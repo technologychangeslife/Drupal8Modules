@@ -1,0 +1,21 @@
+<?php
+
+/**
+ * @file
+ * Timezone module.
+ */
+
+/**
+ * Implements hook_theme().
+ */
+function custom_timezone_theme() {
+
+  $templates = [
+    'custom_timezone_block' => [
+      'variables' => ['title' => NULL, 'description' => NULL],
+      'template' => 'block--custom-timezone',
+    ],
+  ];
+
+  return $templates;
+}

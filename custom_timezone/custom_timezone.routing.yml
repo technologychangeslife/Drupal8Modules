@@ -1,0 +1,16 @@
+custom_timezone.configtimezone:
+  path: '/admin/config/custom_timezone/config_timezone'
+  defaults:
+    _form: '\Drupal\custom_timezone\Form\TimeConfigForm'
+    _title: 'Our Admin Timezone Config'
+  requirements:
+    _permission: 'access administration pages'
+  options:
+    _admin_route: TRUE
+custom_timezone.gettime:
+  path: 'get-time'
+  defaults:
+    _controller: '\Drupal\custom_timezone\Controller\MyController::getTime'
+    _title: 'Get Current Time via AJAX'
+  requirements:
+    _permission: 'access content'

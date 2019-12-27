@@ -1,0 +1,6 @@
+my-jslibrary:
+  js:
+    js/ajax.js: {}
+  dependencies:
+    - core/jquery
+    - core/drupalSettings

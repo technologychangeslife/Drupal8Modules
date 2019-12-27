@@ -1,0 +1,6 @@
+custom_timezone.configtimezone:
+  title: 'Admin TimeZone Configuration Form'
+  route_name: custom_timezone.configtimezone
+  description: 'Configure Custom TimeZone'
+  parent: system.admin_config_system
+  weight: 99

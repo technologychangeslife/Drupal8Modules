@@ -1,0 +1,195 @@
+<?php
+
+/**
+ * @file
+ * Custom bhge_document_center.
+ */
+
+use Drupal\views\Views;
+use Drupal\Core\Form\FormStateInterface;
+
+/**
+ * Implementing hook_theme().
+ */
+function bhge_digital_binder_theme($existing, $type, $theme, $path) {
+
+  return [
+    'article_list' => [
+      'variables' => ['items' => [], 'title' => '']
+    ]
+  ];
+}
+
+/**
+ * Implementing hook_form_alter().
+ */
+
+function bhge_digital_binder_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+    //print $form_id;
+    $view_names = ['documents_for_digital_binder'];
+    $view = $form_state->getStorage('view');
+    if ($form_id == 'views_exposed_form' && in_array($view['view']->id(), $view_names)) {
+        print "Digital Binder View";
+        
+        $query = \Drupal::entityQuery('node')
+        ->condition('status', 1) //published or not
+        ->condition('type', 'section') //content type
+        ->pager(100); //specify results to return
+        $nids = $query->execute();
+        
+        print "Product Types"; print '<br>';
+        foreach ($nids as $nid) {
+          $node = \Drupal\node\Entity\Node::load($nid); 
+          $body = $node->body->value;
+          if($node->title->value != 'Masoneilan' || $node->title->value != 'Consolidated' || $node->title->value != 'Mooney' || $node->title->value != 'Becker') {
+            print $nid;
+            print ":".$title = $node->title->value; print '<br>';
+          }
+        }
+        
+        print "Brands"; print '<br>';
+        foreach ($nids as $nid) {
+          $node = \Drupal\node\Entity\Node::load($nid); 
+          $body = $node->body->value;
+          if($node->title->value == 'Masoneilan' || $node->title->value == 'Consolidated' || $node->title->value == 'Mooney' || $node->title->value == 'Becker') {
+            print $nid;
+            print ":".$title = $node->title->value; print '<br>';
+          }
+        }
+        
+        $select_brand_filter = [556, 1186];
+        $field_select_product_filter = [376];
+        $field_topic_filter = [];
+        $field_part_number_filter = [];
+        
+        if(!empty($select_brand_filter) && empty($field_select_product_filter) && empty($field_topic_filter) && empty($field_part_number_filter)) {
+            $document_query = \Drupal::entityQuery('node')
+            ->condition('status', 1) //published or not
+            ->condition('type', 'document') //content type
+            ->condition('select_brand', $select_brand_filter, 'IN') // filtering brands
+            ->sort('created' , 'DESC')
+            ->pager(50); //specify results to return
+        }
+        
+        if(!empty($select_brand_filter) && !empty($field_select_product_filter) && empty($field_topic_filter) && empty($field_part_number_filter)) {
+            $document_query = \Drupal::entityQuery('node')
+            ->condition('status', 1) //published or not
+            ->condition('type', 'document') //content type
+            ->condition('select_brand', $select_brand_filter, 'IN') // filtering brands
+            ->condition('field_select_product', $field_select_product_filter, 'IN') // filtering product types
+            ->sort('created' , 'DESC')
+            ->pager(50); //specify results to return
+        }
+
+        if(!empty($select_brand_filter) && !empty($field_select_product_filter) && !empty($field_topic_filter) && empty($field_part_number_filter)) {
+            $document_query = \Drupal::entityQuery('node')
+            ->condition('status', 1) //published or not
+            ->condition('type', 'document') //content type
+            ->condition('select_brand', $select_brand_filter, 'IN') // filtering brands
+            ->condition('field_select_product', $field_select_product_filter, 'IN') // filtering product types
+            ->condition('field_topic', $field_topic_filter, 'IN') // filtering file types
+            ->sort('created' , 'DESC')
+            ->pager(50); //specify results to return
+        }
+        
+        if(!empty($select_brand_filter) && empty($field_select_product_filter) && empty($field_topic_filter) && !empty($field_part_number_filter)) {
+            $document_query = \Drupal::entityQuery('node')
+            ->condition('status', 1) //published or not
+            ->condition('type', 'document') //content type
+            ->condition('select_brand', $select_brand_filter, 'IN') // filtering brands
+            ->condition('field_part_number', $field_part_number_filter, 'IN') // filtering file types
+            ->sort('created' , 'DESC')
+            ->pager(50); //specify results to return
+        }
+        
+        if(!empty($select_brand_filter) && empty($field_select_product_filter) && !empty($field_topic_filter) && empty($field_part_number_filter)) {
+            $document_query = \Drupal::entityQuery('node')
+            ->condition('status', 1) //published or not
+            ->condition('type', 'document') //content type
+            ->condition('select_brand', $select_brand_filter, 'IN') // filtering brands
+            ->condition('field_topic', $field_topic_filter, 'IN') // filtering file types
+            ->sort('created' , 'DESC')
+            ->pager(50); //specify results to return
+        }
+        
+        if(empty($select_brand_filter) && !empty($field_select_product_filter) && !empty($field_topic_filter) && empty($field_part_number_filter)) {
+            $document_query = \Drupal::entityQuery('node')
+            ->condition('status', 1) //published or not
+            ->condition('type', 'document') //content type
+            ->condition('field_select_product', $field_select_product_filter, 'IN') // filtering product types
+            ->condition('field_topic', $field_topic_filter, 'IN') // filtering file types
+            ->sort('created' , 'DESC')
+            ->pager(50); //specify results to return
+        }
+        
+        if(empty($select_brand_filter) && !empty($field_select_product_filter) && empty($field_topic_filter) && !empty($field_part_number_filter)) {
+            $document_query = \Drupal::entityQuery('node')
+            ->condition('status', 1) //published or not
+            ->condition('type', 'document') //content type
+            ->condition('field_select_product', $field_select_product_filter, 'IN') // filtering product types
+            ->condition('field_part_number', $field_part_number_filter, 'IN') // filtering file types
+            ->sort('created' , 'DESC')
+            ->pager(50); //specify results to return
+        }
+        
+        if(empty($select_brand_filter) && empty($field_select_product_filter) && !empty($field_topic_filter) && !empty($field_part_number_filter)) {
+            $document_query = \Drupal::entityQuery('node')
+            ->condition('status', 1) //published or not
+            ->condition('type', 'document') //content type
+            ->condition('field_topic', $field_topic_filter, 'IN') // filtering file types
+            ->condition('field_part_number', $field_part_number_filter, 'IN') // filtering file types
+            ->sort('created' , 'DESC')
+            ->pager(50); //specify results to return
+        }
+        
+        if(!empty($select_brand_filter) && !empty($field_select_product_filter) && !empty($field_topic_filter) && !empty($field_part_number_filter)) {
+            $document_query = \Drupal::entityQuery('node')
+            ->condition('status', 1) //published or not
+            ->condition('type', 'document') //content type
+            ->condition('select_brand', $select_brand_filter, 'IN') // filtering brands
+            ->condition('field_select_product', $field_select_product_filter, 'IN') // filtering product types
+            ->condition('field_topic', $field_topic_filter, 'IN') // filtering file types
+            ->condition('field_part_number', $field_part_number_filter, 'IN') // filtering file types
+            ->sort('created' , 'DESC')
+            ->pager(50); //specify results to return
+        }
+        $document_nids = $document_query->execute();
+
+        foreach ($document_nids as $document_nid) {
+          $document_node = \Drupal\node\Entity\Node::load($document_nid);
+          
+          print $document_title = $document_node->title->value; print '<br>';
+          
+          print "File Type/Topic : ".$field_topic = $document_node->get('field_topic')->getValue(); print '<br>';
+          print '<pre>'; print_r($field_topic); print '<pre>'; //exit();
+          
+          print "Product Types : ".$field_select_product = $document_node->get('field_select_product')->getValue(); print '<br>';
+          print '<pre>'; print_r($field_select_product); print '<pre>'; //exit();
+          
+          print "Brands : ".$select_brand = $document_node->get('select_brand')->getValue(); print '<br>';
+          print '<pre>'; print_r($select_brand); print '<pre>';
+          
+          print "Field Part Number : ".$field_part_number = $document_node->get('field_part_number')->getValue(); print '<br>';
+          print '<pre>'; print_r($field_part_number); print '<pre>';
+          
+          print '----------------';
+          print '<br>';
+        }        
+        
+        
+        exit(); 
+        
+        //$product_options = ['1'=>'Globe','2'=>'Rotary'];
+        $product_options = bhge_document_center_get_filter_options($options, 'count_document_by_product', 'block_1');
+        print "<pre>"; print_r($product_options); print "</pre>";
+        $product_field = 'field_select_product_target_id';
+        $form[$product_field]['#title'] = 'Select Product';
+        //$form[$product_field]['#options'][1] = t('Select Product Checkbox');
+        $form[$product_field]['#type'] = 'checkboxes';
+        $form[$product_field]['#multiple'] = TRUE;
+        // Specify the empty option for our select list.
+        //$form[$product_field]['#empty_option'] = t('--Any--');
+        $form[$product_field]['#options'] = $product_options;
+        //$form[$product_field]['#weight'] = -2;
+    }
+}

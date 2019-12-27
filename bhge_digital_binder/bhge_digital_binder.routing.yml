@@ -1,0 +1,35 @@
+bhge_digital_binder.article_list:
+  path: '/digital-binder'
+  defaults:
+    _controller: '\Drupal\bhge_digital_binder\Controller\DigitalController::page'
+    _title: 'Our custom Article list'
+  requirements:
+    _permission: 'access content'
+bhge_digital_binder.form:
+  path: '/digital-binder-form'
+  defaults:
+    _title: 'Digital Binder Form'
+    _form: '\Drupal\bhge_digital_binder\Form\DigitalBinderForm'
+  requirements:
+    _permission: 'access content'
+bhge_digital_binder.binder_form:
+  path: '/binder-form'
+  defaults:
+    _form:  '\Drupal\bhge_digital_binder\Form\BinderForm'
+    _title: 'Binder Form'
+  requirements:
+    _permission: 'access content'
+bhge_digital_binder.simple_form:
+  path: '/simple-form'
+  defaults:
+    _form:  '\Drupal\bhge_digital_binder\Form\SimpleForm'
+    _title: 'Binder Form'
+  requirements:
+    _permission: 'access content'
+bhge_digital_binder.digital_binder_list:
+  path: '/digital-binder-list'
+  defaults:
+    _controller: '\Drupal\bhge_digital_binder\Controller\DigitalController::list_search_items'
+    _title: 'Your list from the search'
+  requirements:
+    _permission: 'access content'

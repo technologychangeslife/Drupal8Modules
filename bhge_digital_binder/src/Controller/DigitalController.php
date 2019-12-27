@@ -2,172 +2,174 @@
 
 namespace Drupal\bhge_digital_binder\Controller;
 
+use Drupal\node\Entity\Node;
 use Drupal\Core\Controller\ControllerBase;
-use mikehaertl\pdftk\Pdf;
-use Drupal\bhge_digital_binder\PDFMerger;
+use Drupal\media\Entity\Media;
+use Drupal\file\Entity\File;
 
 /**
- *
+ * This class contain methods used for multiple steps of binder.
  */
 class DigitalController extends ControllerBase {
 
   /**
+   * This will list items selected form previous search.
    *
+   * Which are selected from Binder form after search.
    */
-  public function list_search_items() {
-      
-      $tempstore = \Drupal::service('user.private_tempstore')->get('bhge_digital_binder');
-      $search_result_data = $tempstore->get('search_result_data');
-       
-      print '<pre>'; print_r($search_result_data); print '</pre>';
-      
-      foreach ($search_result_data as $key => $val) {
-          $node = \Drupal\node\Entity\Node::load($key);
-          $search_results = '<div>'.$node->title->value.'</div>'.$search_results;
-      }
-      $search_results = '<div><b>Your Selected Results</b></div>'.$search_results."<div><a href='/binder-form'>Click Here</a> to go back.</div>";
-      return array (
-      '#markup' => $search_results,
+  public function listSearchItems() {
+
+    $tempstore = \Drupal::service('tempstore.shared')->get('bhge_digital_binder');
+    $search_result_data = $tempstore->get('search_result_data');
+    $search_results_list = [];
+
+    foreach ($search_result_data as $key => $val) {
+      $node = Node::load($key);
+      $search_results = '<div>' . $node->title->value . '</div>' . $search_results;
+      $search_results_list[] = $node->title->value;
+    }
+
+    $search_results = '<div><b>Your Selected Results</b></div>' . $search_results . "<div><a href='/binder'>Click Here</a> to proceed to the binder.</div>";
+    $search_results = $search_results . "<div><a href='/binder-form'>Click Here</a> to go back.</div>";
+    return [
+      '#search_results_list' => $search_results_list,
+      '#theme' => 'digital_binder_list',
       '#prefix' => '<div>',
       '#suffix' => '</div>',
-      );
-      
+    ];
+
   }
-  
+
   /**
-   *
+   * This function will merge multiple PDF into 1.
+   */
+  public function binder() {
+    $tempstore = \Drupal::service('tempstore.shared')->get('bhge_digital_binder');
+    $search_result_data = $tempstore->get('search_result_data_new');
+    $pdf_merge_service = \Drupal::service('bhge_digital_binder.pdf_merge');
+    
+    $pdf_write_service = \Drupal::service('bhge_digital_binder.pdf_write');
+    
+    // test some inline CSS
+     $html = '<p>This is just an example of html code to demonstrate some supported CSS inline styles.
+     <span style="font-weight: bold;">bold text</span>
+     <span style="text-decoration: line-through;">line-trough</span>
+     <span style="text-decoration: underline line-through;">underline and line-trough</span>
+     <span style="color: rgb(0, 128, 64);">color</span>
+     <span style="background-color: rgb(255, 0, 0); color: rgb(255, 255, 255);">background color</span>
+     <span style="font-weight: bold;">bold</span>
+     <span style="font-size: xx-small;">xx-small</span>
+     <span style="font-size: x-small;">x-small</span>
+     <span style="font-size: small;">small</span>
+     <span style="font-size: medium;">medium</span>
+     <span style="font-size: large;">large</span>
+     <span style="font-size: x-large;">x-large</span>
+     <span style="font-size: xx-large;">xx-large</span>
+     </p>';
+    
+    // output the HTML content
+    $pdf_write_service->writeHTML($html, true, false, true, false, '');
+    //Close and output PDF document
+    $pdf_write_service->Output('example_006.pdf', 'I');
+    
+    
+    $dc = \Drupal::service('file_system')->realpath(file_default_scheme() . "://");
+    foreach ($search_result_data as $key => $val) {
+      $node = Node::load($key);
+
+      $dam_field_file = $node->get('field_dam_file')->getValue();
+
+      if (!empty($dam_field_file[0]['target_id'])) {
+
+        $dam_url = $this->getfileurl($dam_field_file[0]['target_id']);
+        $dam_url = str_replace("%20", " ", $dam_url);
+        $dam_url = str_replace("%28", "(", $dam_url);
+        $dam_url = str_replace("%29", ")", $dam_url);
+        $files_path = explode("sites", $dam_url);
+        $dam_file_path = $_SERVER['DOCUMENT_ROOT'] . base_path() . 'sites' . $files_path[1];
+        if (file_exists($dam_file_path)) {
+          \Drupal::logger('bhge_digital_binder')->notice("inside if loop");
+          $pdf_merge_service->addPDF($dam_file_path, 'all');
+        }
+
+        $search_results = '<div>' . $node->title->value . '</div><div>Url:' . $dam_url . '</div>' . $search_results;
+      }
+
+      if (empty($dam_field_file[0]['target_id'])) {
+        $search_results = '<div>' . $node->title->value . '</div>' . $search_results;
+      }
+
+    }
+    $string = date("Y_m_d_h_i_s");
+    $pdf_merge_service->merge('file', $dc . '/pdf_merge_' . $string . '.pdf');
+    $search_results = '<div><b>Your Selected Results</b></div>' . $search_results . "<div>";
+    $click_here = $dc . '/pdf_merge_' . $string . '.pdf';
+    $download_path = file_create_url('public://pdf_merge_' . $string . '.pdf');
+    $search_results = $search_results . "<div>Merged PDF:" . $click_here . "</div><div><a href='/binder-form'>Click Here</a> to go back.</div>";
+    $merged_pdf = $download_path;
+    $this->bhgeDigitalBinderPageCache();
+    return [
+      '#merged_pdf' => $merged_pdf,
+      '#theme' => 'digital_binder_merged_pdf',
+      '#prefix' => '<div>',
+      '#suffix' => '</div>',
+    ];
+  }
+
+  /**
+   * This function will give the DAM file Url.
+   */
+  public function getfileurl($dam_field_file_target_id) {
+    $media = Media::load($dam_field_file_target_id);
+    $media_field_asset = $media->get('field_asset')->getValue();
+    $file = File::load($media_field_asset[0]['target_id']);
+    $dam_file_uri = $file->getFileUri();
+    $dam_url = file_create_url($dam_file_uri);
+    return $dam_url;
+  }
+
+  /**
+   * Function to kill the cache for the page.
+   */
+  public function bhgeDigitalBinderPageCache() {
+    \Drupal::service('page_cache_kill_switch')->trigger();
+    return [
+      '#markup' => time(),
+    ];
+  }
+
+  /**
+   * Testing function for Binder/PDF Merge.
    */
   public function page() {
 
-    $current_path = \Drupal::service('path.current')->getPath(); print '<br>';
-    // Print $directory = \Drupal::service('file_system')->realpath(""); print '<br>';.
-    print "dc = " . $dc = \Drupal::service('file_system')->realpath(file_default_scheme() . "://");
-    print "<br>";
-    // $dc = $_SERVER['DOCUMENT_ROOT'].base_path().'modules/custom/bhge_digital_binder/files';
-
+    $current_path = \Drupal::service('path.current')->getPath();
+    $dc = \Drupal::service('file_system')->realpath(file_default_scheme() . "://");
     $uri = $_SERVER['DOCUMENT_ROOT'] . base_path() . 'modules/custom/bhge_digital_binder/files/pdf1.pdf';
     $uri2 = $_SERVER['DOCUMENT_ROOT'] . base_path() . 'modules/custom/bhge_digital_binder/files/pdf2.pdf';
     if (file_exists($uri) && file_exists($uri2)) {
-      print 'both file exists from 1st check'; print '<br>';
+
     }
     else {
-      print 'No such file exists.'; print '<br>';
+
     }
 
-    print $string = date("Y_m_d_h_i_s"); print "<br>";
+    $string = date("Y_m_d_h_i_s");
 
     $pdf_merge_service = \Drupal::service('bhge_digital_binder.pdf_merge');
     \Drupal::logger('bhge_digital_binder')->notice('<pre><code>' . print_r($pdf_merge_service, TRUE) . '<code></pre>');
     if (file_exists($uri) && file_exists($uri2)) {
       \Drupal::logger('bhge_digital_binder')->notice("inside if loop");
-      // $pdf_merge_service->addPDF($_SERVER['DOCUMENT_ROOT'].base_path().'modules/custom/bhge_digital_binder/files/pdf3.pdf', '1,2'); not working.
-
-      // Working below files
-      /*$pdf_merge_service->addPDF($_SERVER['DOCUMENT_ROOT'].base_path().'modules/custom/bhge_digital_binder/files/pdf1.pdf', 'all');
-      $pdf_merge_service->addPDF($_SERVER['DOCUMENT_ROOT'].base_path().'modules/custom/bhge_digital_binder/files/pdf4.pdf', 'all');
-      $pdf_merge_service->addPDF($_SERVER['DOCUMENT_ROOT'].base_path().'modules/custom/bhge_digital_binder/files/pdf2.pdf', 'all');*/
-      // working with above files.
-
-      // $pdf_merge_service->addPDF($_SERVER['DOCUMENT_ROOT'].base_path().'modules/custom/bhge_digital_binder/files/CN-Power-Broch-GEA19389C-English.pdf', 'all');
-      // $pdf_merge_service->addPDF($_SERVER['DOCUMENT_ROOT'].base_path().'modules/custom/bhge_digital_binder/files/CN-Cond-Catalog-GEA18713D-RU-Russian.pdf', 'all');
-      // $pdf_merge_service->addPDF($_SERVER['DOCUMENT_ROOT'].base_path().'modules/custom/bhge_digital_binder/files/MN-77000-77003_TechSpec-GEA20210C-English.pdf', 'all');.
-
-      // Sucessfully merged upto 24 pages including russian file.
-
-      // Test with 1 large and 1 small files worked fine.
-      // $pdf_merge_service->addPDF($_SERVER['DOCUMENT_ROOT'].base_path().'modules/custom/bhge_digital_binder/files/pdf_merge_2019_07_19_01_12_48.pdf', 'all');
-      // $pdf_merge_service->addPDF($_SERVER['DOCUMENT_ROOT'].base_path().'modules/custom/bhge_digital_binder/files/pdf4.pdf', 'all');.
-
-      // Test with 2 large file worked fine created 44 page pdf
-      // $pdf_merge_service->addPDF($_SERVER['DOCUMENT_ROOT'].base_path().'modules/custom/bhge_digital_binder/files/pdf_merge_2019_07_19_01_38_26.pdf', 'all');
-      // $pdf_merge_service->addPDF($_SERVER['DOCUMENT_ROOT'].base_path().'modules/custom/bhge_digital_binder/files/pdf_merge_2019_07_19_01_12_48.pdf', 'all');.
-
-      // Test with pdf3 mb_detect_encoding(); failed with pdf3.pdf.
-      // $pdf_merge_service->addPDF($_SERVER['DOCUMENT_ROOT'].base_path().'modules/custom/bhge_digital_binder/files/pdf3.pdf', 'all');
-      // $pdf_merge_service->addPDF($_SERVER['DOCUMENT_ROOT'].base_path().'modules/custom/bhge_digital_binder/files/pdf4.pdf', 'all');
-      // print mb_detect_encoding($_SERVER['DOCUMENT_ROOT'].base_path().'modules/custom/bhge_digital_binder/files/pdf3.pdf'); print "<br>";
-      // print mb_detect_encoding($_SERVER['DOCUMENT_ROOT'].base_path().'modules/custom/bhge_digital_binder/files/pdf4.pdf'); print "<br>";.
-
-      // Worked fine with russian and pdf4.pdf. output pdf_merge_2019_07_19_04_07_30.pdf
-      // $pdf_merge_service->addPDF($_SERVER['DOCUMENT_ROOT'].base_path().'modules/custom/bhge_digital_binder/files/CN-Cond-Catalog-GEA18713D-RU-Russian.pdf', 'all');
-      // $pdf_merge_service->addPDF($_SERVER['DOCUMENT_ROOT'].base_path().'modules/custom/bhge_digital_binder/files/pdf4.pdf', 'all');.
-
-      // Worked fine with 8-pages-8mb and pdf4.pdf. output pdf_merge_2019_07_19_04_12_17.pdf
-      // $pdf_merge_service->addPDF($_SERVER['DOCUMENT_ROOT'].base_path().'modules/custom/bhge_digital_binder/files/8-pages-8mb.pdf', 'all');
-      // $pdf_merge_service->addPDF($_SERVER['DOCUMENT_ROOT'].base_path().'modules/custom/bhge_digital_binder/files/pdf4.pdf', 'all');.
-
-      // Worked fine with 8-pages-8mb and 16-mb-1-page.pdf.
-      // $pdf_merge_service->addPDF($_SERVER['DOCUMENT_ROOT'].base_path().'modules/custom/bhge_digital_binder/files/16-mb-1-page.pdf', 'all');
-      // $pdf_merge_service->addPDF($_SERVER['DOCUMENT_ROOT'].base_path().'modules/custom/bhge_digital_binder/files/8-pages-8mb.pdf', 'all');.
-
-      // Worked fine with 7mb-28-page and pdf4.pdf. output pdf_merge_2019_07_19_04_40_06.pdf
-      // $pdf_merge_service->addPDF($_SERVER['DOCUMENT_ROOT'].base_path().'modules/custom/bhge_digital_binder/files/7mb-28-page.pdf', 'all');
-      // $pdf_merge_service->addPDF($_SERVER['DOCUMENT_ROOT'].base_path().'modules/custom/bhge_digital_binder/files/pdf4.pdf', 'all');.
-
-      // Worked fine with 8-pages-8mb , 16-mb-1-page.pdf , 7mb-28-page output pdf_merge_2019_07_22_08_43_03.pdf total 37 pages and 31mb.
-      // $pdf_merge_service->addPDF($_SERVER['DOCUMENT_ROOT'].base_path().'modules/custom/bhge_digital_binder/files/16-mb-1-page.pdf', 'all');
-      // $pdf_merge_service->addPDF($_SERVER['DOCUMENT_ROOT'].base_path().'modules/custom/bhge_digital_binder/files/8-pages-8mb.pdf', 'all');
-      // $pdf_merge_service->addPDF($_SERVER['DOCUMENT_ROOT'].base_path().'modules/custom/bhge_digital_binder/files/7mb-28-page.pdf', 'all');.
-
-      // Worked fine with 8-pages-8mb , 16-mb-1-page.pdf , 7mb-28-page , 16mb-188pages output pdf_merge_2019_07_22_09_13_15. 225 pages 47mb .
-      // $pdf_merge_service->addPDF($_SERVER['DOCUMENT_ROOT'].base_path().'modules/custom/bhge_digital_binder/files/16-mb-1-page.pdf', 'all');
-      // $pdf_merge_service->addPDF($_SERVER['DOCUMENT_ROOT'].base_path().'modules/custom/bhge_digital_binder/files/8-pages-8mb.pdf', 'all');
-      // $pdf_merge_service->addPDF($_SERVER['DOCUMENT_ROOT'].base_path().'modules/custom/bhge_digital_binder/files/7mb-28-page.pdf', 'all');
-      // $pdf_merge_service->addPDF($_SERVER['DOCUMENT_ROOT'].base_path().'modules/custom/bhge_digital_binder/files/16mb-188pages.pdf', 'all');.
-
-      // Worked fine with 8-pages-8mb , 16-mb-1-page.pdf , 7mb-28-page , 16mb-188pages output pdf_merge_2019_07_22_09_13_15. 225 pages 47mb .
-      // $pdf_merge_service->addPDF($_SERVER['DOCUMENT_ROOT'].base_path().'modules/custom/bhge_digital_binder/files/16-mb-1-page.pdf', 'all');
-      // $pdf_merge_service->addPDF($_SERVER['DOCUMENT_ROOT'].base_path().'modules/custom/bhge_digital_binder/files/8-pages-8mb.pdf', 'all');
-      // $pdf_merge_service->addPDF($_SERVER['DOCUMENT_ROOT'].base_path().'modules/custom/bhge_digital_binder/files/7mb-28-page.pdf', 'all');
-      // $pdf_merge_service->addPDF($_SERVER['DOCUMENT_ROOT'].base_path().'modules/custom/bhge_digital_binder/files/16mb-188pages.pdf', 'all');.
-
-      // Worked fine with 8-pages-8mb , 16-mb-1-page.pdf , 7mb-28-page , 16mb-188pages , 9mb-72pages output repeated thrice worked fine with
-      // 747 pages and
-      // $pdf_merge_service->addPDF($_SERVER['DOCUMENT_ROOT'].base_path().'modules/custom/bhge_digital_binder/files/16-mb-1-page.pdf', 'all');
-      // $pdf_merge_service->addPDF($_SERVER['DOCUMENT_ROOT'].base_path().'modules/custom/bhge_digital_binder/files/8-pages-8mb.pdf', 'all');
-      // $pdf_merge_service->addPDF($_SERVER['DOCUMENT_ROOT'].base_path().'modules/custom/bhge_digital_binder/files/7mb-28-page.pdf', 'all');
-      // $pdf_merge_service->addPDF($_SERVER['DOCUMENT_ROOT'].base_path().'modules/custom/bhge_digital_binder/files/16mb-188pages.pdf', 'all');
-      // $pdf_merge_service->addPDF($_SERVER['DOCUMENT_ROOT'].base_path().'modules/custom/bhge_digital_binder/files/9mb-72pages.pdf', 'all');.
-
-      // Worked fine with 8-pages-8mb , 16-mb-1-page.pdf , 7mb-28-page , 16mb-188pages , 9mb-72pages , 8mb-8pages, 3m-12pages , 2mb-24pages ,
-      // 3-16mb-20pages , 16mb-20pages fine with output
-      // worked fine with 12 docs below created a doc of 447 pages 82 mb.
-      // worked fine with 20 docs below created a doc of 925 pages 100 mb.
-      // worked fine with 25 docs below created a doc of 1095 pages 113 mb
-      // $pdf_merge_service->addPDF($_SERVER['DOCUMENT_ROOT'].base_path().'modules/custom/bhge_digital_binder/files/16-mb-1-page.pdf', 'all');.
-
-      // Worked fine with 25 docs below created a doc of 1025 pages 100 mb output pdf_merge_2019_07_22_04_39_38.pdf.
       $pdf_merge_service->addPDF($_SERVER['DOCUMENT_ROOT'] . base_path() . 'modules/custom/bhge_digital_binder/files/pdf4.pdf', 'all');
       $pdf_merge_service->addPDF($_SERVER['DOCUMENT_ROOT'] . base_path() . 'modules/custom/bhge_digital_binder/files/8-pages-8mb.pdf', 'all');
-      /*$pdf_merge_service->addPDF($_SERVER['DOCUMENT_ROOT'].base_path().'modules/custom/bhge_digital_binder/files/7mb-28-page.pdf', 'all');
-      $pdf_merge_service->addPDF($_SERVER['DOCUMENT_ROOT'].base_path().'modules/custom/bhge_digital_binder/files/16mb-188pages.pdf', 'all');
-      $pdf_merge_service->addPDF($_SERVER['DOCUMENT_ROOT'].base_path().'modules/custom/bhge_digital_binder/files/9mb-72pages.pdf', 'all');
-      $pdf_merge_service->addPDF($_SERVER['DOCUMENT_ROOT'].base_path().'modules/custom/bhge_digital_binder/files/8mb-8pages.pdf', 'all');
-      $pdf_merge_service->addPDF($_SERVER['DOCUMENT_ROOT'].base_path().'modules/custom/bhge_digital_binder/files/3mb-12pages.pdf', 'all');
-      $pdf_merge_service->addPDF($_SERVER['DOCUMENT_ROOT'].base_path().'modules/custom/bhge_digital_binder/files/2mb-24pages.pdf', 'all');
-      $pdf_merge_service->addPDF($_SERVER['DOCUMENT_ROOT'].base_path().'modules/custom/bhge_digital_binder/files/3-16mb-20pages.pdf', 'all');
-      $pdf_merge_service->addPDF($_SERVER['DOCUMENT_ROOT'].base_path().'modules/custom/bhge_digital_binder/files/16mb-20pages.pdf', 'all');
-      $pdf_merge_service->addPDF($_SERVER['DOCUMENT_ROOT'].base_path().'modules/custom/bhge_digital_binder/files/6-27mb-48pages.pdf', 'all');
-      $pdf_merge_service->addPDF($_SERVER['DOCUMENT_ROOT'].base_path().'modules/custom/bhge_digital_binder/files/3-26-16pages.pdf', 'all');
-      $pdf_merge_service->addPDF($_SERVER['DOCUMENT_ROOT'].base_path().'modules/custom/bhge_digital_binder/files/1-23mb-20pages.pdf', 'all');
-      $pdf_merge_service->addPDF($_SERVER['DOCUMENT_ROOT'].base_path().'modules/custom/bhge_digital_binder/files/5-3mb-92pages.pdf', 'all');
-      $pdf_merge_service->addPDF($_SERVER['DOCUMENT_ROOT'].base_path().'modules/custom/bhge_digital_binder/files/4-25mb-46pages.pdf', 'all');
-      $pdf_merge_service->addPDF($_SERVER['DOCUMENT_ROOT'].base_path().'modules/custom/bhge_digital_binder/files/3-39mb-71pages.pdf', 'all');
-      $pdf_merge_service->addPDF($_SERVER['DOCUMENT_ROOT'].base_path().'modules/custom/bhge_digital_binder/files/3-67mb-203pages.pdf', 'all');
-      $pdf_merge_service->addPDF($_SERVER['DOCUMENT_ROOT'].base_path().'modules/custom/bhge_digital_binder/files/1-48mb-20pages.pdf', 'all');
-      $pdf_merge_service->addPDF($_SERVER['DOCUMENT_ROOT'].base_path().'modules/custom/bhge_digital_binder/files/2-94mb-16pages.pdf', 'all');
-      $pdf_merge_service->addPDF($_SERVER['DOCUMENT_ROOT'].base_path().'modules/custom/bhge_digital_binder/files/2-3mb-32pages.pdf', 'all');
-      $pdf_merge_service->addPDF($_SERVER['DOCUMENT_ROOT'].base_path().'modules/custom/bhge_digital_binder/files/1-56mb-12pages.pdf', 'all');
-      $pdf_merge_service->addPDF($_SERVER['DOCUMENT_ROOT'].base_path().'modules/custom/bhge_digital_binder/files/2-25mb-40pages.pdf', 'all');
-      $pdf_merge_service->addPDF($_SERVER['DOCUMENT_ROOT'].base_path().'modules/custom/bhge_digital_binder/files/6-12mb-72pages.pdf', 'all');
-      $pdf_merge_service->addPDF($_SERVER['DOCUMENT_ROOT'].base_path().'modules/custom/bhge_digital_binder/files/2-54mb-24pages.pdf', 'all');
-      $pdf_merge_service->addPDF($_SERVER['DOCUMENT_ROOT'].base_path().'modules/custom/bhge_digital_binder/files/2mb-22pages.pdf', 'all');*/
 
       $pdf_merge_service->merge('file', $dc . '/pdf_merge_' . $string . '.pdf');
 
-      print $click_here = $dc . '/pdf_merge_' . $string . '.pdf'; print "<br>";
+      $click_here = $dc . '/pdf_merge_' . $string . '.pdf';
       \Drupal::logger('bhge_digital_binder')->notice("end of inside if loop" . $click_here);
     }
+
+    $this->bhgeDigitalBinderPageCache();
 
     $items = [
       ['name' => 'File 1'],
@@ -178,7 +180,7 @@ class DigitalController extends ControllerBase {
     return [
       '#theme' => 'article_list',
       '#items' => $items,
-      '#title' => 'Our article list'
+      '#title' => 'Our article list',
     ];
   }
 

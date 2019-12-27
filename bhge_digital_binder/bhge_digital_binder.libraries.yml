@@ -1,0 +1,19 @@
+bhge-digital-binder:
+  version: 1.x
+  js:
+    js/bhge-digital-binder.js: {}
+  dependencies:
+    - core/jquery
+    - core/drupal
+    - core/drupalSettings
+    - core/drupal.ajax
+bhge-digital-binder-list:
+  version: 1.x
+  js:
+    js/bhge-digital-binder-list.js: {}
+  dependencies:
+    - core/jquery.ui.sortable
+    - core/jquery
+    - core/drupal
+    - core/drupalSettings
+    - core/drupal.ajax

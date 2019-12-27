@@ -5,3 +5,5 @@ services:
     class: Drupal\bhge_digital_binder\FPDF_Merge
   bhge_digital_binder.pdf_merge:
     class: Drupal\bhge_digital_binder\PDFMerger
+  bhge_digital_binder.pdf_write:
+    class: Drupal\bhge_digital_binder\TCPDF

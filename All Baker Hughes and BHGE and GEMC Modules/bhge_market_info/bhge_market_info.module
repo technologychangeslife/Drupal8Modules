@@ -1,0 +1,44 @@
+<?php
+
+/**
+ * @file
+ * Custom bhge_market_info module.
+ */
+
+/**
+ * Implements hook_theme().
+ */
+function bhge_market_info_theme() {
+
+  $theme['market_info_preview'] = [
+    'variables' => ['info' => NULL],
+    'template' => 'market-info-preview',
+  ];
+
+  $theme['market_info_menu'] = [
+    'variables' => ['info' => NULL],
+    'template' => 'market-info-menu',
+  ];
+
+  return $theme;
+}
+
+/**
+ * Implements hook_paragraph_view().
+ */
+function bhge_market_info_paragraph_view(&$build, $paragraph) {
+  if ($paragraph->getType() === 'block_market_info') {
+    $build['#cache']['max-age'] = 30;
+  }
+}
+
+/**
+ * Implements hook_preprocess_menu().
+ */
+function bhge_market_info_preprocess_menu__main(&$vars) {
+  if (!empty($vars['items']['bhge_core.stock_info'])) {
+    // Overwrite stock info menu item.
+    $vars['items']['bhge_core.stock_info']['attributes']->setAttribute('class', 'market-information even link');
+    $vars['items']['bhge_core.stock_info']['title'] = ['#theme' => 'market_info_menu'];
+  }
+}

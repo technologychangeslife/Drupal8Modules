@@ -1,0 +1,6 @@
+name: BHGE Dynamic filter card
+type: module
+description: 'BHGE Dynamic Cards with Filter Component'
+package: Custom
+version: 8.x
+core: 8.x

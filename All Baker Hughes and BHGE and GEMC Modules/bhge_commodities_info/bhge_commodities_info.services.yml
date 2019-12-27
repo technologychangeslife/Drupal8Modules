@@ -1,0 +1,3 @@
+services:
+  bhge_commodities_info.class:
+    class: \Drupal\bhge_commodities_info\Controller\CommoditiesInfoController

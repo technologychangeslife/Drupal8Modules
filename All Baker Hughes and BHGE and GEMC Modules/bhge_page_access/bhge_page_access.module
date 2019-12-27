@@ -1,0 +1,358 @@
+<?php
+
+/**
+ * @file
+ * Allows administrators to customize page level access.
+ */
+
+use Drupal\node\Entity\Node;
+use Drupal\Core\Session\AccountInterface;
+use Drupal\node\NodeInterface;
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\bhge_page_access\Entity\BhgePageAccess;
+use Drupal\user\Entity\User;
+use Drupal\Core\Access\AccessResult;
+
+/**
+ * Implements hook_form_BASE_FORM_ID_alter() for \Drupal\node\NodeForm.
+ *
+ * Adds page access fields to the node form.
+ *
+ * @see bhge_page_access_form_node_form_submit()
+ */
+function bhge_page_access_form_node_form_alter(&$form, FormStateInterface &$form_state) {
+  // Get current form node.
+  $node = $form_state->getFormObject()->getEntity();
+  // Get default values.
+  $defaults = bhge_page_access_get_node_defaults($node);
+  // Get available user roles.
+  $user_roles = user_role_names(TRUE);
+  // Remove administrator role from available user roles.
+  unset($user_roles['administrator']);
+  $defaults_id = isset($defaults['id']) ? $defaults['id'] : NULL;
+  $form['bhge_page_access'] = [
+    '#type' => 'details',
+    '#title' => t('Page access settings'),
+    '#access' => \Drupal::currentUser()->hasPermission('administer menu'),
+    '#open' => (bool) $defaults_id,
+    '#group' => 'advanced',
+    '#attached' => [
+      'library' => ['bhge_page_access/drupal.bhge_page_access.adminforms'],
+    ],
+    '#tree' => TRUE,
+    '#attributes' => ['class' => ['bhge-page-access-form']],
+  ];
+  $form['bhge_page_access_entity_id'] = [
+    '#type' => 'hidden',
+    '#value' => $defaults_id,
+  ];
+  $form['bhge_page_access']['enabled'] = [
+    '#type' => 'checkbox',
+    '#title' => t('Enable page access control'),
+    '#default_value' => (int) (bool) $defaults_id,
+  ];
+  $form['bhge_page_access']['roles'] = [
+    '#type' => 'checkboxes',
+    '#options' => $user_roles,
+    '#title' => t('Roles'),
+    '#description' => t('Select user roles, who can view or update.'),
+    '#states' => [
+      'invisible' => [
+        'input[name="bhge_page_access[enabled]"]' => ['checked' => FALSE],
+      ],
+    ],
+    '#default_value' => isset($defaults['bhge_page_access']['roles']) ? $defaults['bhge_page_access']['roles'] : [],
+  ];
+  $form['bhge_page_access']['users'] = [
+    '#type' => 'item',
+    '#title' => 'Users',
+    '#description' => t('Add users, who can view or update.'),
+    '#states' => [
+      'invisible' => [
+        'input[name="bhge_page_access[enabled]"]' => ['checked' => FALSE],
+      ],
+    ],
+  ];
+  $form['bhge_page_access']['list'] = [
+    '#type' => 'container',
+    '#parents' => ['bhge_page_access'],
+    '#states' => [
+      'invisible' => [
+        'input[name="bhge_page_access[enabled]"]' => ['checked' => FALSE],
+      ],
+    ],
+    '#attributes' => ['id' => ['bhge_page_access_user_list']],
+  ];
+  if (empty($form_state->get('bhge_page_access_users_count'))) {
+    if (!empty($defaults['bhge_page_access'])) {
+      $form_state->set('bhge_page_access_users_count', count($defaults['bhge_page_access']['users']));
+    }
+    else {
+      $form_state->set('bhge_page_access_users_count', 1);
+    }
+    $form_state->set('bhge_page_access_users_to_remove', []);
+  }
+  $bhge_page_access_users_count = $form_state->get('bhge_page_access_users_count');
+  $bhge_page_access_users_to_remove = $form_state->get('bhge_page_access_users_to_remove');
+  for ($i = 0; $i < $bhge_page_access_users_count; $i++) {
+    if (in_array($i, $bhge_page_access_users_to_remove)) {
+      unset($form['bhge_page_access']['list'][$i]);
+      continue;
+    }
+    $defaut_bhge_page_access_users = isset($defaults['bhge_page_access']['users'][$i]['user_autocomplete']) ? $defaults['bhge_page_access']['users'][$i]['user_autocomplete'] : [];
+    $user_reference = _get_user_reference_default_value($defaut_bhge_page_access_users);
+    $form['bhge_page_access']['list'][$i]['user_autocomplete'] = [
+      '#type' => 'entity_autocomplete',
+      '#target_type' => 'user',
+      '#selection_settings' => ['include_anonymous' => FALSE],
+      '#attributes' => [
+        'class' => ['bhge-page-access-user-autocomplete'],
+        'placeholder' => 'Username',
+      ],
+      '#prefix' => '<div class="container-inline" id="bhge-page-access-' . $i . '">',
+      '#default_value' => $user_reference,
+    ];
+    $defaut_bhge_page_access_users_permission = isset($defaults['bhge_page_access']['users'][$i]['edit_permission']) ? $defaults['bhge_page_access']['users'][$i]['edit_permission'] : [];
+    $form['bhge_page_access']['list'][$i]['edit_permission'] = [
+      '#type' => 'checkbox',
+      '#default_value' => 0,
+      '#title' => 'Edit',
+      '#attributes' => ['class' => ['bhge-page-access-edit-access']],
+      '#default_value' => (int) (bool) $defaut_bhge_page_access_users_permission,
+    ];
+    if ($i) {
+      $form['bhge_page_access']['list'][$i]['remove'] = [
+        '#type' => 'submit',
+        '#value' => 'X',
+        '#submit' => ['bhge_page_access_remove_user'],
+        '#ajax' => [
+          'callback' => 'bhge_page_access_add_or_remove_user_callback',
+          'wrapper' => 'bhge_page_access_user_list',
+          'options' => [
+            'query' => [
+              'triggering_element_index' => $i,
+            ],
+          ],
+        ],
+        '#attributes' => ['class' => ['bhge-page-access-remove-user']],
+        '#suffix' => '</div>',
+      ];
+    }
+    else {
+      $form['bhge_page_access']['list'][$i]['edit_permission']['#suffix'] = '</div>';
+    }
+  }
+  $form['bhge_page_access']['list']['add_user'] = [
+    '#type' => 'submit',
+    '#value' => t('Add user'),
+    '#submit' => ['bhge_page_access_add_user'],
+    '#ajax' => [
+      'callback' => 'bhge_page_access_add_or_remove_user_callback',
+      'wrapper' => 'bhge_page_access_user_list',
+    ],
+    '#attributes' => ['class' => ['bhge-page-access-add-user']],
+  ];
+
+  foreach (array_keys($form['actions']) as $action) {
+    if ($action != 'preview' && isset($form['actions'][$action]['#type']) && $form['actions'][$action]['#type'] === 'submit') {
+      $form['actions'][$action]['#submit'][] = 'bhge_page_access_form_node_form_submit';
+    }
+  }
+}
+
+/**
+ * Add more user submit handler.
+ *
+ * @param array $form
+ *   Form object.
+ * @param \Drupal\Core\Form\FormStateInterface $form_state
+ *   Form_state object.
+ */
+function bhge_page_access_add_user(array $form, FormStateInterface &$form_state) {
+  $bhge_page_access_users_count = $form_state->get('bhge_page_access_users_count');
+  $form_state->set('bhge_page_access_users_count', $bhge_page_access_users_count + 1);
+  $form_state->setRebuild();
+}
+
+/**
+ * Remove user submit handler.
+ *
+ * @param array $form
+ *   Form object.
+ * @param \Drupal\Core\Form\FormStateInterface $form_state
+ *   Form_state object.
+ */
+function bhge_page_access_remove_user(array $form, FormStateInterface &$form_state) {
+  $triggering_element_index = \Drupal::request()->query->get('triggering_element_index');
+  $bhge_page_access_users_to_remove = $form_state->get('bhge_page_access_users_to_remove');
+  $bhge_page_access_users_to_remove[] = $triggering_element_index;
+  $form_state->set('bhge_page_access_users_to_remove', $bhge_page_access_users_to_remove);
+  $form_state->setRebuild();
+}
+
+/**
+ * Ajax callback for add and remove user.
+ *
+ * @param array $form
+ *   Form object.
+ * @param \Drupal\Core\Form\FormStateInterface $form_state
+ *   Form_state object.
+ *
+ * @return mixed
+ *   It will return list.
+ */
+function bhge_page_access_add_or_remove_user_callback(array $form, FormStateInterface &$form_state) {
+  return $form['bhge_page_access']['list'];
+}
+
+/**
+ * Returns the definition for page access for the given node.
+ *
+ * @param Drupal\node\Entity\Node $node
+ *   The node entity.
+ *
+ * @return array
+ *   An array that contains default values for the page access form.
+ */
+function bhge_page_access_get_node_defaults(Node $node) {
+  $node_id = $node->id();
+  $defaults = [];
+  if (empty($node_id)) {
+    return $defaults;
+  }
+  $bhge_page_access = new BhgePageAccess([], 'bhge_page_access');
+  $bhge_page_access_entity = $bhge_page_access->loadByNid($node_id);
+
+  if (!empty($bhge_page_access_entity)) {
+    $id = $bhge_page_access_entity->id();
+    $bhge_page_access = $bhge_page_access_entity->value();
+    $defaults += [
+      'id' => $id,
+      'bhge_page_access' => $bhge_page_access,
+    ];
+  }
+  else {
+    $defaults += [
+      'id' => '',
+      'bhge_page_access' => [],
+    ];
+  }
+  return $defaults;
+}
+
+/**
+ * Node page settings form submit handler.
+ *
+ * @param object $form
+ *   Form object.
+ * @param \Drupal\Core\Form\FormStateInterface $form_state
+ *   Form State object.
+ */
+function bhge_page_access_form_node_form_submit($form, FormStateInterface $form_state) {
+  $node_id = $form_state->getFormObject()->getEntity()->id();
+  if (!$form_state->isValueEmpty('bhge_page_access')) {
+    $values = $form_state->getValue('bhge_page_access');
+    $entity_id = $form_state->getValue('bhge_page_access_entity_id');
+    if (empty($values['enabled'])) {
+      if ($entity_id) {
+        $entity = BhgePageAccess::load($entity_id);
+        $entity->delete();
+      }
+    }
+    else {
+      _bhge_page_access_node_save($node_id, $values, $entity_id);
+    }
+  }
+}
+
+/**
+ * Method to save page access settings.
+ *
+ * @param int $node_id
+ *   Node Id.
+ * @param array $values
+ *   Setting values.
+ */
+function _bhge_page_access_node_save($node_id, array $values, $entity_id) {
+  unset($values['enabled']);
+  unset($values['users']);
+  if ($entity_id) {
+    $entity = BhgePageAccess::load($entity_id);
+  }
+  else {
+    $entity = BhgePageAccess::create();
+  }
+  $roles = array_shift($values);
+  $roles = array_filter($roles, function ($value) {
+    if ($value) {
+      return TRUE;
+    }
+    return FALSE;
+  });
+  $entity->value = [
+    'roles' => array_values($roles),
+    'users' => array_values($values),
+  ];
+  $entity->nid = $node_id;
+  $entity->save();
+}
+
+/**
+ * Method to get use object for user autocomplete field.
+ *
+ * @param int $uid
+ *   User Id.
+ *
+ * @return \Drupal\Core\Entity\EntityInterface|null|string|static
+ *   Return user object else null value.
+ */
+function _get_user_reference_default_value($uid) {
+  if (is_numeric($uid)) {
+    $user = User::load($uid);
+    if ($user instanceof User) {
+      return $user;
+    }
+  }
+  return '';
+}
+
+/**
+ * Controls access to a node.
+ *
+ * Decide on access to view/update, if page access settings is been enabled for
+ * the node entity based on current user.
+ *
+ * @param \Drupal\node\NodeInterface|string $node
+ *   Node entity.
+ * @param string $op
+ *   The operation to be performed.
+ * @param \Drupal\Core\Session\AccountInterface $account
+ *   User object.
+ *
+ * @return \Drupal\Core\Access\AccessResultInterface
+ *   The access result.
+ *
+ * @ingroup node_access
+ */
+function bhge_page_access_node_access(NodeInterface $node, $op, AccountInterface $account) {
+
+  switch ($op) {
+    case 'view':
+    case 'update':
+      $access = \Drupal::service('bhge_page_access.default')->getUserNodeAccess($node, $account);
+
+      if ($access === NULL) {
+        return AccessResult::neutral();
+      }
+      elseif (in_array($op, $access)) {
+        return AccessResult::allowed();
+      }
+      else {
+        return AccessResult::forbidden();
+      }
+
+    default:
+      // No opinion.
+      return AccessResult::neutral();
+  }
+}

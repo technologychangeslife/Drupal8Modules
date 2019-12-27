@@ -1,0 +1,57 @@
+<?php
+
+/**
+ * @file
+ * Custom bhge_campaign related stuff.
+ */
+
+/**
+ * Implements preprocess_paragraph().
+ *
+ * @param array $variables
+ *   This is the set of variables available for the paragraph.
+ *   Return variables array.
+ */
+function bhge_campaign_preprocess_paragraph(array &$variables) {
+  if (!empty($variables['elements']['#paragraph'])) {
+
+    /** @var \Drupal\paragraphs\Entity\Paragraph $paragraph */
+    $paragraph = $variables['elements']['#paragraph'];
+
+    /** @var \Drupal\node\Entity\Node $parent */
+    $parent = $paragraph->getParentEntity();
+    $id = $paragraph->get('type')->getValue();
+
+    // Marketo Form.
+    if (in_array($id[0]['target_id'], ['block_machine_conversation'])) {
+      $module_path = \Drupal::moduleHandler()->getModule('bhge_campaign')->getPath();
+      $variables['#attached']['library'][] = 'bhge_campaign/bhge-machine-conversation';
+
+      $theme_color = [
+        '#tag' => 'link',
+        '#attributes' => [
+          'name' => 'theme-color',
+          'content' => "#000000",
+        ],
+      ];
+
+      $variables['#attached']['html_head'][] = [$theme_color, 'theme-color'];
+      $videos = [
+        '/Videos/animation.mp4',
+        '/Videos/intro.mp4',
+        '/Videos/steamturbine-industrial.scenario.mp4',
+      ];
+      foreach ($videos as $video) {
+        $links = [
+          '#tag' => 'link',
+          '#attributes' => [
+            'as' => 'fetch',
+            'rel' => 'preload',
+            'href' => $module_path . $video,
+          ],
+        ];
+        $variables['#attached']['html_head'][] = [$links, $video];
+      }
+    }
+  }
+}

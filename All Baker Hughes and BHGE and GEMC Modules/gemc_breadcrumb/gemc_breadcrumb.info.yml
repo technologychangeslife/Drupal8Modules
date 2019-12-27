@@ -1,0 +1,4 @@
+name: GEMC Page Breadcrumb
+type: module
+description: Add links to parent categories to breadcrumb.
+core: 8.x

@@ -1,0 +1,9 @@
+gemc-webform:
+  version: 1.x
+  js:
+    js/gemc_webform.js: {}
+  dependencies:
+    - core/jquery
+    - core/drupal
+    - core/drupalSettings
+    - core/drupal.ajax

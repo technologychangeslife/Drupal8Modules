@@ -1,0 +1,115 @@
+{
+	"dialog": [
+		{
+			"author": "machine",
+			"message": {
+				"text": "init"
+			},
+			"status":"init",
+			"wait":9,
+			"waitAuthor": "machine"
+		},
+		{
+			"author": "machine",
+			"message": {
+				"text": "init"
+			},
+			"status":"init",
+			"wait":2,
+			"waitAuthor": "icenter"
+		},
+		{
+			"author": "icenter",
+			"alert": null,
+			"message": {
+				"text": "normal"
+			},
+			"status":"normal"
+		},
+		{
+			"author": "ge0",
+			"alert": null,
+			"message": {
+				"text": "normal"
+			},
+			"status":"normal"
+		},
+		{
+			"author": "ge1",
+			"alert": null,
+			"message": {
+				"text": "anomaly"
+			},
+			"status":"anomaly",
+			"wait":2,
+			"waitAuthor": "machine"
+		},
+		{
+			"author": "machine",
+			"message": {
+				"text": "anomaly"
+			},
+			"status":"anomaly",
+			"wait":2,
+			"waitAuthor": "ge2"
+		},
+		{
+			"author": "ge2",
+			"alert": null,
+			"message": {
+				"text": "anomaly"
+			},
+			"status":"anomaly",
+			"wait":2,
+			"waitAuthor": "engineer0"
+		},
+		{
+			"author": "icenter",
+			"alert": null,
+			"message": {
+				"text": "anomalyend"
+			},
+			"status":"anomalyend"
+		},
+		{
+			"author": "machine",
+			"message": {
+				"text": "anomalyend"
+			},
+			"status":"anomalyend",
+			"wait":3,
+			"waitAuthor": "machine"
+		},
+		{
+			"author": "machine",
+			"message": {
+				"text": "anomalyend"
+			},
+			"status":"anomalyend"
+		},
+		{
+			"author": "icenter",
+			"alert": null,
+			"message": {
+				"text": "anomalyend"
+			},
+			"status":"anomalyend"
+		},
+		{
+			"author": "machine",
+			"message": {
+				"text": "normal"
+			},
+			"status":"normal"
+		},
+		{
+			"author": "icenter",
+			"alert": null,
+			"message": {
+				"text": "normal"
+			},
+			"status":"normal",
+			"wait": 5
+		}
+	]
+}

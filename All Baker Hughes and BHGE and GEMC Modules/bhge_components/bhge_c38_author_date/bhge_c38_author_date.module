@@ -1,0 +1,66 @@
+<?php
+
+/**
+ * @file
+ * Custom bhge_38_author_date module.
+ */
+
+use Drupal\node\Entity\Node;
+use Drupal\Core\Url;
+
+/**
+ * Implements hook_preprocess_field().
+ */
+function bhge_c38_author_date_preprocess_field(&$variables, $hook) {
+
+  if ($variables['element']['#field_name'] == 'field_author') {
+
+    /** @var \Drupal\node\Entity\Node $parentEntity */
+    $parentEntity = $variables['element']['#object'];
+    if (!empty($parentEntity) && $parentEntity instanceof Node) {
+      if ($parentEntity->bundle() == 'event_item' && method_exists($parentEntity->get('field_copy'), 'first') && method_exists($parentEntity->get('field_copy')
+        ->first(), 'getValue')) {
+        $title = html_entity_decode(strip_tags(preg_replace("/&nbsp;/", ' ',
+          $parentEntity->get('field_copy')
+            ->first()
+            ->getValue()['value'])));
+
+        if (strlen($title) > 145) {
+          $variables['title'] = substr($title, 0, 142) . '...';
+        }
+        else {
+          $variables['title'] = substr($title, 0, 145);
+        }
+      }
+      else {
+        $variables['title'] = $parentEntity->getTitle();
+      }
+      $variables['node_url'] = Url::fromRoute('entity.node.canonical', [
+        'node' => $parentEntity->get('nid')
+          ->getValue()[0]['value'],
+      ], ['absolute' => TRUE])->toString();
+
+      // Get webcast related info.
+      if ($parentEntity->bundle() == 'webcast_item') {
+        $variables = bhge_components_get_webcast_data($variables, $parentEntity);
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_preprocess_node().
+ */
+function bhge_c38_author_date_preprocess_node(&$variables) {
+  if (!empty($variables['elements']['#node'])) {
+    $node = $variables['elements']['#node'];
+    $variables['node_url'] = Url::fromRoute('entity.node.canonical', [
+      'node' => $node->get('nid')
+        ->getValue()[0]['value'],
+    ], ['absolute' => TRUE])->toString();
+    if ($node->getType() == 'article') {
+      $variables['multimedia_message'] = t('I found this content interesting:') . ' ' . $variables['node_url'];
+      $variables['multimedia_lbl'] = t('Print or e-mail it');
+    }
+  }
+}

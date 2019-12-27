@@ -1,0 +1,9 @@
+bhge-menu:
+  version: 1.x
+  js:
+    js/bhge_n02_global_nav.js: {}
+  dependencies:
+  - core/jquery
+  - core/drupal
+  - core/drupalSettings
+  - core/drupal.ajax

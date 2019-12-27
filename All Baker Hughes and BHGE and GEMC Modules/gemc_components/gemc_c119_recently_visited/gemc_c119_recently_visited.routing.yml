@@ -1,0 +1,7 @@
+gemc_c119_recent_visited.controller:
+  path: 'api/v1/recently-visited-products'
+  defaults:
+    _controller: '\Drupal\gemc_c119_recently_visited\Controller\RecentlyVisitedProductsController::getResponse'
+  methods:  [GET]
+  requirements:
+    _permission: 'access content'

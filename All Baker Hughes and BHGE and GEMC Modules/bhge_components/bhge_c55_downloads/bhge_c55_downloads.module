@@ -1,0 +1,108 @@
+<?php
+
+/**
+ * @file
+ * Custom bhge_c55_downloads module.
+ */
+
+/**
+ * Implements preprocess_paragraph().
+ */
+function bhge_c55_downloads_preprocess_paragraph(&$variables) {
+  if (!empty($variables['elements']['#paragraph'])) {
+
+    /** @var \Drupal\paragraphs\Entity\Paragraph $paragraph */
+    $paragraph = $variables['elements']['#paragraph'];
+    $id = $paragraph->get('type')->getValue();
+    $parent = NULL;
+
+    if ($id[0]['target_id'] == 'block_downloads') {
+
+      $media_items = $paragraph->get('field_dam_dlds');
+      $is_dam = FALSE;
+      if (!$media_items->isEmpty()) {
+        $files = $media_items;
+        $is_dam = TRUE;
+      }
+      else {
+        $files = $paragraph->get('field_downloads');
+      }
+      $variables['has_filters'] = !empty($paragraph->get('field_download_filter')
+        ->getValue()[0]['value']) ? 1 : 0;
+
+      $variables['offset'] = 0;
+      $variables['limit'] = 6;
+      $variables['dataset']['total'] = $files->count();
+
+      if ($variables['dataset']['total'] < $variables['limit']) {
+        $variables['limit'] = $variables['dataset']['total'];
+      }
+
+      $paragraphId = $paragraph->id();
+
+      $uiUtils = \Drupal::service('bhge_core.twig.uiutilsextension');
+      // Setting topics sidebar data.
+      $topics = [];
+      if ($variables['has_filters']) {
+        $allDownloads[] = [
+          'filter' => '',
+          'title' => 'All',
+        ];
+        $topics = array_merge($allDownloads, _bhge_c55_downloads_get_download_types($files));
+      }
+
+      if (!empty($topics)) {
+        $variables['topics'] = $topics;
+      }
+
+      if (!empty($paragraphId)) {
+        $variables['pid'] = $paragraphId;
+      }
+
+      // Initial load dataset.
+      for ($i = 0; $i < $variables['limit']; $i++) {
+        $file = $files[$i]->entity;
+        if ($file) {
+          $field_download_type = $file->field_download_type->entity;
+          $download_type_name = !empty($field_download_type) ? $field_download_type->getName() : '';
+          if ($is_dam) {
+            $fileData = $uiUtils->processFileField($file->field_asset->entity);
+          }
+          else {
+            $fileData = $uiUtils->processFileField($file->field_file->entity);
+          }
+          $variables['dataset']['results'][] = [
+            "isDownloadType" => "true",
+            "contentType" => "download",
+            "title" => $file->getName(),
+            "fileExtension" => $fileData['type'],
+            "fileType" => $download_type_name,
+            "fileLanguage" => $fileData['language'],
+            "fileSize" => $fileData['size'],
+            "url" => $fileData['url'],
+          ];
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Get download type terms.
+ */
+function _bhge_c55_downloads_get_download_types($files) {
+  $types = [];
+  foreach ($files as $file) {
+    $download_field = $file->entity->field_download_type;
+    if (!is_null($download_field)) {
+      $download_file = $download_field->entity;
+      if (!empty($download_file) && !empty($download_file->getName())) {
+        $types[] = [
+          'filter' => $download_file->id(),
+          'title' => $download_file->getName(),
+        ];
+      }
+    }
+  }
+  return array_unique($types, SORT_REGULAR);
+}

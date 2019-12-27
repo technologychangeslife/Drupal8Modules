@@ -1,0 +1,8 @@
+services:
+  bh_layout_preview.route_subscriber:
+    class: Drupal\bh_layout_preview\Routing\RouteSubscriber
+    tags:
+      - { name: event_subscriber }
+  bh_layout_preview.layout_builder_plugins:
+    class: Drupal\bh_layout_preview\Services\GetLayoutBuilderPlugins
+    arguments: ['@plugin.manager.block']

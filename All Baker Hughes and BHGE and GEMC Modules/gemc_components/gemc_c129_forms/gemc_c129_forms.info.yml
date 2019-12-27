@@ -1,0 +1,6 @@
+name: GEMC C129 Forms
+type: module
+description: 'GEMC C129 Marketo Forms'
+package: BHGE Components
+version: 8.x
+core: 8.x

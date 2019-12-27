@@ -1,0 +1,6 @@
+name: BHGE C55 Contextual Links.
+type: module
+description: 'BHGE C55 Contextual links'
+package: BHGE Components
+version: 8.x
+core: 8.x

@@ -1,0 +1,5 @@
+services:
+  bh_settings.twig.uiutilsextension:
+    class: Drupal\bh_settings\Extension\UIUtilsExtension
+    tags:
+      - { name: twig.extension }

@@ -1,0 +1,7 @@
+ge_marketo_webhooks.calculate_paoi:
+  path: '/ge_marketo_ajax/paoi'
+  defaults:
+    _controller: '\Drupal\ge_marketo_webhooks\Controller\WebhooksController::calculatePaoiHandler'
+    _format: json
+  requirements:
+    _access: 'TRUE'

@@ -1,0 +1,53 @@
+bhge_core.stock_info:
+  title: 'Stock info'
+  url: 'http://investors.bhge.com/stock-information/stock-quote-chart'
+  weight: 100
+  menu_name: main
+bhge_core.general_settings_form:
+  title: 'BHGE Settings'
+  description: 'Manage BHGE settings.'
+  route_name: bhge_core.general_settings_form
+  parent: system.admin_config_system
+  menu_name: bhge_core
+  weight: 1
+bhge_core.social_settings_form:
+  title: 'BHGE Social Settings'
+  description: 'Manage BHGE Social settings.'
+  route_name: bhge_core.social_settings_form
+  parent: bhge_core.general_settings_form
+  menu_name: bhge_core
+  weight: 2
+bhge_core.tracking_settings_form:
+  title: 'BHGE Tracking Settings'
+  description: 'Manage BHGE Tracking settings.'
+  route_name: bhge_core.tracking_settings_form
+  parent: bhge_core.general_settings_form
+  menu_name: bhge_core
+  weight: 2
+bhge_core.organization_schema_settings_form:
+  title: 'BHGE Organization Schema Settings'
+  description: 'Manage BHGE Organization Schema settings.'
+  route_name: bhge_core.organization_schema_settings_form
+  parent: bhge_core.general_settings_form
+  menu_name: bhge_core
+  weight: 2
+bhge_core.external_api_settings_form:
+  title: 'BHGE External API Settings'
+  description: 'Manage BHGE External API settings.'
+  route_name: bhge_core.external_api_settings_form
+  parent: bhge_core.general_settings_form
+  menu_name: bhge_core
+  weight: 2
+bhge_core.market_info_settings_form:
+  title: 'BHGE Market Info Settings'
+  description: 'Manage BHGE Market Info settings.'
+  route_name: bhge_core.market_info_settings_form
+  parent: bhge_core.general_settings_form
+  menu_name: bhge_core
+  weight: 2
+bhge_core.taxonomy_overview_page:
+  title: 'Taxonomy'
+  description: 'Taxonomy overview page'
+  route_name: entity.taxonomy_vocabulary.collection
+  parent: 'system.admin_content'
+  weight: 5

@@ -1,0 +1,8 @@
+name: GEMC C17 Browser component
+type: module
+description: 'GEMC C17 previous/next browser'
+package: GEMC Components
+version: 8.x
+core: 8.x
+dependencies:
+  - gemc_components

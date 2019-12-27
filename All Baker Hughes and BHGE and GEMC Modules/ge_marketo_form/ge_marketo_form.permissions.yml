@@ -1,0 +1,22 @@
+add marketo form entities:
+  title: 'Create new Marketo Form entities'
+
+administer marketo form entities:
+  title: 'Administer Marketo Form entities'
+  description: 'Allow to access the administration form to configure Marketo Form entities.'
+  restrict access: true
+
+delete marketo form entities:
+  title: 'Delete Marketo Form entities'
+
+edit marketo form entities:
+  title: 'Edit Marketo Form entities'
+
+access marketo form overview:
+  title: 'Access the Marketo Form overview page'
+
+view published marketo form entities:
+  title: 'View published Marketo Form entities'
+
+view unpublished marketo form entities:
+  title: 'View unpublished Marketo Form entities'

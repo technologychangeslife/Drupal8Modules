@@ -1,0 +1,54 @@
+<?php
+
+/**
+ * @file
+ * Custom gemc_webform.
+ */
+
+use Drupal\Core\Form\FormStateInterface;
+
+/**
+ * Implements hook_form_alter().
+ */
+function gemc_webform_form_alter(&$form, FormStateInterface &$form_state, $form_id) {
+  $currentstep = $form_state->get('current_page');
+
+  if (($form['#form_id'] == 'webform_submission_rs_ms_product_repair_add_form' && $currentstep == 'customer_return_information') ||
+        ($form['#form_id'] == 'webform_submission_rs_ms_credit_return_add_form' && $currentstep == 'customer_return_information')) {
+    $form['#validate'][] = 'gemc_webform_content_form_validate';
+
+  }
+  if ($form['#form_id'] == 'webform_submission_rs_ms_product_repair_add_form' ||
+      $form['#form_id'] == 'webform_submission_rs_ms_credit_return_add_form' ||
+      $form['#form_id'] == 'webform_submission_gas_shipment_form_reuter_stokes_add_form' ||
+      $form['#form_id'] == 'webform_submission_bn_repair_request_add_form' ||
+      $form['#form_id'] == 'webform_submission_bn_credit_return_add_form' ||
+      $form['#form_id'] == 'webform_submission_bn_calibration_request_add_form') {
+    $form['#attached']['library'][] = 'gemc_webform/gemc-webform';
+  }
+}
+
+/**
+ * Checks if part number is filled and serial number is empty.
+ */
+function gemc_webform_content_form_validate($form, FormStateInterface &$form_state) {
+
+  $returnpi = $form_state->getValue(['return_part_info']);
+  foreach ($returnpi as $key => $value) {
+    foreach ($value as $id => $test) {
+
+      if ($id == 'part_number') {
+        $partnumber = $test;
+
+      }
+      if ($id == 'serial_number') {
+        $serialnumber = $test;
+
+      }
+    }
+
+    if (!empty($partnumber) && empty($serialnumber)) {
+      $form_state->setErrorByName('', t('RS Serial# field is required.'));
+    }
+  }
+}

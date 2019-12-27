@@ -1,0 +1,10 @@
+bh_component_library.settings:
+  title: 'Component Library'
+  parent: system.admin
+  description: 'Showcase of the entire components library'
+  route_name: bh_component_library.settings
+
+bh_component_library.component_library:
+  class: Drupal\bh_component_library\Plugin\Menu\BhDynamicMenuLink
+  deriver: Drupal\bh_component_library\Plugin\Derivative\BhDynamicMenu
+  menu_name: bh_component_library

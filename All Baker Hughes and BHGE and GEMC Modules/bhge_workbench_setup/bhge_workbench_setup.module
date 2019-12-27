@@ -1,0 +1,34 @@
+<?php
+
+/**
+ * @file
+ * Custom bhge_workbench module.
+ */
+
+use Drupal\views\ViewExecutable;
+use Drupal\Core\Form\FormStateInterface;
+
+/**
+ * Implements hook_form_alter().
+ */
+function bhge_workbench_setup_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+  if ($form_id === 'workbench_moderation_entity_moderation_form') {
+    // Just change the label from Apply to Submit.
+    $form['submit']['#value'] = t('Submit');
+  }
+}
+
+/**
+ * Implements hook_views_pre_view().
+ */
+function bhge_workbench_setup_views_pre_view(ViewExecutable $view) {
+  // Do not display the bulk operations for advanced builder.
+  if ($view->id() === 'content') {
+    $account = \Drupal::currentUser();
+    $is_employee = in_array('advanced_builder', $account->getRoles());
+
+    if ($is_employee) {
+      $view->removeHandler($view->current_display, 'field', 'node_bulk_form');
+    }
+  }
+}

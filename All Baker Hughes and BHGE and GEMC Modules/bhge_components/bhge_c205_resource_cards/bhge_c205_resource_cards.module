@@ -1,0 +1,59 @@
+<?php
+
+/**
+ * @file
+ * Custom bhge_c205_resource_cards module.
+ */
+
+/**
+ * Implements preprocess_paragraph().
+ */
+function bhge_c205_resource_cards_preprocess_paragraph(&$variables) {
+  if (!empty($variables['elements']['#paragraph'])) {
+
+    /** @var \Drupal\paragraphs\Entity\Paragraph $paragraph */
+    $paragraph = $variables['elements']['#paragraph'];
+    $id = $paragraph->get('type')->getValue();
+    $parent = NULL;
+
+    if ($id[0]['target_id'] == 'block_resource_cards') {
+      if (!empty($paragraph->field_resource_cards)) {
+        if (!empty($paragraph->field_resource_cards->getValue())) {
+
+          $cards = $paragraph->field_resource_cards->getValue();
+          if (in_array(count($cards), [1, 2, 4])) {
+            $variables['class'] = 'block-numbers-4';
+          }
+          else {
+            $variables['class'] = 'block-numbers-3';
+          }
+
+        }
+      }
+    }
+    if ($id[0]['target_id'] == 'resource_card') {
+      $extraClass = '';
+      if (!empty($paragraph->field_background_overlay->getValue())) {
+        switch ($paragraph->field_background_overlay->getValue()[0]['value']) {
+          case 'light':
+            $extraClass = 'has-overlay darken-25';
+            break;
+
+          case 'medium':
+            $extraClass = 'has-overlay darken-50';
+            break;
+
+          case 'dark':
+            $extraClass = 'has-overlay darken-75';
+            break;
+
+          case 'darker':
+            $extraClass = 'has-overlay darken-100';
+            break;
+
+        }
+      }
+      $variables['extraClass'] = $extraClass;
+    }
+  }
+}

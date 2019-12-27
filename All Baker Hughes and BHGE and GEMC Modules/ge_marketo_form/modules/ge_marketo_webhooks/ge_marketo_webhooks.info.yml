@@ -1,0 +1,7 @@
+name: GE Marketo Webhooks
+type: module
+description: GE Marketo Webhooks
+core: 8.x
+package: GE
+dependences:
+ - ge_marketo_form

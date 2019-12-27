@@ -1,0 +1,6 @@
+name: BHGE C-04 Contact us Single
+type: module
+description: 'C-04 Contact single CTA'
+package: BHGE Components
+version: 8.x
+core: 8.x

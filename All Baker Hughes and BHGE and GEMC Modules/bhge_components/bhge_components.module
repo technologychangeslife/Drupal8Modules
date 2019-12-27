@@ -1,0 +1,183 @@
+<?php
+
+/**
+ * @file
+ * Theme processors for bhge theme components.
+ */
+
+use Drupal\Core\Menu\MenuTreeParameters;
+use Drupal\bhge_core\Extension\UIUtilsExtension;
+
+/**
+ * Implements hook_preprocess_node().
+ */
+function bhge_components_preprocess_node(&$vars) {
+  // Generic.
+  bhge_components_header_component_class($vars, 'field_blocks');
+
+  // Blog content type targeted.
+  bhge_components_header_component_class($vars, 'field_block_hero');
+}
+
+/**
+ * Header component class.
+ *
+ * @param array $vars
+ *   Parameters vars.
+ * @param string $fieldName
+ *   Name of field.
+ */
+function bhge_components_header_component_class(array $vars, $fieldName) {
+
+  if (!empty($vars['node']->$fieldName) && !$vars['node']->$fieldName->isEmpty() && is_object($vars['node']->$fieldName[0])) {
+
+    $firstParagraph = $vars['node']->$fieldName[0]->entity;
+    if (is_object($firstParagraph)) {
+      $firstParagraph->top_component_class = "is-top-component";
+
+      foreach ($vars['node']->$fieldName as $paragraph) {
+        $entity = $paragraph->entity;
+
+        bhge_components_mark_header_by_type(
+          $entity && $entity->type && $entity->type->entity && $entity->type->entity->id ? $entity->type->entity->id : NULL,
+          $entity
+        );
+        break;
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_preprocess_paragraph().
+ */
+function bhge_components_preprocess_paragraph(&$variables) {
+  if (!empty($variables['elements']['#paragraph'])) {
+    /** @var \Drupal\paragraphs\Entity\Paragraph $paragraph */
+    $paragraph = $variables['elements']['#paragraph'];
+    $id = $paragraph->get('type')->getValue();
+    $parent = NULL;
+    if ($id[0]['target_id'] === 'block_external_links_tabs') {
+      $variables['#attached']['library'][] = 'bhge_components/bhge-external-links';
+    }
+
+    if ($id[0]['target_id'] === 'block_sub_menu') {
+
+      // Logic to find weather current site is public or internal starts here.
+      $config = new UIUtilsExtension();
+      $site_status = $config->isSiteInternal();
+      // Logic to find weather current site is public or internal ends here.
+
+      if (isset($paragraph->get('field_sub_menu_main')
+        ->getValue()[0]['target_id'])) {
+        $menu_name = $paragraph->get('field_sub_menu_main')
+          ->getValue()[0]['target_id'];
+        $menu_tree = \Drupal::menuTree();
+        $parameters = $menu_tree->getCurrentRouteMenuTreeParameters($menu_name);
+        $parameters->setMaxDepth(100);
+        $parameters->setMinDepth(0);
+        $parameters->onlyEnabledLinks();
+
+        $tree = $menu_tree->load($menu_name, $parameters);
+        $manipulators = [
+          ['callable' => 'menu.default_tree_manipulators:checkAccess'],
+          ['callable' => 'menu.default_tree_manipulators:generateIndexAndSort'],
+        ];
+        $tree = $menu_tree->transform($tree, $manipulators);
+
+        // Finally, build a renderable array from the transformed tree.
+        $menu = $menu_tree->build($tree);
+        $variables['sub_menu_link'] = $menu;
+        $variables['#attached']['library'][] = 'bhge_components/bhge-submenu';
+        $variables['#attached']['drupalSettings']['bhge_components']['bhgeSubmenu']['site_nature'] = $site_status;
+
+        // Defining veriables for theme path.
+        $theme = \Drupal::theme()->getActiveTheme();
+        $theme_path = $theme->getPath();
+        $variables['#attached']['drupalSettings']['bhge_components']['bhgeSubmenu']['theme_path'] = $theme_path;
+      }
+    }
+  }
+}
+
+/**
+ * Helper to determine if a paragraph should be marked "header".
+ *
+ * @param string $type
+ *   Type of paragraph.
+ * @param object $entity
+ *   Entity which we have.
+ */
+function bhge_components_mark_header_by_type($type, $entity) {
+  $arrayField = NULL;
+
+  switch ($type) {
+    case 'block_gallery_carousel':
+    case 'block_carousel':
+    case 'block_accordion':
+    case 'block_double_card':
+      $arrayField = 'field_double_cards';
+      break;
+
+    case 'block_news':
+      $arrayField = 'field_news';
+      break;
+
+    default:
+      $entity->is_header = TRUE;
+      return;
+  }
+
+  if ($arrayField && $entity->{$arrayField} && !$entity->{$arrayField}->isEmpty()) {
+    $entity->{$arrayField}[0]->entity->is_header = TRUE;
+  }
+}
+
+/**
+ * Retrieve webcast date.
+ *
+ * @param object $parentEntity
+ *   Parent entity object.
+ * @param [type]|null $variables
+ *   Null Variable for the function.
+ */
+function bhge_components_get_webcast_data($parentEntity, $variables = []) {
+
+  $variables['is_webcast'] = TRUE;
+
+  if ($parentEntity->hasField('field_start_date_time') && !empty($parentEntity->get('field_start_date_time')
+    ->getValue()[0]['value'])) {
+
+    $variables['date'] = \Drupal::service('date.formatter')
+      ->format($parentEntity->getCreatedTime(), 'custom', 'M. d, Y');
+
+    $variables['startDate'] = strtotime($parentEntity->get('field_start_date_time')
+      ->getValue()[0]['value']);
+
+  }
+
+  if ($parentEntity->hasField('field_end_date_time') && !empty($parentEntity->get('field_end_date_time')
+    ->getValue()[0]['value'])) {
+    $variables['endDate'] = strtotime($parentEntity->get('field_end_date_time')
+      ->getValue()[0]['value']);
+  }
+
+  $variables['currentDate'] = \Drupal::time()->getCurrentTime();
+
+  if ($parentEntity->hasField('field_target') && !empty($parentEntity->get('field_target')
+    ->getValue()[0]['uri'])) {
+    $variables['webcast']['url'] = $parentEntity->get('field_target')
+      ->getValue()[0]['uri'];
+    $variables['webcast']['title'] = $parentEntity->get('field_target')
+      ->getValue()[0]['title'];
+  }
+
+  if ($parentEntity->hasField('field_location') && !empty($parentEntity->get('field_location')
+    ->getValue()[0]['value'])) {
+    $variables['location'] = $parentEntity->get('field_location')
+      ->getValue()[0]['value'];
+  }
+
+  return $variables;
+
+}

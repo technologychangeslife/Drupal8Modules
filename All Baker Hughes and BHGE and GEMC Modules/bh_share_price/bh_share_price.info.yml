@@ -1,0 +1,6 @@
+name: BH Share Price Info
+type: module
+description: 'Share Price Info module'
+package: BH
+version: 8.x
+core: 8.x

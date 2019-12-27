@@ -1,0 +1,52 @@
+<?php
+
+/**
+ * @file
+ * The GEMC search module.
+ */
+
+use Drupal\Core\Form\FormStateInterface;
+
+/**
+ * Implements hook_theme().
+ */
+function gemc_search_theme($existing, $type, $theme, &$path) {
+  $path = 'themes/custom/gemc';
+  $theme = [
+    'gemc_search' => [
+      'variables' => [
+        'data' => NULL,
+        'c04_contact' => NULL,
+      ],
+      'template' => 'components/s01-search/s01-search',
+    ],
+  ];
+  return $theme;
+}
+
+/**
+ * Implements hook_preprocess_page().
+ *
+ * @see themes/custom/gemc/templates/page.html.twig
+ */
+function gemc_search_preprocess_page(&$variables) {
+  if (\Drupal::routeMatch()->getRouteName() == 'gemc_search.search') {
+    $variables['hide_default_block'] = TRUE;
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter() for the search_block_form form.
+ *
+ * Since the exposed form is a GET form, we don't want it to send the form
+ * tokens. However, you cannot make this happen in the form builder function
+ * itself, because the tokens are added to the form after the builder function
+ * is called. So, we have to do it in a form_alter.
+ *
+ * @see \Drupal\search\Form\SearchBlockForm
+ */
+function gemc_search_form_gemc_search_block_form_alter(&$form, FormStateInterface $form_state) {
+  $form['form_build_id']['#access'] = FALSE;
+  $form['form_token']['#access'] = FALSE;
+  $form['form_id']['#access'] = FALSE;
+}

@@ -1,0 +1,6 @@
+name: BH New Brand
+type: module
+description: 'New Branding for BH Site.'
+package: BH
+version: VERSION
+core: '8.x'

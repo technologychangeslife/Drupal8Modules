@@ -1,0 +1,11 @@
+bhge-learning-center-library:
+  version: 1.x
+  js:
+    js/aos.js: {}
+    js/learning_center.js: {}
+  dependencies:
+      - core/jquery
+  css:
+     theme:
+        css/aos.css:
+        css/learning_center.css:

@@ -1,0 +1,16 @@
+.paragraph-type-title {
+  font-size: 16px;
+  padding-top: 6px;
+  padding-bottom: 4px;
+}
+
+.field--name-field-subtitle .paragraph-type-title,
+.field--name-field-subtitle .paragraphs-dropbutton-wrapper,
+.field--name-field-headline .paragraph-type-title,
+.field--name-field-headline .paragraphs-dropbutton-wrapper {
+  display: none;
+}
+
+.node-form .form-item {
+  margin-top: 15px;
+}

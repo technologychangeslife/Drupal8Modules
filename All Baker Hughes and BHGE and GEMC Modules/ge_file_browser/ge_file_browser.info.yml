@@ -1,0 +1,8 @@
+name: GE file browser custom
+type: module
+description: Custom module improving file browsers
+package: Custom
+version: 8.x
+core: 8.x
+dependencies:
+  - file_browser

@@ -1,0 +1,311 @@
+<?php
+
+/**
+ * @file
+ * Custom bhge_case_study_library.
+ */
+
+use Drupal\image\Entity\ImageStyle;
+use Drupal\paragraphs\Entity\Paragraph;
+use Drupal\views\Views;
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Url;
+use Drupal\file\Entity\File;
+
+/**
+ * Implements hook_process_preprocess_field().
+ */
+function bhge_case_study_library_preprocess_field(&$variables, $hook) {
+  $fields = ['field_pdf_cta_label'];
+  if (!empty($variables['element']['#field_name']) && in_array($variables['element']['#field_name'], $fields)) {
+    /** @var \Drupal\node\Entity\Node $parentEntity */
+    $parentEntity = $variables['element']['#object'];
+
+    $contentType = $parentEntity->get('type')->getValue()[0]['target_id'];
+    if ($contentType === 'case_study_summary') {
+
+      if (isset($parentEntity->get('field_file')
+        ->getValue()[0]['target_id'])) {
+        $file = File::load($parentEntity->get('field_file')
+          ->getValue()[0]['target_id']);
+        $path = $file->getFileUri();
+        $file_url = Url::fromUri(file_create_url($path))
+          ->toString();;
+        $variables['case_study_file_path'] = $file_url;
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function bhge_case_study_library_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+  $view_names = ['dyamic_cards_with_filters_case_study'];
+  $view = $form_state->getStorage('view');
+  if ($form_id == 'views_exposed_form' && in_array($view['view']->id(), $view_names)) {
+
+    $data = bhge_case_study_library_get_featured_case_data($view['view']->args[1]);
+    $theme = \Drupal::theme()->getActiveTheme();
+    $theme_path = $theme->getPath();
+    $form['advanced_search'] = [
+      '#type' => 'details',
+      '#title' => t('Advanced Search'),
+      '#open' => FALSE,
+    ];
+    $form['advanced_search']['tid'] = $form['tid'];
+    $form['advanced_search']['tid_1'] = $form['tid_1'];
+    $form['advanced_search']['tid_3'] = $form['tid_3'];
+    $form['title']['#attributes']['placeholder'] = t('Search Case Studies');
+    $form['actions']['submit']['#type'] = 'image_button';
+    $form['title']['#weight'] = '-1';
+    $form['actions']['#weight'] = '0';
+    $form['actions']['submit']['#src'] = $theme_path . '/image/case-study/search.png';
+    $form['actions']['submit']['#attributes']['class'][] = 'search-button';
+
+    unset($form['tid'], $form['tid_1'], $form['tid_2'], $form['tid_3']);
+    $form['advanced_search']['tid']['#options']['All'] = t('Select Application');
+    $form['advanced_search']['tid_1']['#options']['All'] = t('Select Region');
+    $form['advanced_search']['tid_3']['#options']['All'] = t('Select Product/Service');
+    $form['advanced_search']['submit_advanced'] = [
+      '#type' => 'submit',
+      '#value' => t('Submit'),
+      '#attributes' => ['class' => ['submit-advanced']],
+    ];
+    $form['advanced_search']['submit_advanced_reset'] = $form['actions']['reset'];
+    $form['advanced_search']['submit_advanced_reset']['#attributes']['class'][] = 'submit-advanced-reset';
+
+    $form['actions']['clear-results'] = $form['actions']['reset'];
+    $form['actions']['clear-results']['#attributes']['class'][] = 'clear-search';
+
+    unset($form['actions']['reset']);
+
+    if (isset($data['featured_case_study'])) {
+      // Get the list of all case study.
+      $options = bhge_case_study_library_get_case_study_nodes();
+      $field = 'nid';
+      $form[$field]['#type'] = 'select';
+      $form[$field]['#multiple'] = TRUE;
+      $form[$field]['#options'] = $options;
+
+      $form['featured_case_study'] = [
+        '#type' => 'inline_template',
+        '#template' => '
+<a href="#" class="featured_case_study_link">
+<div id="featured_case_study" data-option="' . implode(",", $data['featured_case_study']['node_nids']) . '" data-option-count="' . count($data['featured_case_study']['node_nids']) . '">
+<div id="featured_case_study_image">
+
+<img src="' . $data['featured_case_study']['image'] . '"></img>
+</div>
+<div class="featured_case_study_title">'
+        . t('@title', ['@title' => $data['featured_case_study']['title']]) .
+        '</div></div></a>',
+      ];
+    }
+    $latest_case_study = bhge_case_study_library_get_latest_case_study_data($view['view']->args[1]);
+    if (isset($latest_case_study['latest_case_study'])) {
+      $form['latest_case_study'] = [
+        '#type' => 'inline_template',
+        '#template' => '<a href="#" class="latest-case-study-link">
+<div id="latest-case-study">
+<div id="latest_case_study_image">
+<img src="' . $latest_case_study['latest_case_study']['image'] . '"></img>
+</div>
+<div class="latest-case-study-title">'
+        . t('@title', ['@title' => $latest_case_study['latest_case_study']['title']]) .
+        '</div></div></a>',
+        '#allowed_tags' => ['div', 'img', 'a'],
+      ];
+    }
+    $form['#attached']['library'][] = 'bhge_case_study_library/bhge-case-study-library';
+    $form['#attached']['library'][] = 'bhge_case_study_library/bhge-case-study-library-popup';
+  }
+
+  if ($form_id === 'node_case_study_summary_edit_form') {
+    if (count($form['n2_product_category']['widget']['#options'] > 1)) {
+      $n2_options = bhge_case_study_library_get_n2_nodes($form['n2_product_category']['widget']['#options'], 'n2');
+      unset($form['n2_product_category']['widget']['#options']);
+      $form['n2_product_category']['widget']['#options'] = $n2_options;
+    }
+
+    if (count($form['n3_product_sub_category']['widget']['#options'] > 1)) {
+      $n2_options = bhge_case_study_library_get_n2_nodes($form['n3_product_sub_category']['widget']['#options'], 'n3');
+      unset($form['n3_product_sub_category']['widget']['#options']);
+      $form['n3_product_sub_category']['widget']['#options'] = $n2_options;
+    }
+  }
+}
+
+/**
+ * Implements hook_views_query_alter().
+ */
+function bhge_case_study_library_views_query_alter($view, $query) {
+  if ($view->id() == 'dyamic_cards_with_filters_case_study') {
+    // If the title field is searched.
+    // Than use the same text to search the body field as well.
+    // Adding a left join to node__body table to capture the body_value.
+    if (!empty($view->exposed_widgets['nid']['#value'])) {
+      $query->addWhere('5', 'node_field_data.nid', $view->exposed_widgets['nid']['#value'], 'IN');
+    }
+    if (!empty($view->exposed_widgets['title']['#value'])) {
+      $configuration = [
+        'type' => 'LEFT',
+        'table' => 'node__body',
+        'field' => 'entity_id',
+        'left_table' => 'node_field_data',
+        'left_field' => 'nid',
+        'operator' => '=',
+      ];
+
+      $configuration_2 = [
+        'type' => 'LEFT',
+        'table' => 'paragraph__field_body_copy',
+        'field' => 'entity_id',
+        'left_table' => 'node__summary_text',
+        'left_field' => 'summary_text_target_id',
+        'operator' => '=',
+      ];
+
+      $join_obj = Views::pluginManager('join')
+        ->createInstance('standard', $configuration);
+      $query->addRelationship('node__body', $join_obj, 'entity_id');
+      $query->addWhere('1', 'node__body.body_value', '%' . db_like($view->exposed_widgets['title']['#value']) . "%", 'LIKE');
+
+      $join_obj_2 = Views::pluginManager('join')
+        ->createInstance('standard', $configuration_2);
+      $query->addRelationship('paragraph__field_body_copy', $join_obj_2, 'entity_id');
+      $query->addWhere('1', 'paragraph__field_body_copy.field_body_copy_value', '%' . db_like($view->exposed_widgets['title']['#value']) . "%", 'LIKE');
+    }
+  }
+}
+
+/**
+ * Find the filter type for this particular paragraphs.
+ *
+ * Get the entity_id from the view args.
+ */
+function bhge_case_study_library_get_featured_case_data($view_args) {
+  $nids = [];
+  $p = Paragraph::load($view_args);
+  if ($p->get('type')
+    ->getValue()[0]['target_id'] === 'block_case_study_summary_search') {
+    if ($p->get('field_featured_case_studies')->getValue()) {
+      $data = [];
+      $fid = $p->get('field_featured_case_studies')->getValue()[0]['target_id'];
+      // For the featured section.
+      if ($fid && $p->field_select_case_study->getValue()) {
+        $file = File::load($fid);
+        $image_url = ImageStyle::load('featured')
+          ->buildUrl($file->getFileUri());
+        // Foreach ($p->get('field_select_case_study') as $key => $value) {.
+        foreach ($p->field_select_case_study->getValue() as $value) {
+          if ($value) {
+            $nids[] = $value['target_id'];
+          }
+        }
+        if ($p->get('field_overwrite_the_title')->getValue()) {
+          $title = $p->get('field_overwrite_the_title')->getValue()[0]['value'];
+        }
+        if (isset($title) && isset($nids) && isset($image_url)) {
+          $data['featured_case_study'] = [
+            'image' => $image_url,
+            'title' => $title,
+            'node_nids' => $nids,
+          ];
+        }
+      }
+      return $data;
+    }
+  }
+}
+
+/**
+ * Build the latest case study section.
+ *
+ * Get the entity_id from the view args.
+ */
+function bhge_case_study_library_get_latest_case_study_data($view_args) {
+  $p = Paragraph::load($view_args);
+  if ($p->get('type')
+    ->getValue()[0]['target_id'] === 'block_case_study_summary_search') {
+    $data = [];
+    if ($p->get('field_latest_image')->getValue()) {
+      $fid = $p->get('field_latest_image')->getValue()[0]['target_id'];
+      // For the Latest case study section.
+      if ($fid) {
+        $file = File::load($fid);
+        $image_url = ImageStyle::load('featured')
+          ->buildUrl($file->getFileUri());
+        if ($p->get('field_latest_case_study_title')->getValue()) {
+          $title = $p->get('field_latest_case_study_title')->getValue()[0]['value'];
+        }
+        if (isset($title) && isset($image_url)) {
+          $data['latest_case_study'] = [
+            'image' => $image_url,
+            'title' => $title,
+          ];
+        }
+      }
+      return $data;
+    }
+  }
+}
+
+/**
+ * Get the Case Study nodes from DB.
+ */
+function bhge_case_study_library_get_case_study_nodes() {
+  $options = [];
+  // Query nodes.
+  $storage = Drupal::getContainer()->get('entity_type.manager')->getStorage('node');
+  $nids = $storage->getQuery();
+
+  // Gather published artist nodes and sort by title.
+  $nids = $nids->condition('type', 'case_study_summary')
+    ->condition('status', 1)
+    ->sort('title')
+    ->execute();
+
+  // If there are no nodes, move on.
+  if (!$nids) {
+    return $options;
+  }
+  else {
+    // Start building out the options for our select list.
+    $nodes = $storage->loadMultiple($nids);
+
+    // Push titles into select list.
+    foreach ($nodes as $node) {
+      $options[$node->id()] = $node->getTitle();
+    }
+    return $options;
+  }
+}
+
+/**
+ * Get Path Alias for  Product Category nodes from Drupal.
+ */
+function bhge_case_study_library_get_n2_nodes($options, $level) {
+  $final_options = [];
+  foreach ($options as $key => $value) {
+    if ($key !== '_none') {
+      $alias = $alias = \Drupal::service('path.alias_manager')->getAliasByPath('/node/' . $key);
+      $alias_2 = explode("/", $alias);
+      if ($level === 'n2') {
+        if (empty($alias_2[4])) {
+          $final_options[$key] = $value;
+        }
+      }
+      if ($level === 'n3') {
+        if (!empty($alias_2[4])) {
+          $final_options[$key] = $value;
+          // Hard code this value since the view results doesn't capture it because has page is not checked in this case.
+          $final_options['9541'] = 'Plug-and-Perf Solutions';
+        }
+      }
+    }
+  }
+  $option_list = ['_none' => '-None-'];
+  $final_options = $option_list + $final_options;
+  return $final_options;
+}

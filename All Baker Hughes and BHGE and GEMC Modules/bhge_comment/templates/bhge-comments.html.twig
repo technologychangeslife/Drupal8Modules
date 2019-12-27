@@ -1,0 +1,70 @@
+{#
+/**
+ * @file
+ * Custom theme for parent comments.
+ *
+ * Available variables:
+ * - comments_data
+ * - comment_count
+ * - entity_id
+ *
+ */
+#}
+
+
+<section id="bhge-comments" data-component="c26-comments" class="">
+  <div class="section-wrapper">
+    <div class="content-wrapper">
+      <div class="title-wrapper">
+        <h3 class="title heading-02">
+          {{ comment_count }} {{ "Comments"|t }}
+        </h3>
+        {% if comments_status == 2 %}
+          <a href="#" class="cta component-cta btn-make-comment">
+            <span class="copy">{{ "Make a comment"|t }}</span>
+          </a>
+        {% endif %}
+      </div>
+      {% if comments_status == 2 %}
+        <div class="submit-wrapper">
+          <form class="comment-form-add" action="post" data-form-url="/api/v1/comment/add/{{ entity_id }}/0"
+                data-parent-comment="">
+            <textarea id="shareMessage" class="input-field" placeholder="{{ "Leave a comment"|t }}"></textarea>
+            <input data-drupal-selector="edit-submit" type="submit" id="edit-submit" name="op" value="Submit"
+                   class="button button--primary js-form-submit form-submit">
+          </form>
+        </div>
+      {% endif %}
+      <div class="comments-title-wrapper">
+        {% if comments_hidden %}
+          <div class="view-previous-comments">{{ "View previous comments"|t }} <span>{{ comments_hidden }}</span></div>
+          <div class="hide-previous-comments">{{ "Hide previous comments"|t }} <span>{{ comments_hidden }}</span></div>
+        {% endif %}
+        <div class="sort">
+          <div class="options">
+            <div class="option title">{{ "Sort by"|t }}
+              <svg class="component-icon ">
+                <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#chevron-down"></use>
+              </svg>
+            </div>
+            <div class="option current" data-type="oldest-position">{{ "Oldest first"|t }}</div>
+            <div class="option" data-type="newest-position">{{ "Newest first"|t }}</div>
+            <div class="option" data-type="comments-position">{{ "Top comments"|t }}</div>
+          </div>
+        </div>
+      </div>
+      {% if comments_status < 2 %}
+        <p><i>{{ "Commenting is closed on this page, you cannot add new comments."|t }}</i></p>
+      {% endif %}
+
+      <div class="comments-wrapper">
+        <div class="new-comment-wrapper"></div>
+        {% for comment in comments_data %}
+
+          {{ comment.parent }}
+
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</section>

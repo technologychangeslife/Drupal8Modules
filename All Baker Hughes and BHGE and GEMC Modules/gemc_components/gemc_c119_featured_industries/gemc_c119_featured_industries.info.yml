@@ -1,0 +1,6 @@
+name: GEMC C119 Featured Industries
+type: module
+description: 'GEMC C119 Featured Industries'
+package: GEMC Components
+version: 8.x
+core: 8.x

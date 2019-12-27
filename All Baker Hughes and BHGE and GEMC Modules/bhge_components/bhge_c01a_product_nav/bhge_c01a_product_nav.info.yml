@@ -1,0 +1,8 @@
+name: BHGE Product Navigation
+type: module
+description: 'Products Navigation'
+package: BHGE Components
+version: 8.x
+core: 8.x
+dependencies:
+  - bhge_c55_product_gallery

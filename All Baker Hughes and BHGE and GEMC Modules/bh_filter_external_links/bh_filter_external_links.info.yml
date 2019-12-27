@@ -1,0 +1,6 @@
+name: BH External Links Filter
+type: module
+description: 'Filter to open external links in new window'
+package: BH
+version: VERSION
+core: '8.x'

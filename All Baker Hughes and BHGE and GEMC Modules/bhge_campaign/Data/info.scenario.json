@@ -1,0 +1,114 @@
+{
+	"properties": {},
+	"dialog": [
+		{
+			"author": "system",
+			"message": {
+				"text": "You have been added to the conversation"
+			},
+			"wait":0.5
+		},
+		{
+			"author": "presenter",
+			"message": {
+				"text": "Hope you enjoyed this demo. Do you want some more info about iCenter services?"
+			},
+			"wait":0.5
+		},
+		{
+			"author": "options",
+			"message": {
+				"options": [
+					{
+						"label": "Tell me more about iCenter",
+						"load":0
+					},
+					{
+						"label": "How can I get in touch with you?",
+						"load":1
+					},
+					{
+						"label": "I'm fine now, thanks",
+						"back":"LocationSelector"
+					}
+				]
+			}
+		}
+	],
+	"replies": [		
+		{
+			"dialog": [
+				{
+					"author": "presenter",
+					"message": {
+						"text": "Connecting your machines to our experts through dedicated Engineering support 24/7, 365 days a year from BHGE iCenters in Florence, Houston and Kuala Lumpur. The reliable digital partner to maximize performance and value of your assets throughout their lifecycle."
+					}
+				},
+				{
+					"author": "presenter",
+					"message": {
+						"text": "BHGE diagnostic engineers provide round the clock support to manage issues proactively and solve complex engineering problems. Big data is securely monitored from any location in the world. Data are processed by advanced analytics which constantly check for deviations from expected behavior. Experienced diagnostic engineers regularly cooperate with your reliability ."
+					}
+				},
+				{
+					"author": "presenter",
+					"message": {
+						"text": "From early diagnosis to implementation of the solution, the iCenters provide front line assistance and follow up, working jointly with you and OEM engineering department."
+					}
+				},
+				{
+					"author": "presenter",
+					"message": {
+						"text": "Your machines are “talking”, our analytics are “listening”, if an anomaly appears, the analytics raise the issue to our iCenters. Our iCenters are committed to work with you to fix every problem as quickly as possible and making accurate and recurrent checks to ensure that every parameter is ok."
+					}
+				},
+				{
+					"author": "options",
+					"message": {
+						"options": [
+							{
+								"label": "How can I get in touch with you?",
+								"load":1
+							},
+							{
+								"label": "I'm fine now, thanks",
+								"back":"LocationSelector"
+							}
+						]
+					}
+				}
+			]
+		},		
+		{
+			"dialog": [
+				{
+					"author": "presenter",
+					"message": {
+						"text": "To get in touch with us, send an email to icenter@bhge.com"
+					}
+				},
+				{
+					"author": "presenter",
+					"message": {
+						"text": "We'll be glad to get back to you as soon as possible."
+					}
+				},
+				{
+					"author": "options",
+					"message": {
+						"options": [
+							{
+								"label": "Tell me more about iCenter",
+								"load":0
+							},
+							{
+								"label": "I'm fine now, thanks",
+								"back":"LocationSelector"
+							}
+						]
+					}
+				}
+			]
+		}
+	]
+}

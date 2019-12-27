@@ -1,0 +1,6 @@
+bhge_career_search.search:
+  path: 'career-search'
+  defaults: { _controller: '\Drupal\bhge_career_search\Controller\CareerSearch::search' }
+  methods:  [GET]
+  requirements:
+    _access: 'TRUE'

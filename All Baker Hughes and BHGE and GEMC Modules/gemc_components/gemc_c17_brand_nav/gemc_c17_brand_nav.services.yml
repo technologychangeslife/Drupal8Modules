@@ -1,0 +1,4 @@
+services:
+  gemc_c17_brand_nav.brand_data:
+    class: Drupal\gemc_c17_brand_nav\BrandData
+    arguments: ['@database']

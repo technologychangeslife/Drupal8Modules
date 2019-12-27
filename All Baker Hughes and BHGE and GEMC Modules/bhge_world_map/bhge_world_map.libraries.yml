@@ -1,0 +1,9 @@
+world-map:
+  version: 1.x
+  js:
+    js/bhge-world-map.js: {}
+  dependencies:
+  - core/jquery
+  - core/drupal
+  - core/drupalSettings
+  - core/drupal.ajax

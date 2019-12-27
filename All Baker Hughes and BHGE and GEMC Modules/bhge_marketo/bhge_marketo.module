@@ -1,0 +1,55 @@
+<?php
+
+/**
+ * @file
+ * The marketo module.
+ */
+
+use Drupal\Core\Site\Settings;
+
+/**
+ * Implements hook preprocess_page().
+ */
+function bhge_marketo_preprocess_page(&$variables) {
+  $variables['#attached']['library'][] = 'bhge_marketo/marketo';
+}
+
+/**
+ * Implements hook preprocess_paragraph().
+ */
+function bhge_marketo_preprocess_paragraph(&$variables) {
+  if (!empty($variables['elements']['#paragraph'])) {
+
+    /** @var \Drupal\paragraphs\Entity\Paragraph $paragraph */
+    $paragraph = $variables['elements']['#paragraph'];
+
+    /** @var \Drupal\node\Entity\Node $parent */
+    $parent = $paragraph->getParentEntity();
+    $id = $paragraph->get('type')->getValue();
+
+    // Marketo Form.
+    if (in_array($id[0]['target_id'], ['block_marketo_form', 'block_floating_form'])) {
+
+      // Get Marketo Title.
+      $variables['marketo_title'] = $paragraph->get('field_label')->value;
+
+      // Form id.
+      $variables['marketo_form_id'] = $paragraph->get('field_id')
+        ->getValue()[0]['value'];
+
+      // Muchkin id.
+      $variables['marketo_munchkin_id'] = $paragraph->get('field_munchkin_id')
+        ->getValue()[0]['value'];
+
+      // API Url.
+      $variables['marketo_api_url'] = Settings::get('marketo_api');
+
+      /** @var \Drupal\bhge_marketo\MarketoHelpers $marketoHelpers */
+      $marketoHelpers = \Drupal::service('bhge_marketo.helpers');
+
+      // Populate meta.
+      $variables['marketo_meta'] = $marketoHelpers->populateMarketoMeta([], $paragraph);
+
+    }
+  }
+}

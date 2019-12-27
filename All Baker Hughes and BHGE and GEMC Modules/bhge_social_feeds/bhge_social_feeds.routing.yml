@@ -1,0 +1,7 @@
+bhge_social_feeds_form:
+  path: '/admin/config/system/bhgesocialfeeds-setting-form'
+  defaults:
+    _form: '\Drupal\bhge_social_feeds\Form\BhgeSocialFeedsForm'
+    _title: 'Bhge Social Feeds Instagram Setting Form'
+  requirements:
+    _permission: 'administer site configuration'

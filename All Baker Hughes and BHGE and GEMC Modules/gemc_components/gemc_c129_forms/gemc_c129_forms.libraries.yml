@@ -1,0 +1,4 @@
+marketo:
+  header: true
+  js:
+    //app-e.marketo.com/js/forms2/js/forms2.min.js: { type: external }

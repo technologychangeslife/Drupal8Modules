@@ -1,0 +1,6 @@
+name: BHGE Content Category Cards
+type: module
+description: 'BHGE Content Category Cards is used for product category and content category three cards.'
+package: Custom
+version: 8.x
+core: 8.x

@@ -1,0 +1,6 @@
+name: GEMC C101 Sticky header
+type: module
+description: 'GEMC C101 Sticky header'
+package: GEMC Componenets
+version: 8.x
+core: 8.x

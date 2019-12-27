@@ -1,0 +1,6 @@
+name: GEMC Download Center
+type: module
+description: 'Download Center module for GEMC'
+package: Custom
+version: 8.x
+core: 8.x

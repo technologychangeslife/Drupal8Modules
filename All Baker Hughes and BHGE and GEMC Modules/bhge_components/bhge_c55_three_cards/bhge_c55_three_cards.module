@@ -1,0 +1,46 @@
+<?php
+
+/**
+ * @file
+ * Custom bhge_c55_three_cards module.
+ */
+
+/**
+ * Implements hook_preprocess_paragraph().
+ */
+function bhge_c55_three_cards_preprocess_paragraph(&$variables) {
+  if (!empty($variables['elements']['#paragraph'])) {
+
+    /** @var \Drupal\paragraphs\Entity\Paragraph $paragraph */
+    $paragraph = $variables['elements']['#paragraph'];
+    $id = $paragraph->get('type')->getValue();
+    $parent = NULL;
+
+    if ($id[0]['target_id'] == 'block_three_cards') {
+      $variables['has_filters'] = 0;
+      $variables['category'] = NULL;
+      $variables['limit'] = 60;
+      $variables['offset'] = 0;
+      $variables['topics'] = NULL;
+      $variables['pid'] = $paragraph->id();
+
+      $dataHelpers = \Drupal::service('bhge_core.data_helpers');
+      $cards = $paragraph->field_three_cards;
+      foreach ($cards as $card) {
+        $card = $card->entity;
+        $image = $dataHelpers->getImage($card, 'field_image', 'field_dam_image', 'three_card_image');
+        $variables['dataset']['results'][] = [
+          'contentType' => !empty($image) ? 'image' : 'text',
+          'image' => $image,
+          'title' => $card->field_title->value,
+          'type' => $card->field_label->value,
+          'gradient' => !empty($card->field_gradient_background_image->value) ? 'has-gradient' : '',
+          'description' => $dataHelpers->getDescription($card),
+          'buttons' => $dataHelpers->getLinks($card),
+        ];
+      }
+
+      $variables['dataset']['total'] = count($cards);
+    }
+  }
+}

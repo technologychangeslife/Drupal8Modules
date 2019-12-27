@@ -1,0 +1,8 @@
+name: GEMC C130 Downloads
+type: module
+description: 'GEMC C130 Downlaods'
+package: GEMC Components
+version: 8.x
+core: 8.x
+dependencies:
+  - gemc_components

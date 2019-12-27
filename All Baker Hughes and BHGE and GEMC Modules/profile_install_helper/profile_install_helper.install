@@ -1,0 +1,47 @@
+<?php
+
+/**
+ * @file
+ * Install, update and uninstall functions for profile_install_helper module.
+ */
+
+/**
+ * Implements hook_install().
+ */
+function profile_install_helper_install() {
+
+  if (drupal_installation_attempted()) {
+    // Set admin theme on node edit forms.
+    \Drupal::configFactory()
+      ->getEditable('node.settings')
+      ->set('use_admin_theme', TRUE)
+      ->save(TRUE);
+
+    // Enable ACSF related modules if on ACSF environment.
+    if (!empty($_ENV['AH_SITE_GROUP']) && !empty($_ENV['AH_SITE_ENVIRONMENT']) && function_exists('gardens_site_data_get_filepath') && file_exists(gardens_site_data_get_filepath())) {
+
+      $acsfModules = [
+        'acsf',
+        'acsf_duplication',
+        'acsf_theme',
+        'acsf_variables',
+      ];
+      \Drupal::service('module_installer')->install($acsfModules);
+    }
+
+    // Reset site UUID to be compatible with config in sync dir.
+    $config = \Drupal::configFactory()->getEditable('system.site');
+    $config->set('uuid', 'bc85cbfb-f3db-4b6b-b3c2-132b2c79e16a')->save();
+
+    if (function_exists('drush_config_import')) {
+      // Import all config from sync dir on drush si.
+      drush_set_context('DRUSH_AFFIRMATIVE', TRUE);
+      drush_config_import();
+    }
+
+    // Set valid path as home, else home will WSOD.
+    $config->set('page.front', '/node/add/page')->save();
+
+    drupal_set_message(t('Please <a href="/user/login">login</a>, <a href="/node/add/page">create a page</a> and <a href="/admin/config/system/site-information">set configurations</a> after install.'));
+  }
+}

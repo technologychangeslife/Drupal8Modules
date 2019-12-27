@@ -1,0 +1,6 @@
+name: BH Formatters
+type: module
+description: 'Field Formatter plugins'
+package: BH
+version: VERSION
+core: '8.x'

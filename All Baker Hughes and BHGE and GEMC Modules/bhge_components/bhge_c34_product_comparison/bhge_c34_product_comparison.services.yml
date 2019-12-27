@@ -1,0 +1,7 @@
+services:
+  bhge_c34_product_comparison.comparison_data:
+    class: Drupal\bhge_c34_product_comparison\ComparisonData
+    arguments: ['@database']
+  bhge_c34_product_comparison.comparison_data_helpers:
+    class: Drupal\bhge_c34_product_comparison\DataHelpers
+    arguments: ['@bhge_c34_product_comparison.comparison_data']

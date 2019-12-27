@@ -1,0 +1,11 @@
+## YAML Template.
+bh-brand-library:
+  version: 1.x
+  css:
+    theme:
+      css/bh-new-brand.css:
+bh-brand-hero-library:
+  version: 1.x
+  css:
+    theme:
+      css/bh-hero-brand.css:

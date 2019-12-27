@@ -1,0 +1,22 @@
+<?php
+
+/**
+ * @file
+ * Install, update and uninstall functions for the bhge sync .
+ */
+
+use Drupal\Core\Database\Database;
+
+/**
+ * Remove unused modules from key_value.
+ */
+function bhge_components_update_8700() {
+  $query = \Drupal::database()->delete('key_value');
+  $query->condition('name', [
+  'bhge_search_tweaks',
+  'csp',
+  'hsts'
+],
+  'IN');
+  $query->execute();
+}

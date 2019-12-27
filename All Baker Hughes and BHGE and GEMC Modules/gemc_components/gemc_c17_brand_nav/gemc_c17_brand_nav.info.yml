@@ -1,0 +1,6 @@
+name: GEMC Brand C17 Navigation
+type: module
+description: 'GEMC Brand C17 Navigation'
+package: GEMC Components
+version: 8.x
+core: 8.x

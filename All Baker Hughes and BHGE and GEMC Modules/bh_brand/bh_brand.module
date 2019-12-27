@@ -1,0 +1,25 @@
+<?php
+
+/**
+ * @file
+ * This module connects with BHGE Box.
+ */
+
+/**
+ * Adding library.
+ */
+function bh_brand_preprocess_page(&$variables) {
+  // $variables['#attached']['library'][] = 'bh_brand/bh-brand-library';.
+  $node = \Drupal::routeMatch()->getParameter('node');
+  if (isset($node)) {
+    if ($node->hasfield('field_mini_banner') && $node->get('field_mini_banner')->value) {
+      $variables['#attached']['library'][] = 'bh_brand/bh-brand-library';
+    }
+    else {
+      $variables['#attached']['library'][] = 'bh_brand/bh-brand-hero-library';
+    }
+  }
+  else {
+    $variables['#attached']['library'][] = 'bh_brand/bh-brand-library';
+  }
+}

@@ -1,0 +1,18 @@
+bhge-external-links:
+  version: 1.x
+  js:
+    js/bhge-elinks.js: {}
+  dependencies:
+  - core/jquery
+  - core/drupal
+  - core/drupalSettings
+  - core/drupal.ajax
+bhge-submenu:
+  version: 1.x
+  js:
+    js/bhge-sub-menu.js: {}
+  dependencies:
+    - core/jquery
+    - core/drupal
+    - core/drupalSettings
+    - core/drupal.ajax

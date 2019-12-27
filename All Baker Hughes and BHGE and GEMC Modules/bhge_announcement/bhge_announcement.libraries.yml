@@ -1,0 +1,30 @@
+bhge-announcement:
+  version: 1.x
+  js:
+    js/bhge-announcement.js: {}
+  dependencies:
+    - core/jquery
+    - core/drupal
+    - core/drupalSettings
+    
+bhge-announcement-modal:
+  version: 1.x
+  js:
+    js/bhge-announcement-modal.js: {}
+    https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js: {type: external, minified: true}
+  dependencies:
+    - core/jquery
+    - core/drupal
+    - core/drupalSettings    
+  css:
+    theme:
+      css/bhge-announcement-modal.css: {}
+
+bhge-announcement-public:
+  version: 1.x
+  js:
+    js/bhge-announcement-public.js: {}
+  dependencies:
+  - core/jquery
+  - core/drupal
+  - core/drupalSettings

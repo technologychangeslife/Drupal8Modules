@@ -1,0 +1,9 @@
+name: GEMC C115 C120 Section Gallery
+type: module
+description: 'GEMC C115 C120 Product Gallery Component'
+package: GEMC Components
+version: 8.x
+core: 8.x
+dependencies:
+  - gemc_c115_120_gallery
+  - gemc_components

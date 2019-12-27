@@ -1,0 +1,106 @@
+<?php
+
+/**
+ * @file
+ * Custom bhge_content_repo module.
+ */
+
+use Drupal\Component\Utility\Unicode;
+
+/**
+ * Implements hooks_preprocess_paragraph().
+ */
+function bhge_c55_content_repo_preprocess_paragraph(&$variables) {
+  if (!empty($variables['elements']['#paragraph'])) {
+
+    /** @var \Drupal\paragraphs\Entity\Paragraph $paragraph */
+    $paragraph = $variables['elements']['#paragraph'];
+    $id = $paragraph->get('type')->getValue();
+    $parent = NULL;
+
+    if ($id[0]['target_id'] == 'block_content_repository') {
+
+      $variables['has_filters'] = 0;
+
+      $variables['offset'] = 0;
+      $variables['limit'] = 8;
+
+      $contentRepoController = \Drupal::service('bhge_c55_content_repo.content.respository.class');
+      $documents = $contentRepoController->getFiles();
+
+      $variables['dataset']['total'] = count($documents);
+
+      if ($variables['dataset']['total'] < $variables['limit']) {
+        $variables['limit'] = $variables['dataset']['total'];
+      }
+
+      $paragraphId = $paragraph->id();
+
+      $uiutils = \Drupal::service('bhge_core.twig.uiutilsextension');
+      // Setting topics sidebar data.
+      $variables['tabs']['function'] = $uiutils->getTaxonomy('function');
+      $variables['tabs']['level'] = $uiutils->getTaxonomy('level');
+      $variables['tabs']['region'] = $uiutils->getTaxonomy('region');
+
+      if (!empty($topics)) {
+        $variables['topics'] = $topics;
+      }
+
+      if (!empty($paragraphId)) {
+        $variables['pid'] = $paragraphId;
+      }
+
+      $i = 0;
+      foreach ($documents as $document) {
+        if ($i == $variables['limit']) {
+          break;
+        }
+        $i++;
+        $gated = 0;
+        if (!empty($document->get('field_gated_content')[0])) {
+          $gated = $document->get('field_gated_content')[0]->value;
+        }
+        $file = $document->field_file->entity;
+        $filesize = !empty($file) ? format_size($file->filesize->value) : '';
+        $file_type = !empty($file) ? pathinfo($file->filename->value) : '';
+        $file_ext = !empty($file_type) ? $file_type['extension'] : '';
+        if ($gated) {
+          $url = $document->toUrl()->toString();
+        }
+        else {
+          $url = !empty($file) ? file_create_url($file->getFileUri()) : '';
+        }
+        $file_language = !empty($file) ? $file->language()->getName() : '';
+
+        $variables['dataset']['results'][] = [
+          "contentType" => "download",
+          'title' => $document->getTitle(),
+          'description' => $document->get('field_description')->value ? $document->get('field_description')->value : '',
+          'filesize' => $filesize,
+          'type' => $file_ext,
+          'url' => $url,
+          "isDownloadType" => "true",
+          "fileExtension" => $file_ext,
+          "fileType" => '',
+          "fileLanguage" => $file_language,
+          "fileSize" => $filesize,
+          'gated' => $gated,
+        ];
+      }
+    }
+  }
+}
+
+/**
+ * Get stripped tags from rich text field.
+ *
+ * @param string $description
+ *   The description of the component.
+ *
+ * @return string
+ *   Returning the description after stripping the tags.
+ */
+function _bhge_c55_content_repo_get_description($description) {
+  $strippedTags = str_replace("&nbsp;", "", strip_tags($description));
+  return Unicode::truncate($strippedTags, 250, TRUE, TRUE);
+}

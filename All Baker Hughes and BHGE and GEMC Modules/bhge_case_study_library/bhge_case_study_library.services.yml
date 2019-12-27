@@ -1,0 +1,5 @@
+services:
+  bhge_case_study_library.breadcrumb_builder:
+    class: Drupal\bhge_case_study_library\Breadcrumb\BreadcrumbBuilder
+    tags:
+      - { name: breadcrumb_builder, priority: 10001 }

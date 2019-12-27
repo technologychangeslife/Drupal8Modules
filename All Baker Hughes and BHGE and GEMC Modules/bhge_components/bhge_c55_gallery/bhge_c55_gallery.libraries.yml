@@ -1,0 +1,9 @@
+c55-gallery:
+  version: 1.x
+  js:
+    js/bhge_c55_gallery.js: {}
+  dependencies:
+  - core/jquery
+  - core/drupal
+  - core/drupalSettings
+  - core/drupal.ajax

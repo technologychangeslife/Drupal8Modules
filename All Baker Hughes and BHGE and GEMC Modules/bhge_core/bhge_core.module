@@ -1,0 +1,421 @@
+<?php
+
+/**
+ * @file
+ * Custom bhge_core module.
+ */
+
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Field\BaseFieldDefinition;
+use Drupal\Core\Entity\EntityTypeInterface;
+use Drupal\block\Entity\Block;
+use Drupal\field\Entity\FieldStorageConfig;
+use Drupal\node\NodeInterface;
+
+/**
+ * Implements hook_theme().
+ */
+function bhge_core_theme($existing, $type, $theme, &$path) {
+
+  $theme = [
+    'ical_template' => [
+      'variables' => [
+        'timezone' => drupal_get_user_timezone(),
+        'startdate' => NULL,
+        'enddate' => NULL,
+        'location' => NULL,
+        'description' => NULL,
+      ],
+      'template' => 'ical',
+    ],
+  ];
+  return $theme;
+}
+
+/**
+ * Implements hook_theme_suggestions_page_alter().
+ */
+function bhge_core_theme_suggestions_page_alter(array &$suggestions, array $variables) {
+  $route_name = \Drupal::routeMatch()->getRouteName();
+  if ($route_name === 'system.403') {
+    $suggestions[] = 'page__403';
+
+  }
+}
+
+/**
+ * Implements hook_entity_base_field_info().
+ */
+function bhge_core_entity_base_field_info(EntityTypeInterface $entity_type) {
+  $fields = [];
+
+  if ($entity_type->id() == 'menu_link_content') {
+
+    $fields['open_in_new_tab'] = BaseFieldDefinition::create('boolean')
+      ->setLabel(t('Open in new tab'))
+      ->setDescription(t('Check this to open the link in a new tab'))
+      ->setDisplayOptions('form', [
+        'weight' => 28,
+      ]);
+  }
+  return $fields;
+}
+
+/**
+ * Implements hook_core_paranoia_disable_modules().
+ */
+function bhge_core_paranoia_disable_modules() {
+  if (isset($_ENV['AH_SITE_ENVIRONMENT']) && ($_ENV['AH_SITE_ENVIRONMENT'] == 'stage' || $_ENV['AH_SITE_ENVIRONMENT'] == 'prod' || $_ENV['AH_SITE_ENVIRONMENT'] == '01live' || $_ENV['AH_SITE_ENVIRONMENT'] == '01test')) {
+    $disableModules = [
+      'twig_xdebug',
+      'views_ui',
+      // 'field_ui',.
+      'migrate_drupal_ui',
+      'devel',
+    ];
+
+    if ($_ENV['AH_SITE_ENVIRONMENT'] == 'prod') {
+      $disableModules[] = 'jenkins_buildnumber';
+      $disableModules[] = 'update';
+    }
+
+    return $disableModules;
+  }
+}
+
+/**
+ * Implements hook_preprocess_menu().
+ */
+function bhge_core_preprocess_menu__main(&$vars) {
+  // Inject breadcrumb block.
+  $vars['breadcrumbs'] = \Drupal::entityTypeManager()
+    ->getViewBuilder('block')
+    ->view(
+      Block::load('bhge_breadcrumbs')
+    );
+
+  foreach ($vars['items'] as &$item) {
+    if (!is_string($item['url']) && $item['url']->isRouted() && $item['url']->getRouteName() == '<none>') {
+      $item['url'] = '#';
+    }
+    $item['description'] = $item['original_link']->getPluginDefinition()['description'];
+
+    if (!empty($item['below'])) {
+      _bhge_core_modify_menu_links_below($item['below']);
+    }
+
+    // Defining "open_in_new_tab" for main menu links.
+    if ($item['original_link']->getDerivativeId()) {
+      $menu_content = \Drupal::entityTypeManager()
+        ->getStorage('menu_link_content')
+        ->loadByProperties(['uuid' => $item['original_link']->getDerivativeId()]);
+
+      foreach ($menu_content as $mc) {
+        $item['open_in_new_tab'] = $mc->get('open_in_new_tab')->value;
+      }
+    }
+
+  }
+
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function bhge_core_form_alter(&$form, FormStateInterface &$form_state, $form_name) {
+
+  // Disable HTML5 form validation: elements can be hidden from view.
+  $form['#attributes']['novalidate'] = 'novalidate';
+
+  /*
+   * Checking if form is section page add or section page edit.
+   * Disabling fields that are not needed when has_page field is unchecked.
+   * If has_page is checked, show all those fields.
+   */
+  if ($form_name === 'node_section_form' || $form_name === 'node_section_edit_form') {
+    $form['#validate'][] = 'bhge_core_node_form_validate';
+    $user_input = $form_state->getUserInput();
+    $form_fields = [
+      'field_block_standalone_content',
+      'field_features_and_benefits',
+      'field_case_studies',
+      'field_block_contact_us',
+      'field_block_links',
+    ];
+    if ((array_key_exists('field_has_page', $user_input) && !empty($user_input['field_has_page']) && $user_input['field_has_page']['value']) || (array_key_exists('field_has_page', $form) && $form['field_has_page']['widget']['value']['#default_value'])) {
+      foreach ($form_fields as $form_field) {
+        $form[$form_field]['#access'] = TRUE;
+      }
+    }
+    else {
+      foreach ($form_fields as $form_field) {
+        $form[$form_field]['#access'] = FALSE;
+      }
+    }
+  }
+
+  // Apply honeypot to all webforms.
+  if (strpos($form_name, 'webform_') !== FALSE) {
+    honeypot_add_form_protection($form, $form_state, ['honeypot']);
+  }
+
+  $forms = [
+    'media_dam_asset_pdf_add_form',
+    'media_dam_asset_pdf_edit_form',
+    'media_dam_asset_dld_add_form',
+    'media_dam_asset_dld_edit_form',
+    'media_dam_asset_epub_add_form',
+    'media_dam_asset_epub_edit_form',
+    'media_dam_asset_img_add_form',
+    'media_dam_asset_img_edit_form'
+  ];
+  if (in_array($form_name, $forms)) {
+    // Disable the field_asset form field.
+    $form['field_asset']['#disabled'] = 'disabled';
+  }
+}
+
+/**
+ * Implements hook_field_group_build_pre_render_alter().
+ */
+function bhge_core_field_group_build_pre_render_alter(&$element) {
+  $error_messages = drupal_get_messages('error', FALSE);
+
+  // Check for error messages.
+  if (count($error_messages)) {
+    foreach ($element as &$item) {
+
+      if (is_array($item) && isset($item['#open'])) {
+        // Expand all field_group wrappers if error.
+        $item['#open'] = TRUE;
+      }
+    }
+  }
+}
+
+/**
+ * Helper to validate form submit.
+ */
+function bhge_core_node_form_validate($form, FormStateInterface $form_state) {
+  $node = $form_state->getFormObject()->getEntity();
+  if (!empty($node)) {
+    $section_parents = $form_state->getValue('field_section_parents');
+    foreach ($section_parents as $parent) {
+      if (is_array($parent) && !empty($parent['target_id']) && $parent['target_id'] == $node->id()) {
+        $form_state->setErrorByName("field_section_parents", t("Field parent sections can\'t reference the same page as current"));
+      }
+    }
+  }
+}
+
+/**
+ * Helper to remove traces from database of deleted modules.
+ *
+ * @param array $modules
+ *   Array of modules.
+ */
+function _bhge_core_clean_obsolete_modules(array $modules) {
+  $query = \Drupal::database()->delete('key_value');
+  $query->condition('collection', 'system.schema');
+  $query->condition('name', $modules, 'IN');
+  $query->execute();
+}
+
+/**
+ * Helper to change child links of main menu.
+ *
+ * @param array $items
+ *   Items array.
+ */
+function _bhge_core_modify_menu_links_below(array &$items) {
+  // If it is childless then link will have url.
+  if (empty($items['childless'])) {
+    foreach ($items as &$item) {
+      if (is_array($item)) {
+        if (!empty($item['url']) && !is_string($item['url']) && $item['url']->isRouted() && $item['url']->getRouteName() == '<none>') {
+          $item['url'] = '#';
+        }
+        $item['description'] = !empty($item['original_link']) ? $item['original_link']->getPluginDefinition()['description'] : '';
+
+        // Defining "open_in_new_tab" for main menu links.
+        if ($item['original_link']->getDerivativeId()) {
+          $menu_content = \Drupal::entityTypeManager()
+            ->getStorage('menu_link_content')
+            ->loadByProperties(['uuid' => $item['original_link']->getDerivativeId()]);
+
+          foreach ($menu_content as $mc) {
+            $item['open_in_new_tab'] = $mc->get('open_in_new_tab')->value;
+          }
+        }
+
+        if (!empty($item['below'])) {
+          _bhge_core_modify_menu_links_below($item['below']);
+        }
+      }
+      else {
+        if (!empty($item->below)) {
+          _bhge_core_modify_menu_links_below($item->below);
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Update the length of a text field which already contains data.
+ *
+ * @param string $entity_type_id
+ *   Entity type ID.
+ * @param string $field_name
+ *   Field Name.
+ * @param int $new_length
+ *   New Length parameter.
+ */
+function _bhge_core_change_text_field_max_length($entity_type_id, $field_name, $new_length) {
+
+  $database = \Drupal::database();
+  $tables = [
+    "{$entity_type_id}__$field_name",
+    "{$entity_type_id}_revision__$field_name",
+  ];
+  $existing_data = [];
+  // Retrieve existing field data.
+  foreach ($tables as $table) {
+    // Get the old data.
+    $existing_data[$table] = $database->select($table)
+      ->fields($table)
+      ->execute()
+      ->fetchAll(PDO::FETCH_ASSOC);
+    // Wipe it.
+    $database->truncate($table)->execute();
+  }
+
+  $field_storage_configs = \Drupal::entityTypeManager()
+    ->getStorage('field_storage_config')
+    ->loadByProperties([
+      'field_name' => $field_name,
+    ]);
+  foreach ($field_storage_configs as $field_storage) {
+    $new_field_storage = $field_storage->toArray();
+    $new_field_storage['settings']['max_length'] = $new_length;
+    $new_field_storage = FieldStorageConfig::create($new_field_storage);
+    $new_field_storage->original = $new_field_storage;
+    $new_field_storage->enforceIsNew(FALSE);
+    $new_field_storage->save();
+  }
+
+  // Restore the data.
+  if (!empty($existing_data)) {
+    foreach ($tables as $table) {
+      if (!empty($existing_data[$table])) {
+        $insert_query = $database
+          ->insert($table)
+          ->fields(array_keys(end($existing_data[$table])));
+        foreach ($existing_data[$table] as $row) {
+          $insert_query->values(array_values($row));
+        }
+        $insert_query->execute();
+      }
+    }
+  }
+  // Flush the caches.
+  drupal_flush_all_caches();
+}
+
+/**
+ * Implements hook_preprocess_menu().
+ */
+function bhge_core_preprocess_menu(&$vars) {
+
+  $menu_links_new_window = ['legacy-sites-and-segments',
+    'footer',
+    'sustainability-report'
+  ];
+
+  foreach ($vars['items'] as &$item) {
+
+    if (!isset($item['original_link'])) {
+      continue;
+    }
+
+    $current_menu = $item['original_link']->getMenuName();
+
+    if (in_array($current_menu, $menu_links_new_window)) {
+
+      // Defining "open_in_new_tab" for Parent menu links.
+      if ($item['original_link']->getDerivativeId()) {
+        $menu_content = \Drupal::entityTypeManager()
+          ->getStorage('menu_link_content')
+          ->loadByProperties(['uuid' => $item['original_link']->getDerivativeId()]);
+
+        foreach ($menu_content as $mc) {
+          $item['open_in_new_tab'] = $mc->get('open_in_new_tab')->value;
+        }
+      }
+
+      if (!empty($item['below'])) {
+
+        foreach ($item['below'] as &$item) {
+
+          // Defining "open_in_new_tab" for child menu links.
+          if ($item['original_link']->getDerivativeId()) {
+            $menu_content = \Drupal::entityTypeManager()
+              ->getStorage('menu_link_content')
+              ->loadByProperties(['uuid' => $item['original_link']->getDerivativeId()]);
+
+            foreach ($menu_content as $mc) {
+              $item['open_in_new_tab'] = $mc->get('open_in_new_tab')->value;
+            }
+          }
+
+        }
+      }
+    }
+  }
+
+}
+
+/**
+ * Implements hook_entity_type_alter().
+ */
+function bhge_core_entity_type_alter(array &$entity_types) {
+  foreach ($entity_types as $entity_type) {
+    $constraints = $entity_type->getConstraints();
+    unset($constraints['EntityUntranslatableFields']);
+    $entity_type->setConstraints($constraints);
+  }
+}
+
+/**
+ * Implements hook_node_access_records_alter().
+ *
+ * Alter the grants array to support language code.
+ */
+function bhge_core_node_access_records_alter(&$grants, NodeInterface $node) {
+  // Skip when node is not translatable or $grants array is empty.
+  if (!$node->isTranslatable() || empty($grants)) {
+    return;
+  }
+
+  // Assemble $grants arrays with langcode when node is published.
+  $access_grants = [];
+  foreach ($grants as $grant) {
+    // $grant with langcode.
+    if (isset($grant['langcode'])) {
+      $access_grants[] = $grant;
+      continue;
+    }
+    // $grant without langcode.
+    foreach ($node->getTranslationLanguages(TRUE) as $langcode => $language) {
+      $translated_node = $node->getTranslation($langcode);
+      if ($translated_node->isPublished() === TRUE) {
+        $grant['langcode'] = $langcode;
+        $access_grants[] = $grant;
+      }
+    }
+  }
+
+  if (count($access_grants) > 0) {
+    $grants = $access_grants;
+  }
+}

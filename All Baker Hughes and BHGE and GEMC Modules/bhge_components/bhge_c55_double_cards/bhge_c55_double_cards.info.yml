@@ -1,0 +1,6 @@
+name: BHGE C55 Double Cards
+type: module
+description: 'BHGE C55 Component For Double Cards'
+package: BHGE Components
+version: 8.x
+core: 8.x

@@ -1,0 +1,427 @@
+{
+	"properties": {
+		"location": "US",
+		"title": "Gas Turbine ",
+		"map": "modules/custom/bhge_campaign/Maps/america.png",
+		"timeOffset": 6,
+		"description": "This machine conversation avoided 6 hours of unplanned downtime  at this facility",
+		"scenario": 1,
+		"video": {
+			"src":"modules/custom/bhge_campaign/Videos/gasturbine.scenario.mp4",
+			"poster": "modules/custom/bhge_campaign/Videos/gasturbine.scenario.png",
+			"init": {
+				"start":0,
+				"duration":9
+			},
+			"normal": {
+				"start":9,
+				"duration":9
+			},
+			"anomaly": {
+				"start":9,
+				"duration":13.5
+			},
+			"anomalyend": {
+				"start":13.5,
+				"duration":15
+			}
+		}
+	},
+	"dialog": [
+		{
+			"author": "machine0",
+			"message": {
+				"text": "Good morning! Here’s PGT25+G4, It’s a sunny day ☀︎ with a temperature of 69°F!"
+			},
+			"status":"init",
+			"wait":10,
+			"waitAuthor": "icenter"
+		},
+		{
+			"author": "icenter",
+			"alert": null,
+			"message": {
+				"text": "Ciao from the Analytics Engine!"
+			},
+			"status":"init",
+			"wait":5,
+			"waitAuthor": "icenter"
+		},
+		{
+			"author": "icenter",
+			"alert": null,
+			"message": {
+				"text": "Did you notice any issues while enjoying the sun?"
+			},
+			"status":"normal",
+			"wait":4,
+			"waitAuthor": "machine0"
+		},
+		{
+			"author": "machine0",
+			"message": {
+				"text": "Nope, no major changes since the last check."
+			},
+			"status":"normal",
+			"wait":2,
+			"waitAuthor": "icenter"
+		},
+		{
+			"author": "icenter",
+			"alert": null,
+			"message": {
+				"text": "Sounds great, don’t forget sun protection! 🕶"
+			},
+			"status":"normal",
+			"wait":20
+		},
+		
+		
+		{
+			"author": "machine0",
+			"message": {
+				"text": "Hey, I don’t feel so good, something is wrong…"
+			},
+			"status":"normal"
+		},
+		{
+			"author": "machine0",
+			"message": {
+				"text": "I’m sending you some data from the combustion chamber and fuel properties."
+			},
+			"status":"anomaly",
+			"wait":2,
+			"waitAuthor": "icenter"
+		},
+		{
+			"author": "icenter",
+			"alert": null,
+			"message": {
+				"text": "Uhm, that’s weird."
+			},
+			"status":"anomaly"
+		},
+		{
+			"author": "machine0",
+			"message": {
+				"text": "",
+				"image": "modules/custom/bhge_campaign/Widgets/pgt25.scenario/w01.png"
+			},
+			"status":"anomaly",
+			"wait":2,
+			"waitAuthor": "icenter"
+		},
+		{
+			"author": "icenter",
+			"alert": null,
+			"message": {
+				"text": "You’re right, pulsations are higher than expected, and the fuel properties are changing sharply, can you adjust the LHV value?"
+			},
+			"status":"anomaly"
+		},
+		{
+			"author": "machine0",
+			"message": {
+				"text": "I’m on it…"
+			},
+			"status":"anomaly",
+			"wait":3,
+			"waitAuthor": "machine0"
+		},
+		{
+			"author": "machine0",
+			"message": {
+				"text": "I’m adjusting the fuel LHV to reflect what’s showing on the measured values."
+			},
+			"status":"anomaly"
+		},
+		{
+			"author": "icenter",
+			"alert": null,
+			"message": {
+				"text": "Careful, it looks like it’s not working and the pulsations are spiking and going outside the recommended thresholds, I think this requires human intervention, I need to call the iCenter in Houston and alert our Engineers there."
+			},
+			"status":"anomaly"
+		},
+		{
+			"author": "machine0",
+			"message": {
+				"text": "Thanks, in the meantime I’ll do my best to control the situation from here."
+			},
+			"status":"anomaly"
+		},
+		{
+			"author": "icenter",
+			"alert": null,
+			"message": {
+				"text": "Erik, can you take a look at these spikes on this turbine?"
+			},
+			"status":"anomaly",
+			"wait": 5
+		},
+		{
+			"author": "system",
+			"alert": null,
+			"message": {
+				"text": "Erik has been added to this conversation"
+			},
+			"status":"anomaly"
+		},
+		{
+			"author": "ge0",
+			"alert": null,
+			"message": {
+				"text": "Hello there, I’m Erik from Houston."
+			},
+			"status":"anomaly"
+		},
+		{
+			"author": "ge0",
+			"alert": null,
+			"message": {
+				"text": "Can you please tell me if you are adjusting the firing temperature?"
+			},
+			"status":"anomaly"
+		},
+		{
+			"author": "machine0",
+			"message": {
+				"text": "Hi Erik! Sure, let me check…"
+			},
+			"status":"anomaly",
+			"wait": 5,
+			"waitAuthor": "machine0"
+		},
+		{
+			"author": "machine0",
+			"message": {
+				"text": "Yes, I’ve lowered by 200°F"
+			},
+			"status":"anomaly",
+			"wait": 5,
+			"waitAuthor": "ge0"
+		},
+		{
+			"author": "ge0",
+			"alert": null,
+			"message": {
+				"text": "It doesn’t seem to be enough, values are still spiking."
+			},
+			"status":"anomaly"
+		},
+		{
+			"author": "ge0",
+			"alert": null,
+			"message": {
+				"text": "What about the LHV values? Can you provide me the latest value trend?"
+			},
+			"status":"anomaly"
+		},
+		{
+			"author": "machine0",
+			"message": {
+				"text": "Let me have a look…"
+			},
+			"status":"anomaly",
+			"wait": 2,
+			"waitAuthor": "machine0"
+		},
+		{
+			"author": "machine0",
+			"message": {
+				"text": "Here’s the trend of the LHV value over the last hour.",
+				"image": "modules/custom/bhge_campaign/Widgets/pgt25.scenario/w02.png"
+			},
+			"status":"anomaly"
+		},
+		{
+			"author": "machine0",
+			"message": {
+				"text": "Apparently the LHV values suddenly changed while we were having the pulsation spikes."
+			},
+			"status":"anomaly",
+			"wait": 3,
+			"waitAuthor": "ge0"
+		},
+		{
+			"author": "ge0",
+			"alert": null,
+			"message": {
+				"text": "Gotcha!"
+			},
+			"status":"anomaly",
+			"wait": 3,
+			"waitAuthor": "ge0"
+		},
+		{
+			"author": "ge0",
+			"alert": null,
+			"message": {
+				"text": "It seems to me that the source of problem is the LHV and you aren’t able to copy the actual values. We need a combustion expert! Let me check with Daniele in Florence."
+			},
+			"status":"anomaly"
+		},
+		{
+			"author": "system",
+			"alert": null,
+			"message": {
+				"text": "Daniele has been added to this conversation"
+			},
+			"status":"anomaly"
+		},
+		{
+			"author": "engineer0",
+			"alert": null,
+			"message": {
+				"text": "Hi, I’m Daniele."
+			},
+			"status":"anomaly"
+		},
+		{
+			"author": "engineer0",
+			"alert": null,
+			"message": {
+				"text": "I’m taking a look at the trends…"
+			},
+			"status":"anomaly"
+		},
+		{
+			"author": "engineer0",
+			"alert": null,
+			"message": {
+				"text": "In seems to me like we need to implement a new max LHV rate range."
+			},
+			"status":"anomaly",
+			"wait":2,
+			"waitAuthor": "machine0"
+		},
+		{
+			"author": "machine0",
+			"message": {
+				"text": "I’m on it…"
+			},
+			"status":"anomaly",
+			"wait": 6,
+			"waitAuthor": "machine0"
+		},
+		{
+			"author": "machine0",
+			"message": {
+				"text": "We've now implemented the new max LHV rate change."
+			},
+			"status":"anomaly",
+			"wait": 5,
+			"waitAuthor": "machine0"
+		},
+		{
+			"author": "machine0",
+			"message": {
+				"text": "Anything else I should do?"
+			},
+			"status":"anomaly",
+			"wait": 3,
+			"waitAuthor": "engineer0"
+		},
+		{
+			"author": "engineer0",
+			"alert": null,
+			"message": {
+				"text": "For now keep working with this setting and I’ll tell the Diagnostic Engineer to keep an eye on this beahviour in the future."
+			},
+			"status":"anomaly",
+			"wait":2
+		},
+		{
+			"author": "system",
+			"alert": null,
+			"message": {
+				"text": "John has been added to this conversation"
+			},
+			"status":"anomaly"
+		},
+		{
+			"author": "diagnostic",
+			"alert": null,
+			"message": {
+				"text": "I’ll make sure the analytics start tracking this closely."
+			},
+			"status":"anomaly"
+		},
+		{
+			"author": "icenter",
+			"alert": null,
+			"message": {
+				"text": "Got it!"
+			},
+			"status":"anomaly",
+			"wait": 45,
+			"waitAuthor": "machine0"
+		},
+		{
+			"author": "machine0",
+			"message": {
+				"text": "Hey look, the LHV level has changed again."
+			},
+			"status":"anomaly"
+		},
+		{
+			"author": "machine0",
+			"message": {
+				"text": "LHV report #3",
+				"image": "modules/custom/bhge_campaign/Widgets/pgt25.scenario/w05.png"
+			},
+			"status":"anomaly"
+		},
+		{
+			"author": "icenter",
+			"alert": null,
+			"message": {
+				"text": "Copy that."
+			},
+			"status":"anomaly",
+			"wait": 45,
+			"waitAuthor": "machine0"
+		},
+		{
+			"author": "machine0",
+			"message": {
+				"text": "The combustion pulsation seems to be normalizing.",
+				"image": "modules/custom/bhge_campaign/Widgets/pgt25.scenario/w04.png"
+			},
+			"status":"anomalyend"
+		},
+		{
+			"author": "icenter",
+			"alert": null,
+			"message": {
+				"text": "That’s okay, I’m not seeing any pulsation or issue."
+			},
+			"status":"anomalyend"
+		},
+		{
+			"author": "ge0",
+			"alert": null,
+			"message": {
+				"text": "Anything you need to let me know about this case?"
+			},
+			"status":"anomalyend"
+		},
+		{
+			"author": "icenter",
+			"alert": null,
+			"message": {
+				"text": "All good here!"
+			},
+			"status":"anomalyend"
+		},
+		{
+			"author": "ge0",
+			"alert": null,
+			"message": {
+				"text": "Cool, I'll close the case."
+			},
+			"status":"normal",
+			"wait":15
+		}
+	]
+}

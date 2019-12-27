@@ -1,0 +1,5 @@
+gemc_download_center.settings_form:
+  title: 'GEMC Downlaod Center Settings'
+  description: 'Manage GEMC Download Center settings.'
+  route_name: gemc_download_center.settings_form
+  parent: system.admin_config_system

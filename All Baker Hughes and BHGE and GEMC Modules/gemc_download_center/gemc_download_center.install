@@ -1,0 +1,37 @@
+<?php
+
+/**
+ * @file
+ * GEMC Download center install file.
+ */
+
+use Drupal\Core\Cache\Cache;
+
+/**
+ * Implements hook_install().
+ */
+function gemc_download_center_install() {
+  drupal_register_shutdown_function('gemc_download_center_install_shutdown');
+}
+
+/**
+ * Config set after initial config import has completed after initial install.
+ */
+function gemc_download_center_install_shutdown() {
+  // @var Drupal\Core\Config\ConfigFactoryInterface $config_factory.
+
+  $config_factory = \Drupal::configFactory();
+  $config = $config_factory->getEditable('gemc_download_center.settings');
+  $config->set('page.instructions.label', 'Instructions');
+  $body = 'Make your selection below to navigate through BHGE Measurement ';
+  $body .= '&amp; Controls current product portfolio and to find the most ';
+  $body .= 'up-to-date datasheets, brochures, and other literature. If the ';
+  $body .= 'information you are looking for is missing, please let us know by ';
+  $body .= 'contacting our Tech Support teams via phone or email - our ';
+  $body .= 'experts will assist you. Customers looking for Commtest licenses ';
+  $body .= 'can visit <a href="http://licensing.commtest.co.nz/">';
+  $body .= 'http://licensing.commtest.co.nz/</a>.';
+  $config->set('page.instructions.body', $body);
+  $config->save();
+  Cache::invalidateTags(['gemc_download_center.settings']);
+}

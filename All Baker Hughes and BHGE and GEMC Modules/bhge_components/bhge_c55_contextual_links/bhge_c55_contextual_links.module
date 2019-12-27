@@ -1,0 +1,142 @@
+<?php
+
+/**
+ * @file
+ * Custom bhge_c55_contextual_links module.
+ */
+
+use Drupal\Core\Url;
+
+/**
+ * Implements hook_preprocess_field().
+ */
+function bhge_c55_contextual_links_preprocess_field(&$variables, $hook) {
+
+  $fields = ['field_related'];
+
+  if (!empty($variables['element']['#field_name']) && in_array($variables['element']['#field_name'], ['field_related_products'])) {
+    $variables['id'] = 'c18-context-ual-links-' . time();
+    $variables['related_products'] = [];
+    $ctype = 'text';
+
+    if (!empty($variables['items'])) {
+      $items = $variables['items'];
+
+      foreach ($items as $item) {
+        /** @var \Drupal\node\Entity\Node $node */
+        $node = $item['content']['#options']['entity'];
+        if ($node->hasField('field_product_information') && !empty($node->get('field_product_information')[0])) {
+          $productInformation = $node->get('field_product_information')->entity;
+
+          $dataHelpers = \Drupal::service('bhge_core.data_helpers');
+          $image = $dataHelpers->getImage($productInformation, 'field_image', 'field_dam_image', 'cards_carousel_image');
+
+          // Formatted output array.
+          $variables['dataset'][] = [
+            'contentType' => !empty($image) ? 'image' : 'text',
+            'title' => $node->getTitle(),
+            'copy' => !empty($productInformation) ? strip_tags($productInformation->get('field_copy')
+              ->getValue()[0]['value']) : '',
+            'image' => $image,
+            'url' => $node->url(),
+          ];
+        }
+        else {
+          $variables['dataset'][] = [
+            'ctype' => $ctype,
+            'title' => $node->getTitle(),
+            'copy' => '',
+            'image' => '',
+            'url' => $node->url(),
+          ];
+        }
+      }
+    }
+  }
+
+  if (!empty($variables['element']['#field_name']) && in_array($variables['element']['#field_name'], $fields)) {
+
+    // Init empty custom variable.
+    $variables['dataset'] = [];
+    $variables['id'] = 'c18-context-ual-links-' . time();
+
+    if (!empty($variables['items'])) {
+      $items = $variables['items'];
+
+      foreach ($items as $key => $item) {
+
+        /** @var \Drupal\node\Entity\Node $node */
+        $node = $item['content']['#node'];
+
+        // Default text value.
+        $dataHelpers = \Drupal::service('bhge_core.data_helpers');
+        $image = $dataHelpers->getImage($node, 'field_main_image', 'field_dam_main_img', 'cards_carousel_image');
+
+        if ($node->bundle() == 'webcast_item') {
+          $data = bhge_components_get_webcast_data(NULL, $node);
+          $variables['is_webcast'] = 1;
+        }
+
+        // Formatted output array.
+        $variables['dataset'][$key] = [
+          'contentType' => !empty($image) ? 'image' : 'text',
+          'title' => $node->getTitle(),
+          'copy' => strip_tags($node->get('body')->getValue()[0]['value']),
+          'image' => $image,
+          'url' => Url::fromRoute('entity.node.canonical', [
+            'node' => $node->get('nid')
+              ->getValue()[0]['value'],
+          ])->toString(),
+        ];
+
+        // Get webcast start date formatted.
+        if (!empty($data)) {
+          $variables['dataset'][$key] = array_merge($variables['dataset'][$key], bhge_components_get_webcast_data(NULL, $node));
+
+          // Webcast template.
+          $variables['dataset'][$key]['contentType'] = 'webcast_item';
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Implements hooks_preprocess_paragraph().
+ */
+function bhge_c55_contextual_links_preprocess_paragraph(&$variables) {
+  if (!empty($variables['elements']['#paragraph'])) {
+
+    /** @var \Drupal\paragraphs\Entity\Paragraph $paragraph */
+    $paragraph = $variables['elements']['#paragraph'];
+    $id = $paragraph->get('type')->getValue();
+
+    if ($id[0]['target_id'] == 'block_contextual_links') {
+      $variables['has_filters'] = 0;
+      $variables['sort_by'] = 'created';
+      $variables['category'] = NULL;
+      $variables['display_mode'] = 2;
+      $variables['limit'] = 60;
+      $variables['offset'] = 0;
+      $variables['topics'] = NULL;
+
+      $links = $paragraph->field_link;
+      $dataHelpers = \Drupal::service('bhge_core.data_helpers');
+      foreach ($links as $link) {
+        $linkEntity = $link->entity;
+
+        $image = $dataHelpers->getImage($linkEntity, 'field_image', 'field_dam_image', 'cards_carousel_image');
+
+        $variables['dataset']['results'][] = [
+          'contentType' => !empty($image) ? 'image' : 'text',
+          'image' => $image,
+          'title' => $linkEntity->field_label->value,
+          'description' => $dataHelpers->getDescription($linkEntity),
+          'type' => '',
+          'url' => $linkEntity->field_target->uri ? Url::fromUri($linkEntity->field_target->uri) : '',
+        ];
+      }
+      $variables['dataset']['total'] = count($links);
+    }
+  }
+}

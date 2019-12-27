@@ -1,0 +1,225 @@
+<?php
+
+/**
+ * @file
+ * Marketo Form module file.
+ */
+
+use Drupal\Component\Plugin\Exception\ContextException;
+use Drupal\node\NodeTypeInterface;
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Link;
+
+/**
+ * Implements hook_theme().
+ */
+function ge_marketo_form_theme($existing, $type, $theme, $path) {
+  return [
+    'marketo_form' => [
+      'variables' => [
+        'data' => [],
+      ],
+    ],
+    'marketo_form__gated' => [
+      'base hook' => 'marketo_form',
+    ],
+  ];
+}
+
+/**
+ * Implements hook_page_attachments_alter().
+ */
+function ge_marketo_form_page_attachments_alter(array &$page) {
+  $config = Drupal::config('ge_marketo_form.settings');
+  // Marketo Script.
+  $marketoScript = [
+    '#type' => 'html_tag',
+    '#tag' => 'script',
+    '#attributes' => [
+      'src' => $config->get('marketo_url') . '/js/forms2/js/forms2.min.js',
+    ],
+  ];
+
+  $page['#attached']['html_head'][] = [$marketoScript, 'marketo_script'];
+
+  // Munchkin scripts.
+  $munchkinScript = [
+    '#type' => 'html_tag',
+    '#tag' => 'script',
+    '#attributes' => [
+      'src' => '//munchkin.marketo.net/munchkin.js',
+      'type' => 'text/javascript',
+    ],
+  ];
+  $page['#attached']['html_head'][] = [$munchkinScript, 'munchkin_script'];
+
+  $clientId = $config->get('marketo_id');
+  $munchkinInitScript = [
+    '#type' => 'html_tag',
+    '#tag' => 'script',
+    '#value' => 'Munchkin.init("' . $clientId . '");',
+  ];
+  $page['#attached']['html_head'][] = [$munchkinInitScript, 'client_script'];
+
+  $munchkinTrackingScript = [
+    '#type' => 'html_tag',
+    '#tag' => 'script',
+    '#value' => 'Munchkin.createTrackingCookie(true);',
+  ];
+  $page['#attached']['html_head'][] = [
+    $munchkinTrackingScript,
+    'tracking_script',
+  ];
+
+}
+
+/**
+ * Implements hook_preprocess_marketo_form().
+ */
+function template_preprocess_marketo_form(&$variables) {
+  $configMarketo = Drupal::config('ge_marketo_form.settings');
+  if (!$configMarketo->get('marketo_url') || !$configMarketo->get('marketo_id')) {
+    $variables['errorMessage'] = t('Marketo Form has not be found. Please contact site administrator.');
+    if (\Drupal::currentUser()
+      ->hasPermission('administer site configuration')) {
+      $linkOptions = [
+        'attributes' => [
+          'target' => '_blank',
+        ],
+      ];
+      $link = Link::createFromRoute(t('Marketo URL and ID'), 'ge_marketo_form', [], $linkOptions);
+      $variables['errorMessage'] = t('Please add @link to be able to display Marketo Form', ['@link' => $link->toString()]);
+    }
+
+  }
+
+  // Add default attributes.
+  $variables['attributes'] = [
+    'class' => ['marketo-form'],
+  ];
+
+  // Add marketo form JS library.
+  $variables['#attached'] = [
+    'library' => [
+      'ge_marketo_form/ge_marketo_form.forms',
+    ],
+  ];
+
+  // Update marketo formid depending on user input for 'download' content type.
+  $node = \Drupal::routeMatch()->getParameter('node');
+  if ($node->hasfield('field_gated_content') && $node->get('field_gated_content')->value) {
+    if ($node->field_marketo_form_embed->entity && $node->field_marketo_form_embed->entity->field_marketo_id->value) {
+
+      $selected_marketo_form_id = $node->field_marketo_form_embed->entity->field_marketo_id->value;
+
+      $variables['data']['formId'] = $selected_marketo_form_id;
+      $variables['data']['buttonText'] = 'download';
+
+    }
+  }
+
+  // Add specific JS settings with data attributes.
+  $variables['#attached']['drupalSettings']['geMarketoForm']['marketo'] = [
+
+    'url' => $configMarketo->get('marketo_url'),
+    'id' => $variables['data']['id'],
+    'formId' => $variables['data']['formId'],
+    'buttonText' => $variables['data']['buttonText'],
+    'gated' => $variables['data']['gated'],
+    'isFile' => FALSE,
+    'dataAttributes' => [
+      'data-marketo-client-id' => $variables['data']['id'],
+      'data-marketo-form-id' => $variables['data']['formId'],
+    ],
+  ];
+
+}
+
+/**
+ * Implements hook_preprocess_marketo_form__gated().
+ */
+function template_preprocess_marketo_form__gated(&$variables) {
+  $variables['#attached']['drupalSettings']['geMarketoForm']['marketo']['isFile'] = $variables['data']['isFile'];
+}
+
+/**
+ * Implements hook_theme_suggestions_alter().
+ */
+function ge_marketo_form_theme_suggestions_alter(array &$suggestions, array $variables, $hook) {
+  if ($variables['theme_hook_original'] == 'marketo_form__gated') {
+    $suggestions[] = $variables['theme_hook_original'] . '__' . $variables['data']['contentTypeMachineName'];
+  }
+}
+
+/**
+ * Implements hook_form_BASE_FORM_ID_alter().
+ */
+function ge_marketo_form_form_node_type_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+  $form['marketo_form'] = [
+    '#type' => 'details',
+    '#title' => t('Marketo Form'),
+    '#group' => 'additional_settings',
+  ];
+
+  // Load the current node type configuration entity.
+  /** @var \Drupal\node\Entity\NodeType $node_type */
+  $node_type = $form_state->getFormObject()->getEntity();
+
+  $form['marketo_form']['marketo_form_enabled'] = [
+    '#type' => 'checkbox',
+    '#title' => t('Enable Marketo Form for this Content Type'),
+    '#description' => t('Check this box if you would like a Marketo Form on this node type.'),
+    '#default_value' => $node_type->getThirdPartySetting('ge_marketo_form', 'enabled', 0),
+  ];
+
+  $form['#entity_builders'][] = 'marketo_form_form_node_type_form_builder';
+
+}
+
+/**
+ * Entity form builder for the node type form.
+ *
+ * To map some values to third party settings.
+ */
+function marketo_form_form_node_type_form_builder($entity_type, NodeTypeInterface $type, &$form, FormStateInterface $form_state) {
+  if ($form_state->getValue('marketo_form_enabled') === 1) {
+    $type->setThirdPartySetting('ge_marketo_form', 'enabled', 1);
+
+    // Clear all plugin caches.
+    \Drupal::service('plugin.cache_clearer')->clearCachedDefinitions();
+
+    return;
+  }
+
+  $type->unsetThirdPartySetting('ge_marketo_form', 'enabled');
+
+  // Clear all plugin caches.
+  \Drupal::service('plugin.cache_clearer')->clearCachedDefinitions();
+}
+
+/**
+ * Implements hook_preprocess_HOOK().
+ */
+function ge_marketo_form_preprocess_node(&$variables) {
+  $node = $variables['node'];
+  if (!node_is_page($node)) {
+    return;
+  }
+
+  $marketoFormPluginDefinitions = \Drupal::service('plugin.manager.marketo_form_manager')->getDefinitions();
+  $pluginId = 'gated_marketo_form:' . $node->bundle();
+  if (array_key_exists($pluginId, $marketoFormPluginDefinitions)) {
+    $marketoFormPlugin = \Drupal::service('plugin.manager.marketo_form_manager')->createInstance($pluginId);
+
+    try {
+      $contexts = \Drupal::service('context.repository')->getRuntimeContexts(array_values($marketoFormPlugin->getContextMapping()));
+      \Drupal::service('context.handler')->applyContextMapping($marketoFormPlugin, $contexts);
+
+      $variables['marketoForm'] = $marketoFormPlugin->getForm($variables);
+    }
+    catch (ContextException $e) {
+      \Drupal::logger('ge_marketo_form')->error($e->getMessage());
+    }
+  }
+
+}

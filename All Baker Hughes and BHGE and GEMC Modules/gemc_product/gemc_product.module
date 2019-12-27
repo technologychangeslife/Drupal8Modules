@@ -1,0 +1,66 @@
+<?php
+
+/**
+ * @file
+ * Custom Industrial.ai module.
+ */
+
+use Drupal\node\NodeInterface;
+use Drupal\Core\Render\BubbleableMetadata;
+
+/**
+ * Implements hook_node_presave().
+ */
+function gemc_product_node_presave(NodeInterface $entity) {
+  if ($entity->bundle() == 'product') {
+    /** @var \Drupal\gemc_product\ProductFiltersService $productFiltersService */
+    $productFiltersService = \Drupal::service('gemc_product.filters_service');
+    $productFiltersService->updateFilterFields($entity);
+  }
+}
+
+/**
+ * Implements hook_token_info().
+ */
+function gemc_product_token_info() {
+
+  $tokens['webform_submission']['gemc_rma'] = [
+    'name' => t('RMA'),
+    'description' => t('The RMA of the webform submission.'),
+  ];
+
+  return ['tokens' => $tokens];
+}
+
+/**
+ * Implements hook_tokens().
+ */
+function gemc_product_tokens($type, $tokens, array $data, array $options, BubbleableMetadata $bubbleable_metadata) {
+  $replacements = [];
+  if ($type == 'webform_submission' && !empty($data['webform_submission'])) {
+    $webform_submission = $data['webform_submission'];
+
+    foreach ($tokens as $name => $original) {
+      switch ($name) {
+        case 'gemc_rma':
+          $dt = date("YmdG", $webform_submission->completed->value);
+          // $replacements[$original] = $dt . $webform_submission->sid->value;.
+          $totalreqnumber = 14;
+          $generatedvalue = $dt . $webform_submission->sid->value;
+          $countofreqvalue = strlen($generatedvalue);
+          if ($countofreqvalue > $totalreqnumber) {
+            $diffvalue = $countofreqvalue - $totalreqnumber;
+
+            $replacements[$original] = substr($generatedvalue, 0, '-' . $diffvalue);
+          }
+          else {
+            $replacements[$original] = $generatedvalue;
+          }
+
+          break;
+      }
+    }
+  }
+
+  return $replacements;
+}

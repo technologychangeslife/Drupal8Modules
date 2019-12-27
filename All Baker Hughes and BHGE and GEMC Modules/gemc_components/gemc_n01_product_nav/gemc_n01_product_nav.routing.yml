@@ -1,0 +1,7 @@
+gemc_n01_product_nav.section_hierarchy:
+  path: '/admin/content/gemc-sections'
+  defaults:
+    _controller: '\Drupal\gemc_n01_product_nav\Controller\SectionHierarchy::content'
+    _title: 'Product sectionpage hierarchy'
+  requirements:
+    _permission: 'access content overview'

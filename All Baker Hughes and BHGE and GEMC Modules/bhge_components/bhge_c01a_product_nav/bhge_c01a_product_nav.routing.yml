@@ -1,0 +1,7 @@
+bhge_c01a_product_nav.section_hierarchy:
+  path: '/admin/content/bhge-sections'
+  defaults:
+    _controller: '\Drupal\bhge_c01a_product_nav\Controller\SectionHierarchy::content'
+    _title: 'Product sectionpage hierarchy'
+  requirements:
+    _permission: 'access content overview'

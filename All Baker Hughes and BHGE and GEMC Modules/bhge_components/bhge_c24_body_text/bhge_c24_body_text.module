@@ -1,0 +1,87 @@
+<?php
+
+/**
+ * @file
+ * Custom bhge_c24_body_text module.
+ */
+
+use Drupal\file\Entity\File;
+use Drupal\image\Entity\ImageStyle;
+use Drupal\Core\Url;
+use Drupal\node\Entity\Node;
+
+/**
+ * Implements hook_preprocess_field().
+ */
+function bhge_c24_body_text_preprocess_field(&$variables, $hook) {
+
+  $fields = ['field_trending'];
+
+  if (!empty($variables['element']['#field_name']) && in_array($variables['element']['#field_name'], $fields)) {
+
+    /** @var \Drupal\node\Entity\Node $parentEntity */
+    $parentEntity = $variables['element']['#object'];
+
+    $contentType = $parentEntity->get('type')->getValue()[0]['target_id'];
+
+    if ($contentType == 'article') {
+      $variables['is_article'] = TRUE;
+      $variables['title'] = $parentEntity->getTitle();
+    }
+
+    // Main body content.
+    if (!empty($parentEntity->get('body'))) {
+      $variables['main_content'] = $parentEntity->get('body')->getValue()[0]['value'];
+    }
+
+    // Trending items.
+    if ($parentEntity->hasField('field_trending')) {
+      $trendingItems = $parentEntity->get('field_trending');
+
+      if (!empty($trendingItems)) {
+
+        $items = $trendingItems->getValue();
+
+        // Init empty custom variable.
+        $variables['trending_items'] = [];
+        $variables['body_classes'] = 'has-columns';
+
+        foreach ($items as $item) {
+
+          /** @var \Drupal\node\Entity\Node $node */
+          $node = Node::load($item['target_id']);
+
+          // Author image.
+          if ($node->hasField('field_author') && !empty($node->get('field_author')->getValue()[0]['target_id'])) {
+            $authorNode = $node->get('field_author')->getValue()[0]['target_id'];
+            $authorNode = Node::load($authorNode);
+
+            if (!empty($authorNode)) {
+              $image = $authorNode->get('field_main_image');
+              $image = !empty($image) ? $image->getValue()[0]['target_id'] : '';
+              if (!empty($image)) {
+                $file = File::load($image);
+                if (!empty($file)) {
+                  $image = ImageStyle::load('author_200_x_200_')->buildUrl($file->getFileUri());
+                }
+                $name = $authorNode->get('title')->getValue()[0]['value'];
+              }
+            }
+          }
+
+          // Formatted output array.
+          $variables['trending_items'][] = [
+            'title' => $node->get('title')->getValue()[0]['value'],
+            'created' => \Drupal::service('date.formatter')->format($node->getCreatedTime(), 'custom', 'M. d, Y'),
+            'link' => Url::fromRoute('entity.node.canonical', ['node' => $node->get('nid')->getValue()[0]['value']])->toString(),
+            'author' => [
+              'image' => !empty($image) ? $image : NULL,
+              'name' => !empty($name) ? $name : NULL,
+            ],
+          ];
+        }
+      }
+    }
+  }
+
+}

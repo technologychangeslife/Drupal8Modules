@@ -1,0 +1,6 @@
+name: GEMC Product
+type: module
+description: 'Functionality related to Product content type'
+package: Custom
+version: 8.x
+core: 8.x

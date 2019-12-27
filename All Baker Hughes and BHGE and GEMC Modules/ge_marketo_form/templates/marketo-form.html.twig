@@ -1,0 +1,7 @@
+<div class="marketo-form-wrapper">
+    {% if errorMessage %}
+        <h3>{{ errorMessage }}</h3>
+    {% else %}
+        <form id="mktoForm_{{ data.formId }}" {{ attributes }}></form>
+    {% endif %}
+</div>

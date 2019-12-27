@@ -1,0 +1,60 @@
+#drupal-off-canvas .chosen-container .chosen-results li {
+  color: #ddd !important;
+}
+#drupal-off-canvas .chosen-container .chosen-results.active-result li {
+  color: #ddd !important;
+}
+#drupal-off-canvas .chosen-container .chosen-drop,
+#drupal-off-canvas .chosen-container-single .chosen-single {
+  background-color: #252525 !important;
+  color: #999999 !important;
+}
+#drupal-off-canvas .chosen-container-single .chosen-single {
+  background-color: #000000 !important;
+  background-image: none !important;
+  background: #000000 none top left no-repeat !important;
+  filter: none !important;
+  border: none !important;
+  display: block !important;
+  height: 30px !important;
+}
+#drupal-off-canvas .chosen-container .chosen-drop {
+  border: 1px solid #121212 !important;
+}
+#drupal-off-canvas .chosen-container-single .chosen-single div {
+  background-image: -webkit-gradient(linear, left bottom, left top,
+  color-stop(0, #333333), color-stop(0.6, #121212)) !important;
+  background-image: -webkit-linear-gradient(center bottom, #333333 0%, #121212 60%) !important;
+  background-image: -moz-linear-gradient(center bottom, #333333 0%, #121212 60%) !important;
+  background-image: -o-linear-gradient(bottom, #333333 0%, #121212 60%) !important;
+  background-image: -ms-linear-gradient(top, #333333 0%,#121212 60%) !important;
+  filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#333333',
+  endColorstr='#121212',GradientType=0 ) !important;
+  background-image: linear-gradient(top, #333333 0%,#121212 60%) !important;
+  border-left: 1px solid #252525 !important;
+}
+#drupal-off-canvas .chosen-container-active .chosen-single-with-drop {
+  box-shadow: none !important;
+}
+#drupal-off-canvas .chosen-container .chosen-results .highlighted {
+  background: #333333 !important;
+  color: #eeeeee !important;
+}
+#drupal-off-canvas .chosen-container .chosen-results .no-results {
+  background: #333 !important;
+}
+#drupal-off-canvas .chosen-container .chosen-results li em {
+  background: none !important;
+}
+#drupal-off-canvas .chosen-container-single .chosen-single abbr {
+  background: url('./chosen-sprite-dark.png') right top no-repeat !important;
+}
+#drupal-off-canvas .chosen-container-single .chosen-single div b {
+  background: url('./chosen-sprite-dark.png') no-repeat 0 1px !important;
+}
+#drupal-off-canvas .chosen-container-single .chosen-search input,
+.chosen-rtl .chosen-search input {
+  background: #333 url('./chosen-sprite-dark.png') no-repeat 100% -22px !important;
+  color: #999999 !important;
+  border: 1px solid #555555 !important;
+}

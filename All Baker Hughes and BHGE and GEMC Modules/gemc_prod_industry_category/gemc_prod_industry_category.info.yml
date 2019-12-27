@@ -1,0 +1,6 @@
+name: GEMC Industry & Product Category
+type: module
+description: 'Functionality related to Industry & Product Category'
+package: Custom
+version: 8.x
+core: 8.x

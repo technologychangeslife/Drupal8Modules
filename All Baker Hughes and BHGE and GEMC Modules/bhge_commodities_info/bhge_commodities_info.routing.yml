@@ -1,0 +1,6 @@
+bhge_commodities_info.getdata:
+  path: '/commodities-info'
+  defaults: { _controller: '\Drupal\bhge_commodities_info\Controller\CommoditiesInfoController::getData' }
+  methods:  [GET]
+  requirements:
+    _access: 'TRUE'

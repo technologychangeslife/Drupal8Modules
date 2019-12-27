@@ -1,0 +1,30 @@
+bhge_core.general_settings_form:
+  route_name : bhge_core.general_settings_form
+  title: General Settings
+  base_route: bhge_core.general_settings_form
+  weight: 10
+bhge_core.social_settings_form:
+  route_name: bhge_core.social_settings_form
+  title: Social Settings
+  base_route: bhge_core.general_settings_form
+  weight: 20
+bhge_core.tracking_settings_form:
+  route_name: bhge_core.tracking_settings_form
+  title: Tracking Settings
+  base_route: bhge_core.general_settings_form
+  weight: 30
+bhge_core.organization_schema_settings_form:
+  route_name: bhge_core.organization_schema_settings_form
+  title: Organization Schema Settings
+  base_route: bhge_core.general_settings_form
+  weight: 40
+bhge_core.external_api_settings_form:
+  route_name: bhge_core.external_api_settings_form
+  title: External API Settings
+  base_route: bhge_core.general_settings_form
+  weight: 50
+bhge_core.market_info_settings_form:
+  route_name: bhge_core.market_info_settings_form
+  title: Market Info Settings
+  base_route: bhge_core.general_settings_form
+  weight: 60

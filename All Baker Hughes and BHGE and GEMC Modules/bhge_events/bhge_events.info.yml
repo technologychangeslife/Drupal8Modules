@@ -1,0 +1,6 @@
+name: BHGE Events Module
+type: module
+description: Custom module for BHGE Events
+package: Custom
+version: 8.x
+core: 8.x

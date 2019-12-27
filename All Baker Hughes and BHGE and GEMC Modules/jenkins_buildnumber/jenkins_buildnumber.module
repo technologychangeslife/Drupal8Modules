@@ -1,0 +1,34 @@
+<?php
+
+/**
+ * @file
+ * Custom module my-bhge.
+ */
+
+/**
+ * Implements hook_theme().
+ */
+function jenkins_buildnumber_theme($existing, $type, $theme, $path) {
+  return [
+    'jenkins-buildnumber' => [
+      'variables' => ['build_number' => NULL],
+    ],
+  ];
+}
+
+/**
+ * Implements hook_page_bottom().
+ */
+function jenkins_buildnumber_page_bottom(&$page) {
+  $buildVersion = '';
+  if (is_file(DRUPAL_ROOT . '/../build-version.txt') && (!isset($_ENV['AH_SITE_ENVIRONMENT']) || $_ENV['AH_SITE_ENVIRONMENT'] == 'dev')) {
+    $buildVersion = file_get_contents(DRUPAL_ROOT . '/../build-version.txt');
+  }
+
+  if ($buildVersion) {
+    $page['jenkins_buildnumber'] = [
+      '#theme' => 'jenkins-buildnumber',
+      '#build_number' => $buildVersion,
+    ];
+  }
+}

@@ -1,0 +1,9 @@
+bhge_n02_global_nav.data:
+  path: 'api/v1/globalnav-data/937b866a8af279cad696bebfabe0b213'
+  defaults:
+    _controller: '\Drupal\bhge_n02_global_nav\Controller\GlobalNavData::load'
+  methods: [GET]
+  requirements:
+    _access: 'TRUE'
+  options:
+    no_cache: true

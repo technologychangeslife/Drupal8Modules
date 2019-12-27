@@ -1,0 +1,56 @@
+<?php
+
+/**
+ * @file
+ * Custom bhge_social_feeds.
+ */
+
+/**
+ * Implements hook_preprocess_paragraph().
+ */
+function bhge_social_feeds_preprocess_paragraph(&$variables) {
+  if (!empty($variables['elements']['#paragraph'])) {
+    /** @var \Drupal\paragraphs\Entity\Paragraph $paragraph */
+    $paragraph = $variables['elements']['#paragraph'];
+    $id = $paragraph->get('type')->getValue();
+    $parent = NULL;
+    if ($id[0]['target_id'] === 'block_social_feeds') {
+      $variables['#attached']['library'][] = 'bhge_social_feeds/bhge-social-feeds';
+      $social_feed_options = $paragraph->get('field_enable_social_feeds')->getValue();
+      if (array_search('instagram', array_column($social_feed_options, 'value')) !== FALSE) {
+        $instagram_feeds = _bhge_social_feeds_get_instagram_feeds();
+        $variables['instagram_feeds'] = $instagram_feeds;
+      }
+    }
+  }
+}
+
+/**
+ * Fetches Instagram feeds.
+ */
+function _bhge_social_feeds_get_instagram_feeds() {
+  $ar_feeds = [];
+  $config = \Drupal::config('bhge_social_feeds.settings');
+  $access_key = $config->get('instagram_bhge_social_feeds_access_token');
+  $count = $config->get('instagram_item_to_fetch');
+  if (!empty($access_key)) {
+    $json = file_get_contents("https://api.instagram.com/v1/users/self/media/recent/?access_token=$access_key&count=$count");
+    $result = json_decode($json);
+    if (!empty($result)) {
+      foreach ($result->data as $key => $post) {
+        if (empty($post->caption->text)) {
+          // Do Nothing.
+        }
+        else {
+          $ar_feeds[$key]['link'] = $post->link;
+          $ar_feeds[$key]['text'] = $post->caption->text;
+          $ar_feeds[$key]['image'] = $post->images->low_resolution->url;
+          $ar_feeds[$key]['date'] = htmlentities(date("F j, Y, g:i a", $post->caption->created_time));
+          $ar_feeds[$key]['likes'] = $post->likes->count;
+          $ar_feeds[$key]['comments'] = $post->comments->count;
+        }
+      }
+    }
+  }
+  return $ar_feeds;
+}

@@ -1,0 +1,24 @@
+<section data-component="c17-browser">
+  <div class="content-wrapper">
+    <div class="button-wrapper">
+      {% if previous_url %}
+      <div class="link prev">
+        <a href="{{ previous_url }}">
+          <svg class="component-icon ">
+            <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#chevron-next"></use>
+          </svg>
+          {{ previous_text }}</a>
+      </div>
+      {% endif %}
+      {% if next_url %}
+      <div class="link next">
+        <a href="{{ next_url }}">{{ next_text }}
+          <svg class="component-icon ">
+            <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#chevron-next"></use>
+          </svg>
+        </a>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</section>

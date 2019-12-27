@@ -1,0 +1,7 @@
+bhge_user_registration.admin_settings_form:
+  title: 'Engagerecip Settings'
+  description: 'Manage Engagerecip settings.'
+  route_name: bhge_user_registration.admin_settings_form
+  parent: system.admin_config_system
+  menu_name: bhge_user_registration
+  weight: 2

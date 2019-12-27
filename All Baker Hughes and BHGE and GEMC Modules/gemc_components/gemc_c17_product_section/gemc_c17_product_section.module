@@ -1,0 +1,96 @@
+<?php
+
+/**
+ * @file
+ * Custom gemc_c17_product_section module.
+ */
+
+use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
+use Drupal\Core\Entity\EntityInterface;
+use Drupal\Component\Utility\Xss;
+use Drupal\Component\Utility\Html;
+
+/**
+ * Implements hook_entity_extra_field_info().
+ */
+function gemc_c17_product_section_entity_extra_field_info() {
+  $extra = [];
+
+  $extra_field = [
+    'label' => t('GEMC C17 browser'),
+    'description' => t('C17 previous next navigation for products and sections.'),
+    'weight' => 6,
+    'visible' => TRUE,
+  ];
+  $extra['node']['section']['display']['gemc_section_prev_next'] = $extra_field;
+  $extra['node']['product']['display']['gemc_product_prev_next'] = $extra_field;
+
+  return $extra;
+}
+
+/**
+ * Implements hook_ENTITY_TYPE_view().
+ */
+function gemc_c17_product_section_node_view(array &$build, EntityInterface $entity, EntityViewDisplayInterface $display, $view_mode) {
+  if ($entity->bundle() != 'section' && $entity->bundle() != 'product') {
+    return;
+  }
+
+  if ($display->getComponent('gemc_section_prev_next') || $display->getComponent('gemc_product_prev_next')) {
+
+    /* @var $productData \Drupal\gemc_c115_120_section\ProductData */
+    $productData = \Drupal::service('gemc_c115_120_section.product_data');
+    $parent = $productData->getParentSection($entity->id(), $entity->bundle(), FALSE);
+    if ($entity->bundle() == 'product' && $parent) {
+      $data = $productData->getSubproducts([$parent->section_id], 0, 60, FALSE);
+      $items = $data['items'];
+    }
+    else {
+      if (isset($parent->section_id) && $parent->section_id) {
+        $data = $productData->getSubsections($parent->section_id, 0, 60, TRUE, FALSE, TRUE);
+        $items = $data['items'];
+      }
+      else {
+        $items = $productData->getMainsections(TRUE, TRUE);
+      }
+    }
+
+    // Only display component if results.
+    if (isset($items) && count($items) > 1) {
+      $alias_manager = \Drupal::service('path.alias_manager');
+      $previous_text = \Drupal::translation()->translate('Previous');
+      $next_text = \Drupal::translation()->translate('Next');
+      $previous = $next = NULL;
+      foreach ($items as $key => $item) {
+        $item->title = Html::decodeEntities(Xss::filter($item->title));
+
+        if (!empty($item->id) && $item->id !== $entity->id()) {
+          $previous = $item;
+        }
+        else {
+          if (isset($items[$key + 1])) {
+            $next = $items[$key + 1];
+          }
+          break;
+        }
+      }
+      if ($previous || $next) {
+        $build_id = 'gemc_' . $entity->bundle() . '_prev_next';
+        $build[$build_id] = [
+          '#theme' => 'gemc_c17_browser',
+          '#cache' => ['contexts' => ['url']],
+        ];
+        $data = [];
+        if ($previous) {
+          $data['previous']['link'] = $alias_manager->getAliasByPath('/node/' . $previous->id);
+          $data['previous']['label'] = "$previous_text [$previous->title]";
+        }
+        if ($next) {
+          $data['next']['link'] = $alias_manager->getAliasByPath('/node/' . $next->id);
+          $data['next']['label'] = "$next_text [$next->title]";
+        }
+        $build[$build_id]['#data'] = $data;
+      }
+    }
+  }
+}

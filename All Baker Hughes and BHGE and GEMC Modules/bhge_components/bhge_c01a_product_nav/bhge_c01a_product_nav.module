@@ -1,0 +1,153 @@
+<?php
+
+/**
+ * @file
+ * This module is for Product Navigation.
+ */
+
+use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
+
+/**
+ * Implements hook_theme().
+ */
+function bhge_c01a_product_nav_theme() {
+
+  $theme = [
+    'bhge_product_previous_next' => [
+      'variables' => [
+        'previous_url' => NULL,
+        'next_url' => NULL,
+        'previous_text' => NULL,
+        'next_text' => NULL,
+      ],
+      'template' => 'C17-previous-next-nav',
+    ],
+  ];
+  return $theme;
+}
+
+/**
+ * Implements hook_preprocess_menu().
+ */
+function bhge_c01a_product_nav_preprocess_menu__main(&$vars) {
+  // Retrieving products menu tree.
+  // If the products module is enabled and service exists.
+  if (\Drupal::hasService('bhge_c01a_product_nav.product_navigation_data') && !empty($vars['items']['bhge_c01a_product_nav.products_link'])) {
+    $menu_tree = \Drupal::service('bhge_c01a_product_nav.product_navigation_data')->retrieveMenuTree();
+    if (!empty($menu_tree)) {
+      $vars['items']['bhge_c01a_product_nav.products_link']['below'] = $menu_tree;
+    }
+    else {
+      unset($vars['items']['bhge_c01a_product_nav.products_link']);
+    }
+  }
+}
+
+/**
+ * Implements hook_node_delete().
+ */
+function bhge_c01a_product_nav_node_delete($node) {
+  $bundle = $node->bundle();
+  $triggeredEntities = ['product', 'section'];
+
+  if (in_array($bundle, $triggeredEntities)) {
+    _bhge_c01a_product_nav_trigger_menu_regenerate();
+  }
+}
+
+/**
+ * Implements hook_node_update().
+ */
+function bhge_c01a_product_nav_node_update($node) {
+  $triggeredEntities = ['product', 'section'];
+  $bundle = $node->bundle();
+
+  if (in_array($bundle, $triggeredEntities)) {
+    // You can pass any parameters to your callback.
+    drupal_register_shutdown_function('_bhge_c01a_product_nav_trigger_menu_regenerate');
+  }
+}
+
+/**
+ * Implements hook_node_update().
+ */
+function bhge_c01a_product_nav_node_insert($node) {
+  $triggeredEntities = ['product', 'section'];
+  $bundle = $node->bundle();
+
+  if (in_array($bundle, $triggeredEntities)) {
+    // You can pass any parameters to your callback.
+    drupal_register_shutdown_function('_bhge_c01a_product_nav_trigger_menu_regenerate');
+  }
+}
+
+/**
+ * Trigger menu regenerate on node insert,save - shutdown method.
+ */
+function _bhge_c01a_product_nav_trigger_menu_regenerate() {
+  \Drupal::service('bhge_c01a_product_nav.product_navigation_data')
+    ->retrieveMenuTree(TRUE);
+}
+
+/**
+ * Implements hook_ENTITY_TYPE_view().
+ */
+function bhge_c01a_product_nav_node_view(array &$build, EntityInterface $entity, EntityViewDisplayInterface $display, $view_mode) {
+  if ($view_mode == 'full') {
+    if ($display->getComponent('bhge_section_prev_next') || $display->getComponent('bhge_product_prev_next')) {
+
+      /* @var $productData \Drupal\bhge_c55_product_gallery\ProductData */
+      $productData = \Drupal::service('bhge_c55_product_gallery.product_data');
+      $parent = $productData->getParentSection($entity->id(), $entity->bundle(), FALSE);
+      if ($entity->bundle() == 'product' && $parent) {
+        $data = $productData->getSubproducts([$parent->section_id], 0, 60, FALSE, FALSE);
+        $rows = $data['rows'];
+        $previous_text = \Drupal::translation()->translate('Previous product');
+        $next_text = \Drupal::translation()->translate('Next product');
+      }
+      else {
+        if (isset($parent->section_id) && $parent->section_id) {
+          $data = $productData->getSubsections($parent->section_id, 0, 60, TRUE, FALSE, TRUE, TRUE);
+          $rows = $data['rows'];
+        }
+        else {
+          $rows = $productData->getMainsections(TRUE, FALSE, TRUE, TRUE);
+        }
+        $previous_text = \Drupal::translation()->translate('Previous product section');
+        $next_text = \Drupal::translation()->translate('Next product section');
+      }
+
+      // Only display component if results.
+      if (isset($rows) && count($rows) > 1) {
+        $previous = $next = NULL;
+        foreach ($rows as $key => $row) {
+          if (!empty($row->id) && $row->id !== $entity->id()) {
+            $previous = $row;
+          }
+          else {
+            if (isset($rows[$key + 1])) {
+              $next = $rows[$key + 1];
+            }
+            break;
+          }
+        }
+        if ($previous || $next) {
+          $build_id = 'bhge_' . $entity->bundle() . '_prev_next';
+          $build[$build_id] = [
+            '#theme' => 'bhge_product_previous_next',
+            '#cache' => ['contexts' => ['url']],
+          ];
+          if ($previous) {
+            $build[$build_id]['#previous_url'] = $previous->url;
+            $build[$build_id]['#previous_text'] = $previous_text;
+          }
+          if ($next) {
+            $build[$build_id]['#next_url'] = $next->url;
+            $build[$build_id]['#next_text'] = $next_text;
+          }
+        }
+      }
+    }
+  }
+}

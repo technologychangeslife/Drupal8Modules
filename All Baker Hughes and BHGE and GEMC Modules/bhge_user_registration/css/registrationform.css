@@ -1,0 +1,292 @@
+.boxclass {
+  width: 150px;
+  margin-right: 225px;
+}
+
+.formmaindiv {
+  text-align: center;
+  padding: 30px;
+  margin: 18px;
+  position: relative;
+  max-width: 1280px;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.style1 {
+  padding: 0px !important;
+  float: right;
+}
+
+.style2 {
+  padding: 15px;
+  padding-left: 90px;
+}
+
+td.style1 {
+  text-align: center;
+}
+
+td.style2 {
+  text-align: center;
+}
+
+.gecontactfield {
+  float: left;
+  margin-left: 287px;
+  padding: 0px !important;
+  text-align: center;
+}
+
+.messagetext {
+  font-family: Inspira sans bold, sans-serif;
+  line-height: 1.1;
+  color: #186ec9;
+  font-size: 3.0rem;
+}
+
+.gesubmit.gefull .copy,
+.gesubmit.is-negative {
+  color: #fff;
+}
+
+.gesubmit {
+  display: inline-block;
+  position: relative;
+  text-transform: uppercase;
+  font-family: Inspira sans bold, sans-serif;
+  line-height: 3.1;
+  border-radius: 32px;
+  color: #186ec9;
+  transition: all .25s ease-out;
+}
+
+.geform {
+  background: #f6f6f6;
+  color: #000;
+  margin: 12px 0;
+  height: 50px;
+  padding: 0 30px;
+  font-size: 1.5rem;
+  width: 42%;
+}
+
+label.js-form-required.form-required {
+  padding-right: 102px;
+}
+
+.less-margin {
+  padding-right: 21px !important;
+}
+
+.more-margin {
+  padding-right: 133px !important;
+}
+
+INPUT.gesubmit {
+  width: 20% !important;
+  margin-left: 17% !important;
+  margin-bottom: 50px !important;
+}
+
+SELECT.gesubmit {
+  width: 20% !important !important;
+}
+
+DIV#errormsgfirstname {
+  color: #ff0000;
+  float: right;
+  margin-right: 96px;
+  margin-top: 20px;
+}
+
+.form-item-firstname-ge {
+  margin-left: 27%;
+}
+
+.form-item-lastname-ge {
+  margin-left: 27%;
+}
+
+.form-item-ssoid-ge {
+  margin-left: 27%;
+}
+
+.form-item-email {
+  margin-left: 27%;
+}
+
+.form-item-firstname-nonge {
+  margin-left: 27%;
+}
+
+.form-item-lastname-nonge {
+  margin-left: 27%;
+}
+
+.form-item-ssoid-nonge {
+  margin-left: 27%;
+}
+
+.form-item-companyname-nonge {
+  margin-left: 27%;
+}
+
+.form-item-jobtitle-nonge {
+  margin-left: 27%;
+}
+
+.form-item-phonenumber-nonge {
+  margin-left: 27%;
+}
+
+.form-item-email-nonge {
+  margin-left: 27%;
+}
+
+.form-item-address-nonge {
+  margin-left: 27%;
+}
+
+.form-item-city-nonge {
+  margin-left: 27%;
+}
+
+.form-item-email {
+  margin-left: 27%;
+}
+
+.form-item-state-nonge {
+  margin-left: 27%;
+}
+
+.form-item-country-nonge {
+  margin-left: 27%;
+}
+
+.form-item-zipcode-nonge {
+  margin-left: 27%;
+}
+
+.form-item-geemployeecontant-nonge {
+  margin-left: 27%;
+}
+
+.form-item-display2 {
+  margin-left: 27%;
+}
+
+.form-item-display3 {
+  margin-left: 27%;
+}
+
+.gefull {
+  background: #186ec9 !important;
+  color: #fff !important;
+}
+
+.error {
+  color: red;
+  margin-left: -250px;
+}
+
+span.state-indicator {
+  display: none;
+}
+
+a.visually-hidden.focusable.skip-link {
+  display: none;
+}
+
+.js-form-item-firstname-ge {
+  align: center !important;
+}
+
+table {
+  border-collapse: inherit !important;
+}
+
+/* Response message page*/
+.messagediv {
+  text-align: center;
+  padding: 225px;
+  margin: 18px;
+  position: relative;
+  background: #fff;
+  /*box-shadow: 0 0 24px rgba(0,0,0,.15);*/
+  box-sizing: border-box;
+  max-width: 1280px;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.responsemessagetext {
+  font-family: Inspira sans bold, sans-serif;
+  line-height: 1.1;
+  color: #186ec9;
+  font-size: 2.0rem;
+}
+
+.homepagelink {
+  float: left;
+  margin-top: -27px;
+  padding-left: 90px;
+}
+
+.thankyoutextspace {
+  padding-left: 275px;
+}
+
+label#ssoidspace {
+  padding-right: 28px;
+}
+
+label#emailidspace {
+  padding-right: 134px;
+}
+
+label#emailidnongespace {
+  padding-right: 17px;
+}
+
+label#companyname {
+  padding-right: 57px;
+}
+
+label#phonenumbernonge {
+  padding-right: 65px;
+}
+
+label#citynon {
+  padding-right: 127px;
+}
+
+label#statenon {
+  padding-right: 50px;
+}
+
+label#zipnon {
+  padding-right: 40px;
+}
+
+label#geemp {
+  padding-right: 19px;
+}
+
+label#geempcontact {
+  padding-right: 66px;
+}
+
+label#geempcontactemail {
+  padding-right: 90px;
+}
+
+.homepagelinkmessagepage {
+  float: left;
+  margin-top: -223px;
+  padding-left: 12px;
+}
+
+.default-hero {
+  display: none;
+}

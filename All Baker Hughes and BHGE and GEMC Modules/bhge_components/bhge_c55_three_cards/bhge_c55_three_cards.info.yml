@@ -1,0 +1,8 @@
+name: BHGE C55 Three cards
+type: module
+description: 'BHGE C55 Component For Three Cards'
+package: BHGE Components
+version: 8.x
+core: 8.x
+dependencies:
+  - bhge_c55_gallery

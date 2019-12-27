@@ -1,0 +1,8 @@
+name: BHGE Blog question
+type: module
+description: 'Blog question question helpers and overrides.'
+package: BHGE Components
+version: 8.x
+core: 8.x
+dependencies:
+  - bhge_c20_quick_links

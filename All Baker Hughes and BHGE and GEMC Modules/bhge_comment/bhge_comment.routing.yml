@@ -1,0 +1,30 @@
+bhge_comment.comment.like.add:
+  path: 'api/v1/comment-like/add/{cid}'
+  defaults: { _controller: '\Drupal\bhge_comment\Controller\CommentLike::add' }
+  methods:  [POST]
+  requirements:
+    _permission: 'post comments'
+bhge_comment.comment.like.remove:
+  path: 'api/v1/comment-like/remove/{cid}'
+  defaults: { _controller: '\Drupal\bhge_comment\Controller\CommentLike::remove' }
+  methods:  [POST]
+  requirements:
+    _permission: 'post comments'
+bhge_comment.comment.add:
+  path: 'api/v1/comment/add/{eid}/{cid}'
+  defaults: { _controller: '\Drupal\bhge_comment\Controller\Comment::add' }
+  methods:  [POST]
+  requirements:
+    _permission: 'post comments'
+bhge_comment.comment.edit:
+  path: 'api/v1/comment/edit/{cid}'
+  defaults: { _controller: '\Drupal\bhge_comment\Controller\Comment::edit' }
+  methods:  [POST]
+  requirements:
+    _permission: 'edit own comments'
+bhge_comment.comment.delete:
+  path: 'api/v1/comment/delete/{cid}'
+  defaults: { _controller: '\Drupal\bhge_comment\Controller\Comment::delete' }
+  methods:  [POST]
+  requirements:
+    _permission: 'edit own comments'

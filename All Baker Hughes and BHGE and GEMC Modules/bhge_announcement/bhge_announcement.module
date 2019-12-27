@@ -1,0 +1,38 @@
+<?php
+
+/**
+ * @file
+ * Custom bhge_announcement.
+ */
+
+/**
+ * Implements hook_preprocess_paragraph().
+ */
+function bhge_announcement_preprocess_paragraph(&$variables) {
+
+  if (!empty($variables['elements']['#paragraph'])) {
+    /** @var \Drupal\paragraphs\Entity\Paragraph $paragraph */
+    $paragraph = $variables['elements']['#paragraph'];
+    $id = $paragraph->get('type')->getValue();
+    $parent = NULL;
+    if ($id[0]['target_id'] === 'block_announcement') {
+
+      $config = \Drupal::configFactory()->get('bhge.general_settings');
+      $site_nature = $config->get('internal_site');
+
+      // Add JS.
+      if ($site_nature) {
+        // For internal sites like my.bhge.com etc.
+        $variables['#attached']['library'][] = 'bhge_announcement/bhge-announcement';
+      }
+      else {
+        // For public or external sites like bhge.com etc.
+        $variables['#attached']['library'][] = 'bhge_announcement/bhge-announcement-public';
+      }
+    }
+    if ($id[0]['target_id'] === 'announcement_modal') {
+      // Add JS.
+      $variables['#attached']['library'][] = 'bhge_announcement/bhge-announcement-modal';
+    }
+  }
+}

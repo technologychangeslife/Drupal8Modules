@@ -1,0 +1,4 @@
+services:
+  gemc_c119_featured_industries.industries_data:
+    class: Drupal\gemc_c119_featured_industries\IndustriesData
+    arguments: ['@database']

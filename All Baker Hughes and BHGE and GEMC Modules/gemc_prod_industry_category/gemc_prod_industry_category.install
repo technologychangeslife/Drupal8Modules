@@ -1,0 +1,123 @@
+<?php
+
+/**
+ * @file
+ * Install, update and uninstall functions.
+ *
+ * For gemc_prod_industry_category module.
+ */
+
+use Drupal\taxonomy\Entity\Vocabulary;
+use Drupal\taxonomy\Entity\Term;
+use Drupal\field\Entity\FieldConfig;
+use Drupal\field\Entity\FieldStorageConfig;
+
+/**
+ * Implements hook_install().
+ */
+function gemc_prod_industry_category_install() {
+  gemc_prod_industry_category_update_8001();
+  gemc_prod_industry_category_update_8002();
+  gemc_prod_industry_category_update_8003();
+}
+
+/**
+ * Minimum config expected for data imports & updates.
+ */
+function gemc_prod_industry_category_update_8001() {
+  // Create the minimum necessary taxonomy vocabulary config.
+  Vocabulary::create([
+    'uuid' => '62b1f53b-e0a1-4985-9081-a0e9e2e2c7b7',
+    'langcode' => 'en',
+    'status' => TRUE,
+    'dependencies' => [],
+    'name' => 'Product Type',
+    'vid' => 'product_type',
+    'description' => 'Used in Industry & Product Category Selector',
+    'hierarchy' => 0,
+    'weight' => 0,
+  ])->save();
+  // Create the minimum necessary field storage config.
+  FieldStorageConfig::create([
+    'uuid' => 'aef5b9fd-5eb8-454e-92bd-25ccd3481e76',
+    'langcode' => 'en',
+    'status' => TRUE,
+    'field_name' => 'field_product_category',
+    'type' => 'entity_reference',
+    'entity_type' => 'taxonomy_term',
+    'settings' => ['target_type' => 'node'],
+    'translatable' => TRUE,
+  ])->save();
+  // Create the minimum necessary field config.
+  FieldConfig::create([
+    'uuid' => '7b6d15dd-7d4c-419b-bac4-71748a8db616',
+    'langcode' => 'en',
+    'entity_type' => 'taxonomy_term',
+    'field_name' => 'field_product_category',
+    'bundle' => 'product_type',
+    'label' => 'Product category',
+    'translatable' => TRUE,
+  ])->save();
+}
+
+/**
+ * Add reference to related product category.
+ */
+function gemc_prod_industry_category_update_8003() {
+  $entity_manager = Drupal::getContainer()->get('entity_type.manager');
+  $n_storage = $entity_manager->getStorage('node');
+  $t_storage = $entity_manager->getStorage('taxonomy_term');
+  $all_terms = $t_storage->loadTree('product_type');
+
+  foreach ($all_terms as $term) {
+    $nids_query = $n_storage->getQuery();
+    $nids_query->condition('type', 'section')
+      ->condition('status', 1)
+      ->condition('title', $term->name);
+    $nids = $nids_query->execute();
+    if ($nids && count($nids) == 1) {
+      // Update term.
+      $term = Term::load($term->tid);
+      $term->field_product_category->setValue(reset($nids));
+      $term->Save();
+    }
+  }
+}
+
+/**
+ * Minimum config.
+ */
+function gemc_prod_industry_category_update_8004() {
+  FieldStorageConfig::create([
+    'uuid' => '727c5ffa-5aa7-41d4-89c3-43b0d1d407b5',
+    'field_name' => 'field_display_in_prod_cat_sel',
+    'entity_type' => 'taxonomy_term',
+    'type' => 'boolean',
+  ])->save();
+
+  FieldConfig::create([
+    'uuid' => '59fcfa2d-530d-465d-ad13-3db020fed6bf',
+    'field_name' => 'field_display_in_prod_cat_sel',
+    'entity_type' => 'taxonomy_term',
+    'bundle' => 'product_type',
+    'label' => 'Display in Product Category Selector',
+  ])->save();
+}
+
+/**
+ * Add reference to related product category.
+ */
+function gemc_prod_industry_category_update_8005() {
+  $entity_manager = Drupal::getContainer()->get('entity_type.manager');
+  $t_storage = $entity_manager->getStorage('taxonomy_term');
+  $all_terms = $t_storage->loadTree('product_type');
+
+  foreach ($all_terms as $term) {
+    $term = Term::load($term->tid);
+    $term->field_display_in_prod_cat_sel->setValue([1]);
+    $term->Save();
+  }
+
+  $config = \Drupal::service('config.factory')->getEditable('bhge.general_settings');
+  $config->set('website_logo_alternative_text', 'Baker Hughes a GE Company')->save();
+}

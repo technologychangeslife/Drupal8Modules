@@ -1,0 +1,7 @@
+gemc_search.search:
+  path: '/search'
+  defaults:
+    _controller: '\Drupal\gemc_search\Controller\SearchController::search'
+    _title: 'Search'
+  requirements:
+    _access: 'TRUE'

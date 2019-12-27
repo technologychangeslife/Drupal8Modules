@@ -1,0 +1,5 @@
+name: GE Marketo Form
+type: module
+description: GE Marketo Form
+core: 8.x
+package: GE

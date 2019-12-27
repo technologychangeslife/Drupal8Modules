@@ -1,0 +1,12 @@
+<div class="marketo-form-wrapper">
+        {% if errorMessage %}
+                <h3>{{ errorMessage }}</h3>
+        {% else %}
+                <div class="thank-you-text">
+                        <p class="ty-text">Thanks for your interest in this file. </p>
+                        <br>
+                        <p class="download-text">Your download will start shortly ...</p>
+                </div>
+                <form id="mktoForm_{{ data.formId }}" ></form>
+        {% endif %}
+</div>

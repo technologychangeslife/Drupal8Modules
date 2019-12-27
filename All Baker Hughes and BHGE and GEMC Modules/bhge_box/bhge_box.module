@@ -1,0 +1,55 @@
+<?php
+
+/**
+ * @file
+ * This module connects with BHGE Box.
+ */
+
+/**
+ * Implements preprocess_paragraph().
+ *
+ * @param array $variables
+ *   This is the set of variables available for the paragraph.
+ *   Return variables array.
+ */
+function bhge_box_preprocess_paragraph(array &$variables) {
+  if (!empty($variables['elements']['#paragraph'])) {
+
+    /** @var \Drupal\paragraphs\Entity\Paragraph $paragraph */
+    $paragraph = $variables['elements']['#paragraph'];
+    $id = $paragraph->get('type')->getValue();
+    $parent = NULL;
+
+    if ($id[0]['target_id'] == 'box_embed') {
+
+      $variables['domain'] = 'app.box.com';
+
+      $fields = [
+        'domain',
+        'sizing',
+        'shared_link',
+        'sort',
+        'theme',
+        'view_mode',
+      ];
+
+      foreach ($fields as $field) {
+        $friendlyName = $field;
+        $field = 'field_' . $field;
+        if ($paragraph->hasField($field)) {
+
+          if (!empty($paragraph->get($field)->getValue()[0]['value'])) {
+
+            $value = $paragraph->get($field)->getValue()[0]['value'];
+
+            if ($field == 'domain') {
+              $value = $value . '.app.box.com';
+            }
+
+            $variables[$friendlyName] = $value;
+          }
+        }
+      }
+    }
+  }
+}

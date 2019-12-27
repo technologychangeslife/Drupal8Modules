@@ -1,0 +1,9 @@
+bhge-settings-js:
+  version: VERSION
+  js:
+    js/bhge-settings-form.js: {}
+admin-css:
+  version: VERSION
+  css:
+    theme:
+      css/admin.css: {}

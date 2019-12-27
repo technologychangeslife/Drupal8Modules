@@ -1,0 +1,8 @@
+name: GEMC Product Listing Page
+type: module
+description: 'GEMC Product Listing Page'
+package: Custom
+version: 8.x
+core: 8.x
+dependencies:
+  - gemc_c115_120_gallery

@@ -1,0 +1,6 @@
+name: BHGE C38 Author Date Component.
+type: module
+description: 'Commodities Info module for BHGE Oil'
+package: BHGE Componenets
+version: 8.x
+core: 8.x

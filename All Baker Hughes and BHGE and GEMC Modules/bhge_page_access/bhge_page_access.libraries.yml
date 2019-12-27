@@ -1,0 +1,4 @@
+drupal.bhge_page_access.adminforms:
+  css:
+    theme:
+      css/bhge_page_access.admin.css: {}

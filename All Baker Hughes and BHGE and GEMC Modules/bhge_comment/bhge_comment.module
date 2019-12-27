@@ -1,0 +1,130 @@
+<?php
+
+/**
+ * @file
+ * Custom comments for bhge.
+ */
+
+use Drupal\Core\Mail\MailFormatHelper;
+use Drupal\Core\Entity\EntityInterface;
+use Drupal\Component\Utility\Unicode;
+use Drupal\Core\Form\FormStateInterface;
+
+/**
+ * Implements hook_theme().
+ */
+function bhge_comment_theme() {
+  return [
+    'bhge_comments' => [
+      'variables' => [
+        'comments_data' => [],
+        'comment_count' => NULL,
+        'comments_hidden' => 0,
+        'comments_status' => 0,
+        'entity_id' => NULL,
+      ],
+      'template' => 'bhge-comments',
+    ],
+    'bhge_comment' => [
+      'variables' => [
+        'comment_data' => [],
+        'comments_status' => 0,
+        'is_parent' => TRUE,
+        'entity_id' => NULL,
+      ],
+      'template' => 'bhge-comment',
+    ],
+  ];
+}
+
+/**
+ * Implements hook_ENTITY_TYPE_presave().
+ */
+function bhge_comment_comment_presave(EntityInterface $comment) {
+  if (isset($comment->field_comment_body->first()->getValue()['value'])) {
+    // Since we dont use the "subject" field but show it in backend,
+    // populate it.
+    $comment->set('subject', Unicode::truncate($comment->field_comment_body->first()
+      ->getValue()['value'], 50, TRUE, TRUE));
+  }
+  \Drupal::service('cache_tags.invalidator')
+    ->invalidateTags(['comment:' . $comment->id]);
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function bhge_comment_form_node_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+
+  // Hide comment settings on node edit when site is not internal.
+  if (isset($form['field_comments'])) {
+    $config = \Drupal::configFactory()->get('bhge.general_settings');
+    $isInternal = $config->get('internal_site');
+    if (!$isInternal) {
+      unset($form['field_comments']);
+      unset($form['field_enable_comment_notificatio']);
+    }
+  }
+
+  // Custom group to hold comment enable field in advanced section.
+  $form['comment_notif_grp'] = [
+    '#type' => 'details',
+    '#title' => t('Comment Email notification'),
+    '#group' => 'advanced',
+    '#attributes' => [
+      'class' => ['node-form-options'],
+    ],
+    '#attached' => [
+      'library' => ['node/drupal.node'],
+    ],
+    '#weight' => -1,
+    '#optional' => TRUE,
+    '#open' => FALSE,
+  ];
+
+  // Move the comment enable field to the right-hand column.
+  $form['field_enable_comment_notificatio']['#group'] = 'comment_notif_grp';
+
+  return $form;
+}
+
+/**
+ * Implements hook_mail().
+ */
+function bhge_comment_mail($key, &$message, $params) {
+
+  switch ($key) {
+    case 'post_comment_multiple':
+      $message['from'] = \Drupal::config('system.site')->get('mail');
+      $body =
+      "Dear Recipient,
+
+" . $params['commenter_name'] . " has responded to your comment on page: " . $params['page_title'] . "      
+		
+Please visit " . $params['comment_page'] . " to view the comment.
+  
+Regards,
+My.BHGE.com support team";
+
+      $message['subject'] = "New comment on page: " . $params['page_title'];
+      $message['body'][] = MailFormatHelper::htmlToText($body);
+      $message['headers'] += $params['headers'];
+      break;
+
+    case 'post_comment_single':
+      $message['from'] = \Drupal::config('system.site')->get('mail');
+      $body =
+          "Dear Recipient,
+
+" . $params['commenter_name'] . " has commented on page: " . $params['page_title'] . "      
+		
+Please visit " . $params['comment_page'] . " to view the comment.
+  
+Regards,
+My.BHGE.com support team";
+
+      $message['subject'] = "New comment on page: " . $params['page_title'];
+      $message['body'][] = MailFormatHelper::htmlToText($body);
+
+  }
+}

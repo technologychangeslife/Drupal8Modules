@@ -1,0 +1,5 @@
+bhgesocialfeeds_settings.admin:
+  title: 'Bhge Social Feeds Settings'
+  description: 'Manage Bhge  Social settings for your site'
+  parent: system.admin_config_system
+  route_name: bhge_social_feeds_form

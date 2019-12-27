@@ -1,0 +1,6 @@
+name: BHGE Oil Custom
+type: module
+description: 'Custom module for BHGE Oil'
+package: Custom
+version: 8.x
+core: 8.x

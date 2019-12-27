@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16.003 9.503">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #fff;
+      }
+    </style>
+  </defs>
+  <path id="S_CarouselChevronNext" data-name="S CarouselChevronNext" class="cls-1" d="M.5,8a1.234,1.234,0,0,1,.385-.894L7.874.357A1.247,1.247,0,1,1,9.628,2.131L3.545,8,9.608,13.85A1.244,1.244,0,0,1,8.747,16a1.2,1.2,0,0,1-.858-.343L.88,8.9A1.25,1.25,0,0,1,.5,8Z" transform="translate(0.002 10) rotate(-90)"/>
+</svg>

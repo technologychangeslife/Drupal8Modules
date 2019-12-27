@@ -1,0 +1,17 @@
+<?php
+
+/**
+ * @file
+ * Sticky header module.
+ */
+
+/**
+ * Implements hook_theme().
+ */
+function gemc_c101_sticky_header_theme($existing, $type, $theme, $path) {
+  return [
+    'c101_sticky_header' => [
+      'variables' => ['data' => []],
+    ],
+  ];
+}

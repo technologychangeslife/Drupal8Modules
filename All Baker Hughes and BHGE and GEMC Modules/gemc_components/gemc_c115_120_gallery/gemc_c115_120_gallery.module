@@ -1,0 +1,120 @@
+<?php
+
+/**
+ * @file
+ * Custom gemc_c115_120_gallery module.
+ */
+
+use Drupal\Core\Form\FormStateInterface;
+
+/**
+ * Implements hook_theme().
+ */
+function gemc_c115_120_gallery_theme($existing, $type, $theme, &$path) {
+
+  $path = 'themes/custom/gemc';
+  $theme = [
+    'gemc_c115_120_gallery' => [
+      'variables' => [
+        'data' => [],
+      ],
+      'template' => 'components/c115-120-content-gallery/paragraph--c115-120-gallery',
+    ],
+  ];
+  return $theme;
+}
+
+/**
+ * Implements hook_field_widget_form_alter().
+ */
+function gemc_c115_120_gallery_field_widget_form_alter(&$element, FormStateInterface $form_state, $context) {
+  if (isset($context['items']) && $context['items']->getName() == 'field_gallery_content_type') {
+    $org_options = $element['#options'];
+
+    $supportedTypes = [
+      'news_item',
+      'case_study',
+      'industry',
+      'product_brand',
+    ];
+
+    foreach ($org_options as $key => $option) {
+      if (!in_array($key, $supportedTypes)) {
+        unset($element['#options'][$key]);
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_preprocess_paragraph().
+ */
+function gemc_c115_120_gallery_preprocess_paragraph(&$variables) {
+  if (!empty($variables['elements']['#paragraph'])) {
+
+    /** @var \Drupal\paragraphs\Entity\Paragraph $paragraph */
+    $paragraph = $variables['elements']['#paragraph'];
+    $id = $paragraph->get('type')->getValue();
+
+    if ($id[0]['target_id'] == 'c115_120_gallery') {
+
+      if (!empty($paragraph->get('field_gallery_content_type')) && !empty($paragraph->get('field_gallery_content_type')->getValue()[0]['target_id'])) {
+
+        $ctype = $paragraph->get('field_gallery_content_type')
+          ->getValue()[0]['target_id'];
+        $data['title'] = !empty($paragraph->get('field_title')
+          ->getValue()[0]['value']) ? $paragraph->get('field_title')
+          ->getValue()[0]['value'] : '';
+        $data['has_filters'] = !empty($paragraph->get('field_expose_filters')
+          ->getValue()[0]['value']) ? 1 : 0;
+        $data['sort_by'] = !empty($paragraph->get('field_sort_by')
+          ->getValue()[0]['value']) ? 'created' : 'weight';
+
+        // Get filter categories.
+        $pre_filters = array_column($paragraph->get('field_gallery_filter_category')
+          ->getValue(), 'target_id');
+        $pre_filter = isset($pre_filters[0]) ? $pre_filters[0] : NULL;
+
+        $topics = NULL;
+        if ($data['has_filters']) {
+          // Setting topics sidebar data.
+          $topics = \Drupal::service('gemc_c115_120_gallery.gallery_data')
+            ->topics($ctype, $pre_filter);
+          if (!empty($topics)) {
+            $data['categories'] = \Drupal::service('gemc_c115_120_gallery.gallery_data_helpers')
+              ->formatTopicFilters($topics, $ctype, $data['sort_by'], NULL, TRUE);
+          }
+        }
+
+        // Set items per row dependend on filter collumn available.
+        $row_items = $data['has_filters'] && $topics ? 2 : 3;
+
+        $limit = $paragraph->get('field_load_more')
+          ->getValue()[0]['value'] * $row_items;
+        $initial = $paragraph->get('field_rows_initial')
+          ->getValue()[0]['value'] * $row_items;
+
+        // Initial load dataset.
+        $dataset = \Drupal::service('gemc_c115_120_gallery.gallery_data')
+          ->prepareData([$ctype], '', NULL, NULL, $data['sort_by'], 0, $initial, $pre_filter);
+
+        $total = !empty($dataset['total']) ? $dataset['total'] : 0;
+        $count = !empty($dataset) ? count($dataset) : 0;
+
+        $data['items'] = $dataset['results'];
+
+        $data['api'] = [
+          'action' => '/api/v1/content-gallery?contenttype=' . $ctype . '&category=' . $pre_filter,
+          'pagination' => [
+            'limit' => $limit,
+            'offset' => $initial - $limit,
+            'total' => $total,
+          ],
+        ];
+        $data['loadMore'] = t('Load more');
+        $variables['data'] = $data;
+
+      }
+    }
+  }
+}

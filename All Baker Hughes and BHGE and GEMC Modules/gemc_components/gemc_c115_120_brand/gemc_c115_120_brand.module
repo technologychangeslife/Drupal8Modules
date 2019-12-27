@@ -1,0 +1,77 @@
+<?php
+
+/**
+ * @file
+ * Custom gemc_c115_120_brand module.
+ */
+
+use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
+
+/**
+ * Implements hook_ENTITY_TYPE_view().
+ */
+function gemc_c115_120_brand_node_view(array &$build, EntityInterface $entity, EntityViewDisplayInterface $display, $view_mode) {
+  if ($entity->bundle() != 'product_brand') {
+    return;
+  }
+
+  if ($view_mode == 'full') {
+
+    if ($component = $display->getComponent('c115_120_brand_gal')) {
+
+      $nid = $entity->id();
+
+      // Initial load dataset.
+      $dataset = \Drupal::service('gemc_c115_120_gallery.gallery_data')
+        ->prepareData(['product'], 'field_parent_brand', $nid, NULL, 'weight', 0, 6);
+
+      $total = !empty($dataset['total']) ? $dataset['total'] : 0;
+      $count = !empty($dataset) ? count($dataset) : 0;
+
+      $data['items'] = $dataset['results'];
+
+      $data['api'] = [
+        'action' => '/api/v1/content-gallery?contenttype=product&reference=parent_brand&pid=' . $nid,
+        'pagination' => [
+          'limit' => 6,
+          'offset' => 0,
+          'total' => $total,
+        ],
+      ];
+
+      // Only display component if initial results.
+      if (!empty($data['items'])) {
+
+        $data['loadMore'] = t('Load more');
+        $data['title'] = t('Featured solutions');
+
+        // Build total gallery.
+        $build['c115_120_section'] = [
+          '#theme' => 'gemc_c115_120_gallery',
+          '#data' => $data,
+          '#cache' => ['contexts' => ['url']],
+          '#id' => 'section-gallery',
+          '#weight' => $component['weight'],
+        ];
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_entity_extra_field_info().
+ */
+function gemc_c115_120_brand_entity_extra_field_info() {
+  $extra = [];
+
+  $extra_field = [
+    'label' => t('GEMC Product gallery'),
+    'description' => t('Product gallery for brands, contains child products'),
+    'weight' => 3,
+    'visible' => TRUE,
+  ];
+  $extra['node']['product_brand']['display']['c115_120_brand_gal'] = $extra_field;
+
+  return $extra;
+}

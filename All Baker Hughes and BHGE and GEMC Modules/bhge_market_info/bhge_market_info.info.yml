@@ -1,0 +1,10 @@
+name: BHGE Market info
+type: module
+description: 'Market Info module for BHGE Oil'
+package: Custom
+dependencies:
+  - bhge_rigcount
+  - bhge_commodities_info
+  - bhge_share_price
+version: 8.x
+core: 8.x

@@ -1,0 +1,9 @@
+bh-share-price:
+  version: 1.x
+  js:
+    js/bh_share_price.js: {}
+  dependencies:
+    - core/jquery
+    - core/drupal
+    - core/drupalSettings
+    - core/drupal.ajax

@@ -1,0 +1,7 @@
+ge_marketo_form.forms:
+  version: VERSION
+  js:
+    js/marketo_form.handler.js: { weight: -1 }
+  dependencies:
+    - core/jquery
+    - core/drupal

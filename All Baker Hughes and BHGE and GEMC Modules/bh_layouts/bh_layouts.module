@@ -1,0 +1,72 @@
+<?php
+
+/**
+ * @file
+ * Bh layout module file.
+ */
+
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\views\ViewExecutable;
+use Drupal\block_content\BlockContentInterface;
+
+/**
+ * Implements hook_form_alter().
+ */
+function bh_layouts_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+  // Added Library to auto save block in layout builder add/select block popup.
+  if ($form_id == 'layout_builder_add_block' && isset($form['settings']['selection']['entity_browser'])) {
+    $form['#attached']['library'][] = 'bh_layouts/auto_save_block';
+    $form['actions']['submit']['#attributes']['class'][] = 'entity-browser-save-button';
+  }
+
+  // Adding edit option/link in layout builder configure block popup table view.
+  if ($form_id == 'layout_builder_update_block' && isset($form['settings']['selection']['entity_browser'])) {
+    // Set the destination path in form element to pass it in callback.
+    $form['destination']['#value'] = \Drupal::request()->query->get('destination');
+    // Additional process callback for edit link.
+    $form['settings']['selection']['table']['#process'][] = [
+      'Drupal\bh_layouts\Form\EntityBrowserBlockEdit',
+      'processTable',
+    ];
+  }
+}
+
+/**
+ * Implements hook_views_pre_render().
+ *
+ * Change views header to pull dynamic rig count date.
+ */
+function bh_layouts_views_pre_render(ViewExecutable $view) {
+
+  // Do not add contextual link on view preview.
+  if ($view->id() === 'rig_count_data') {
+    $result = views_get_view_result('rig_count_updated_date', 'block_1');
+    if (isset($result)) {
+      foreach ($result as $data) {
+        if (isset($data->node_field_data_created)) {
+          $view->setTitle(t('Updated ') . date("F j, Y", $data->node_field_data_created));
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Implements HOOK_preprocess_block().
+ *
+ * Fix to Uncaught error for quickedit in layout builder blocks.
+ *
+ * @param array $variables
+ *   Rendered array.
+ *
+ * @TODO: Need to remove function after this error fixed in core.
+ */
+function bh_layouts_preprocess_block(&$variables) {
+  $content = $variables['elements']['content'];
+  if (isset($content['#block_content']) && $content['#block_content'] instanceof BlockContentInterface) {
+    if (in_array($content['#block_content']->bundle(), ['image_with_cta', 'text_content'])) {
+      $block_id = $content['#block_content']->id();
+      $variables['attributes']['data-quickedit-entity-id'] = "block_content/$block_id";
+    }
+  }
+}

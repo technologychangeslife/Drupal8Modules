@@ -1,0 +1,9 @@
+gemc-core:
+  version: 1.x
+  js:
+    js/gemc-core.js: {}
+  dependencies:
+  - core/jquery
+  - core/drupal
+  - core/drupalSettings
+  - core/drupal.ajax

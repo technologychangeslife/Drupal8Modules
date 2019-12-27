@@ -1,0 +1,9 @@
+bhge-social-feeds:
+  version: 1.x
+  js:
+    js/bhge-social-feeds.js: {}
+  dependencies:
+  - core/jquery
+  - core/drupal
+  - core/drupalSettings
+  - core/drupal.ajax

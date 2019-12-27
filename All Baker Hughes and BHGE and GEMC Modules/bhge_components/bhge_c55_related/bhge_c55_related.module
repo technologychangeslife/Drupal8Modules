@@ -1,0 +1,131 @@
+<?php
+
+/**
+ * @file
+ * C55 Component For Related people and events.
+ */
+
+use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
+
+/**
+ * Implements hook_node_view().
+ */
+function bhge_c55_related_node_view(array &$build, EntityInterface $entity, EntityViewDisplayInterface $display, $view_mode) {
+
+  if ($view_mode == 'full' && $entity->getType() == 'person') {
+    if ($display->getComponent('c55_bhge_related_people')) {
+
+      $nid = $entity->id();
+      $variables['has_filters'] = 0;
+      $limit = 0;
+      $classes = 'toggle-view mobile-carousel desktop-carousel quadruple-card';
+      $teams = !empty($entity->field_team) ? $entity->field_team : '';
+      $teamIds = [];
+      foreach ($teams as $team) {
+        $teamIds[] = $team->target_id;
+      }
+
+      if (!empty($teamIds)) {
+        $data = \Drupal::service('bhge_c55_gallery.gallery_data')
+          ->prepareData(['person'], $nid, $teamIds, '', 0, $limit, NULL);
+        if ($data['total'] > 0) {
+
+          $build['c55_bhge_product_gallery'] = [
+            '#theme' => 'c55_bhge_gallery',
+            '#class' => $classes,
+            '#nid' => $entity->id(),
+            '#initial_filter' => implode(',', $teamIds),
+            '#topics' => [],
+            '#content_type' => 'person',
+            '#display_mode' => 2,
+            '#dataset' => $data['results'],
+            '#apiUrl' => '/api/v1/content-gallery',
+            '#title' => 'Related People',
+            '#pid' => $nid,
+            '#limit' => $limit,
+            '#offset' => 0,
+            '#total' => $data['total'],
+            '#count' => count($data['results']),
+            '#sort_by' => 'created',
+            '#cache' => ['contexts' => ['url']],
+            '#id' => 'card-gallery-related-people-' . $nid,
+          ];
+        }
+      }
+    }
+
+    if ($display->getComponent('c55_bhge_related_content')) {
+
+      $nid = $entity->id();
+      $limit = 4;
+      $classes = 'padding-left toggle-view load-more quadruple-card';
+      $topic = 'author-' . $entity->id();
+      if (!empty($topic)) {
+        $data = \Drupal::service('bhge_c55_gallery.gallery_data')
+          ->prepareData(['event_item'], $entity->id(), $topic, '', 0, $limit, NULL);
+        if ($data['total'] > 0) {
+
+          $build['c55_bhge_related_content'] = [
+            '#theme' => 'c55_bhge_gallery',
+            '#class' => $classes,
+            '#nid' => $entity->id(),
+            '#initial_filter' => $topic,
+            '#topics' => [],
+            '#content_type' => 'event_item',
+            '#display_mode' => 2,
+            '#dataset' => $data['results'],
+            '#apiUrl' => '/api/v1/content-gallery',
+            '#title' => 'Presentations',
+            '#limit' => $limit,
+            '#offset' => 0,
+            '#total' => $data['total'],
+            '#count' => count($data['results']),
+            '#sort_by' => 'created',
+            '#cache' => ['contexts' => ['url']],
+            '#id' => 'card-gallery-related-content' . $nid,
+          ];
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_preprocess_HOOK().
+ */
+function bhge_c55_related_preprocess_node(&$variables) {
+  $node = $variables['node'];
+
+  if ($variables['view_mode'] == 'full' && $node->getType() == 'person') {
+    $variables['person'] = '';
+    if (isset($variables['content']['c55_bhge_related_people']['#filter_initial'])) {
+      $variables['person'] = $variables['content']['c55_bhge_related_people']['#filter_initial'];
+    }
+    if (isset($variables['content']['c55_bhge_related_content']['#filter_initial'])) {
+      $variables['person'] = $variables['content']['c55_bhge_related_content']['#filter_initial'];
+    }
+  }
+}
+
+/**
+ * Implements hook_entity_extra_field_info().
+ */
+function bhge_c55_related_entity_extra_field_info() {
+  $extra = [];
+
+  $extra['node']['person']['display']['c55_bhge_related_people'] = [
+    'label' => t('BHGE Related People'),
+    'description' => t('Related People contains People with same team'),
+    'weight' => 5,
+    'visible' => TRUE,
+  ];
+  $extra['node']['person']['display']['c55_bhge_related_content'] = [
+    'label' => t('BHGE Related Content'),
+    'description' => t('Related Content contains content where person is author'),
+    'weight' => 6,
+    'visible' => TRUE,
+  ];
+
+  return $extra;
+}

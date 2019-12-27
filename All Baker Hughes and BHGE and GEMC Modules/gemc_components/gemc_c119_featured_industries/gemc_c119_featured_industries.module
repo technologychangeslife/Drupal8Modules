@@ -1,0 +1,54 @@
+<?php
+
+/**
+ * @file
+ * GEMC C119 Featured Industries.
+ */
+
+use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
+use Drupal\Core\Entity\EntityInterface;
+
+/**
+ * Implements hook_entity_extra_field_info().
+ */
+function gemc_c119_featured_industries_entity_extra_field_info() {
+  // Continuing this rendering for sake of convertiing the product category CT.
+  // TODO revisit this to replace with a field preprocess on the entity
+  // reference field directly.
+  $extra['paragraph']['featured_industries']['display']['c119_featured_industries'] = [
+    'label' => t('GEMC Featured Industries'),
+    'description' => t('Product category featured industries.'),
+    'weight' => 3,
+    'visible' => TRUE,
+  ];
+
+  return $extra;
+}
+
+/**
+ * Implements hook_ENTITY_TYPE_view().
+ */
+function gemc_c119_featured_industries_paragraph_view(array &$build, EntityInterface $entity, EntityViewDisplayInterface $display, $view_mode) {
+  if ($entity->bundle() != 'featured_industries') {
+    return;
+  }
+
+  if ($component = $display->getComponent('render_featured_industries')) {
+    /** @var \Drupal\gemc_c119_featured_industries\IndustriesData $industriesData */
+    $industriesDataService = \Drupal::service('gemc_c119_featured_industries.industries_data');
+    $industriesData = $industriesDataService->prepareData($entity);
+    if (!empty($industriesData)) {
+      $data = [
+        'title' => t('Featured Industries'),
+        'items' => $industriesData,
+      ];
+      $build['c119_recently_visited'] = [
+        '#theme' => 'gemc_c119_card_grid_carousel',
+        '#data' => $data,
+        '#cache' => ['contexts' => ['url']],
+        '#weight' => $component['weight'],
+      ];
+    }
+  }
+
+}

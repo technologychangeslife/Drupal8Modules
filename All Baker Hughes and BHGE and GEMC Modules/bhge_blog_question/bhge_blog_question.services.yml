@@ -1,0 +1,9 @@
+services:
+  bhge_blog_question.question_trail:
+    class: Drupal\bhge_blog_question\QuestionTrail
+    arguments: ['@entity_type.manager', '@current_route_match']
+  bhge_blog_question.breadcrumb_builder:
+    class: Drupal\bhge_blog_question\Breadcrumb\BreadcrumbBuilder
+    arguments: ['@bhge_blog_question.question_trail', '@current_user']
+    tags:
+      - { name: breadcrumb_builder, priority: 10001 }

@@ -1,0 +1,36 @@
+bhge_blog_page.question.vote.add:
+  path: 'api/v1/question-vote/add/{pid}'
+  defaults: { _controller: '\Drupal\bhge_blog_page\Controller\Voting::add' }
+  methods:  [GET]
+  requirements:
+    _permission: 'create question content'
+bhge_blog_page.question.vote.remove:
+  path: 'api/v1/question-vote/remove/{pid}'
+  defaults: { _controller: '\Drupal\bhge_blog_page\Controller\Voting::remove' }
+  methods:  [GET]
+  requirements:
+    _permission: 'delete own question content'
+bhge_blog_page.question.add:
+  path: 'api/v1/question/add/{pid}'
+  defaults: { _controller: '\Drupal\bhge_blog_page\Controller\Question::add' }
+  methods:  [POST]
+  requirements:
+    _permission: 'create question content'
+bhge_blog_page.question.edit:
+  path: 'api/v1/question/edit/{nid}'
+  defaults: { _controller: '\Drupal\bhge_blog_page\Controller\Question::edit' }
+  methods:  [POST]
+  requirements:
+    _permission: 'edit own question content'
+bhge_blog_page.question.delete:
+  path: 'api/v1/question/delete/{nid}'
+  defaults: { _controller: '\Drupal\bhge_blog_page\Controller\Question::delete' }
+  methods:  [POST]
+  requirements:
+    _permission: 'delete own question content'
+bhge_blog_page.question.suggestions:
+  path: 'api/v1/question/suggestions'
+  defaults: { _controller: '\Drupal\bhge_blog_page\Controller\Suggestions::load' }
+  methods:  [GET]
+  requirements:
+    _permission: 'create question content'

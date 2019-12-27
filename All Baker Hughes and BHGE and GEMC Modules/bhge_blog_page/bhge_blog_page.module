@@ -1,0 +1,381 @@
+<?php
+
+/**
+ * @file
+ * Custom bhge_blog_page module.
+ */
+
+use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
+
+/**
+ * Implements hook_ENTITY_TYPE_view().
+ */
+function bhge_blog_page_node_view(array &$build, EntityInterface $entity, EntityViewDisplayInterface $display, $view_mode) {
+
+  if ($view_mode == 'full' && $entity->getType() == 'blog_page') {
+
+    if ($display->getComponent('c55_bhge_blog_page')) {
+
+      $config = \Drupal::configFactory()->get('bhge.general_settings');
+      $is_internal = $config->get('internal_site');
+      $alias_manager = \Drupal::service('path.alias_manager');
+
+      $alias = $alias_manager->getAliasByPath('/node/' . $entity->id());
+
+      $nid = $entity->id();
+      $filter_nid = $offset = 0;
+
+      $author_id = $entity->get('field_author')->first()->getValue()['target_id'];
+      $author_alias = $alias_manager->getAliasByPath('/node/' . $author_id);
+
+      // Get C55 data for "blog-overview" display.
+      if (empty($_GET['display'])) {
+        // Setting category sidebar data.
+        $topics = \Drupal::service('bhge_c55_gallery.gallery_data')
+          ->topics('blog_post', NULL, NULL);
+
+        if (!empty($topics)) {
+          $allContent[] = [
+            'filter' => '',
+            'title' => t('All'),
+          ];
+          $topics = array_merge($allContent, array_unique($topics, SORT_REGULAR));
+        }
+
+        // Initial load dataset.
+        $data = \Drupal::service('bhge_c55_gallery.gallery_data')
+          ->prepareData(['blog_post'], $author_id, NULL, 'created', 0, 6, NULL);
+
+        if ($data['results']) {
+          // Set wrapper classes.
+          $classes = 'card-margin toggle-view mobile-carousel quadruple-card';
+          if ($topics) {
+            $classes .= ' sidebar-filter';
+          }
+          if ($data['show_more']) {
+            $classes .= ' load-more';
+          }
+          // Build blog gallery.
+          $build['c55_bhge_blog_page'] = [
+            '#theme' => 'c55_bhge_gallery',
+            '#class' => $classes,
+            '#topics' => $topics,
+            '#pid' => $author_id,
+            '#content_type' => 'blog_post',
+            '#dataset' => $data['results'],
+            '#apiUrl' => '/api/v1/content-gallery',
+            '#title' => 'My blog posts',
+            '#limit' => $data['count'],
+            '#offset' => 0,
+            '#total' => $data['total'],
+            '#count' => $data['count'],
+            '#show_more' => $data['show_more'],
+            '#sort_by' => 'created',
+            '#cache' => ['contexts' => ['url']],
+            '#filter_type' => NULL,
+            '#id' => 'blog-gallery-' . $nid,
+          ];
+        }
+
+        if ($is_internal) {
+
+          // Initial load dataset.
+          $data = \Drupal::service('bhge_c55_gallery.gallery_data')
+            ->prepareData(['question'], $entity->id(), NULL, 'votes', 0, 6, NULL);
+
+          $classes = 'triple-card card-margin load-more mobile-carousel desktop-carousel pagination next-prev-buttons carousel-enabled';
+          if ($data['results']) {
+            // Build top questions block.
+            $build['c18_bhge_blog_page'] = [
+              '#theme' => 'c55_bhge_gallery',
+              '#class' => $classes,
+              '#topics' => NULL,
+              '#content_type' => 'question',
+              '#dataset' => $data['results'],
+              '#apiUrl' => '/api/v1/content-gallery/',
+              '#like_api_url' => '/api/v1/question-vote/add/' . $entity->id(),
+              '#title' => 'Top voted questions',
+              '#limit' => $data['count'],
+              '#offset' => 0,
+              '#total' => $data['total'],
+              '#count' => $data['count'],
+              '#show_more' => $data['show_more'],
+              '#sort_by' => 'created',
+              '#cache' => ['contexts' => ['url']],
+              '#filter_type' => NULL,
+              '#id' => 'top-questions-' . $nid,
+            ];
+          }
+
+          $build['c20_bhge_blog_page'] = [
+            // Build quick links component.
+            '#theme' => 'c20_quick_links_generic',
+            '#links' => [
+              [
+                'link' => $alias . '?display=questions',
+                'label' => 'Browse all questions',
+                'target' => NULL,
+              ],
+              [
+                'link' => $alias . '?display=question-form',
+                'label' => 'Ask a question',
+                'target' => NULL,
+              ],
+              [
+                'link' => $author_alias,
+                'label' => 'More about me',
+                'target' => NULL,
+              ],
+            ],
+          ];
+        }
+
+      }
+      elseif (($_GET['display'] == 'questions' && $is_internal)) {
+
+        // Setting category sidebar data.
+        $topics = \Drupal::service('bhge_c55_gallery.gallery_data')
+          ->topics('question', NULL, NULL);
+
+        if (!empty($topics)) {
+          $allContent[] = [
+            'filter' => '',
+            'title' => t('All'),
+          ];
+          $topics = array_merge($allContent, array_unique($topics, SORT_REGULAR));
+        }
+        // Initial load dataset.
+        $data = \Drupal::service('bhge_c55_gallery.gallery_data')
+          ->prepareData(['question'], $entity->id(), NULL, 'created', 0, 6, NULL);
+
+        if ($data['results']) {
+          // Set wrapper classes.
+          $classes = 'card-margin toggle-view mobile-carousel quadruple-card';
+          if ($topics) {
+            $classes .= ' sidebar-filter';
+          }
+          if ($data['show_more']) {
+            $classes .= ' load-more';
+          }
+          // Build questions gallery.
+          $build['c55_bhge_blog_page'] = [
+            '#theme' => 'c55_bhge_gallery',
+            '#class' => $classes,
+            '#topics' => $topics,
+            '#pid' => $entity->id(),
+            '#content_type' => 'question',
+            '#dataset' => $data['results'],
+            '#apiUrl' => '/api/v1/content-gallery',
+            '#like_api_url' => '/api/v1/question-vote/add/' . $entity->id(),
+            '#title' => 'Questions overview',
+            '#limit' => $data['count'],
+            '#offset' => 0,
+            '#total' => $data['total'],
+            '#count' => $data['count'],
+            '#show_more' => $data['show_more'],
+            '#sort_by' => 'created',
+            '#cache' => ['contexts' => ['url']],
+            '#filter_type' => NULL,
+            '#id' => 'questions-' . $nid,
+          ];
+        }
+
+        // Initial load dataset.
+        $data = \Drupal::service('bhge_c55_gallery.gallery_data')
+          ->prepareData(['blog_post'], $author_id, NULL, 'created', 0, 6, NULL);
+
+        $classes = 'triple-card card-margin load-more mobile-carousel desktop-carousel pagination next-prev-buttons carousel-enabled';
+
+        if ($data['results']) {
+          // Build recent blogposts block.
+          $build['c18_bhge_blog_page'] = [
+            '#theme' => 'c55_bhge_gallery',
+            '#class' => $classes,
+            '#topics' => NULL,
+            '#content_type' => 'blog_post',
+            '#dataset' => $data['results'],
+            '#apiUrl' => '/api/v1/content-gallery',
+            '#title' => 'Recent blogposts',
+            '#limit' => $data['count'],
+            '#offset' => 0,
+            '#total' => $data['total'],
+            '#count' => $data['count'],
+            '#show_more' => $data['show_more'],
+            '#sort_by' => 'created',
+            '#cache' => ['contexts' => ['url']],
+            '#filter_type' => NULL,
+            '#id' => 'blog-gallery-' . $nid,
+          ];
+        }
+
+        // Build quick links component.
+        $build['c20_bhge_blog_page'] = [
+          '#theme' => 'c20_quick_links_generic',
+          '#links' => [
+            [
+              'link' => $alias,
+              'label' => 'Blogposts overview',
+              'target' => NULL,
+            ],
+            [
+              'link' => $alias . '?display=question-form',
+              'label' => 'Ask a question',
+              'target' => NULL,
+            ],
+            [
+              'link' => $author_alias,
+              'label' => 'More about me',
+              'target' => NULL,
+            ],
+          ],
+        ];
+      }
+      elseif (($_GET['display'] == 'question-form' && $is_internal)) {
+        // Initial load dataset.
+        $data = \Drupal::service('bhge_c55_gallery.gallery_data')
+          ->prepareData(['blog_post'], $author_id, NULL, 'created', 0, 6, NULL);
+
+        $classes = 'triple-card card-margin load-more mobile-carousel desktop-carousel pagination next-prev-buttons carousel-enabled';
+
+        if ($data['results']) {
+          // Build recent blogposts block.
+          $build['c18_bhge_blog_page'] = [
+            '#theme' => 'c55_bhge_gallery',
+            '#class' => $classes,
+            '#topics' => NULL,
+            '#content_type' => 'blog_post',
+            '#dataset' => $data['results'],
+            '#apiUrl' => '/api/v1/content-gallery',
+            '#title' => 'Recent blogposts',
+            '#limit' => $data['count'],
+            '#offset' => 0,
+            '#total' => $data['total'],
+            '#count' => $data['count'],
+            '#show_more' => $data['show_more'],
+            '#sort_by' => 'created',
+            '#cache' => ['contexts' => ['url']],
+            '#filter_type' => NULL,
+            '#id' => 'blog-gallery-' . $nid,
+          ];
+        }
+
+        // Build quick links component.
+        $build['c20_bhge_blog_page'] = [
+          '#theme' => 'c20_quick_links_generic',
+          '#links' => [
+            [
+              'link' => $alias,
+              'label' => 'Blogposts overview',
+              'target' => NULL,
+            ],
+            [
+              'link' => $alias . '?display=questions',
+              'label' => 'Browse all questions',
+              'target' => NULL,
+            ],
+            [
+              'link' => $author_alias,
+              'label' => 'More about me',
+              'target' => NULL,
+            ],
+          ],
+        ];
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_preprocess_HOOK().
+ */
+function bhge_blog_page_preprocess_node(&$variables) {
+
+  /* @var $node \Drupal\node\nodeInterface */
+  $node = $variables['node'];
+
+  if ($variables['view_mode'] == 'full' && $node->getType() == 'blog_page') {
+
+    $dataHelpers = \Drupal::service('bhge_blog_page.data_helpers');
+
+    $config = \Drupal::configFactory()->get('bhge.general_settings');
+    $is_internal = $config->get('internal_site');
+    $alias_manager = \Drupal::service('path.alias_manager');
+
+    $alias = $alias_manager->getAliasByPath('/node/' . $node->id());
+
+    $author_id = $node->get('field_author')->first()->getValue()['target_id'];
+    $author_alias = $alias_manager->getAliasByPath('/node/' . $author_id);
+
+    if (!empty($_GET['display']) && $_GET['display'] == 'questions' && $is_internal) {
+      $variables['blog_page_display'] = 'questions-overview';
+      $variables['hero_image'] = $dataHelpers->getImage($node, 'field_hero1_image', 'field_dam_hero1_image');
+      $variables['hero_title'] = $node->get('field_hero1_title')->getString();
+      $variables['hero_subtitle'] = $node->get('field_hero1_subtitle')->getString();
+      $variables['hero_cta_label'] = t('Ask a question');
+      $variables['hero_cta_link'] = $alias . '?display=question-form';
+    }
+    elseif (!empty($_GET['display']) && $_GET['display'] == 'question-form' && $is_internal) {
+      $author = $node->get('uid')->entity;
+      $variables['blog_page_display'] = 'question-form';
+      $topics = $terms = \Drupal::entityManager()->getStorage('taxonomy_term')->loadTree('blog_topic');
+      $variables['topic_options'] = $topics;
+      $variables['user_name'] = $author->mail->value;
+      $variables['user_image'] = '';
+      if (!empty($author->user_picture) && !empty($author->user_picture->entity)) {
+        $file = $author->user_picture->entity;
+        $variables['user_image'] = !empty($file) ? $file->getFileUri() : '';
+      }
+      $variables['submit_url'] = '/api/v1/question/add/' . $node->id();
+    }
+    else {
+      $variables['blog_page_display'] = 'blog-overview';
+      $variables['hero_image'] = $dataHelpers->getImage($node, 'field_main_image', 'field_dam_main_img');
+      $variables['hero_title'] = $node->get('field_hero_title')->getString();
+      $variables['hero_subtitle'] = $node->get('field_hero_subtitle')->getString();
+      if ($is_internal) {
+        $variables['hero_cta_label'] = t('Ask a question');
+        $variables['hero_cta_link'] = $alias . '?display=question-form';
+      }
+      else {
+        $variables['hero_cta_label'] = t('More about me');
+        $variables['hero_cta_link'] = $author_alias;
+      }
+    }
+  }
+
+}
+
+/**
+ * Implements hook_entity_extra_field_info().
+ */
+function bhge_blog_page_entity_extra_field_info() {
+  $extra = [];
+
+  $extra['node']['blog_page']['display']['c55_bhge_blog_page'] = [
+    'label' => t('BHGE blog page gallery'),
+    'description' => t('Blog page gallery, contains latest blog-posts or questions.'),
+    'weight' => 5,
+    'visible' => TRUE,
+  ];
+  $extra['node']['blog_page']['display']['c18_bhge_blog_page'] = [
+    'label' => t('BHGE blog page related'),
+    'description' => t('Blog page related component, contains latest blog-posts or top questions.'),
+    'weight' => 6,
+    'visible' => TRUE,
+  ];
+  $extra['node']['blog_page']['display']['c20_bhge_blog_page'] = [
+    'label' => t('BHGE blog page quick links'),
+    'description' => t('Blog page quick links component.'),
+    'weight' => 7,
+    'visible' => TRUE,
+  ];
+  $extra['node']['blog_page']['display']['c55_bhge_question_form'] = [
+    'label' => t('BHGE blog page question form'),
+    'description' => t('Blog page aks a question form.'),
+    'weight' => 5,
+    'visible' => TRUE,
+  ];
+
+  return $extra;
+}

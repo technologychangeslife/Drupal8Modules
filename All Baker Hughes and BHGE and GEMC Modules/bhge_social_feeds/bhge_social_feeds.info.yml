@@ -1,0 +1,6 @@
+name: BHGE Social Feeds
+type: module
+description: 'BHGE Social Feeds.'
+package: Custom
+version: 8.x
+core: 8.x

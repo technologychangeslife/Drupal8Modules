@@ -1,0 +1,6 @@
+bhge_rigcount.rigcount:
+  path: '/rig/count'
+  defaults: { _controller: '\Drupal\bhge_rigcount\Controller\RigCountController::getCount' }
+  methods:  [GET]
+  requirements:
+    _access: 'TRUE'

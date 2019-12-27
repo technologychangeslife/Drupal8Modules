@@ -1,0 +1,6 @@
+name: BHGE profile install helper
+type: module
+description: 'Custom module for importing config on install'
+package: Custom
+version: 8.x
+core: 8.x

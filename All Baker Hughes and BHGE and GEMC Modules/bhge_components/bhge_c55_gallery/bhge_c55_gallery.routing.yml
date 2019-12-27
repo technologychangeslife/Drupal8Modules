@@ -1,0 +1,8 @@
+bhge_gallery.content.gallery:
+  path: 'api/v1/content-gallery'
+  defaults: { _controller: '\Drupal\bhge_c55_gallery\Controller\GalleryController::getFilteredResult' }
+  methods:  [GET]
+  requirements:
+    _access: 'TRUE'
+  options:
+    no_cache: true

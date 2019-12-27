@@ -1,0 +1,8 @@
+bhge_c55_recently_visited.recently.visited:
+  path: 'api/v1/recently-visited-products'
+  defaults:
+    _controller: '\Drupal\bhge_c55_recently_visited\Controller\ProductRecentlyVisited::getRecentlyVisitedProducts'
+    custom_arg: 6
+  methods:  [GET]
+  requirements:
+    _access: 'TRUE'

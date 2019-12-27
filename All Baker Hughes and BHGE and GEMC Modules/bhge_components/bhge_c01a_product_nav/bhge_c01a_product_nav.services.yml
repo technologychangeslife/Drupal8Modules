@@ -1,0 +1,12 @@
+services:
+  bhge_c01a_product_nav.product_navigation_data:
+    class: Drupal\bhge_c01a_product_nav\ProductNavigation
+    arguments: ['@database', '@bhge_c55_product_gallery.product_data']
+  bhge_c01a_product_nav.breadcrumb_builder:
+    class: Drupal\bhge_c01a_product_nav\Breadcrumb\BreadcrumbBuilder
+    arguments: ['@bhge_c01a_product_nav.section_trail', '@current_user']
+    tags:
+      - { name: breadcrumb_builder, priority: 10001 }
+  bhge_c01a_product_nav.section_trail:
+    class: Drupal\bhge_c01a_product_nav\SectionTrail
+    arguments: ['@bhge_c55_product_gallery.product_data', '@entity_type.manager']

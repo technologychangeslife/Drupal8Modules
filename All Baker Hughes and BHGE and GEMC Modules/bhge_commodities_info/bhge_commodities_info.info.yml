@@ -1,0 +1,6 @@
+name: BHGE Commodities info
+type: module
+description: 'Commodities Info module for BHGE Oil'
+package: Custom
+version: 8.x
+core: 8.x

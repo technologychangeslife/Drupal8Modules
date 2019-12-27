@@ -1,0 +1,271 @@
+<?php
+
+/**
+ * @file
+ * Custom bhge_dynamic_filter_comp.
+ */
+
+use Drupal\paragraphs\Entity\Paragraph;
+use Drupal\views\Views;
+use Drupal\views\Plugin\views\query\Sql;
+use Drupal\views\ViewExecutable;
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Cache\Cache;
+use Drupal\Core\Cache\CacheBackendInterface;
+
+/**
+ * Implements hook_form_alter().
+ */
+function bhge_dynamic_filter_comp_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+  $view_names = ['dyamic_cards_with_filters'];
+  $view = $form_state->getStorage('view');
+  if ($form_id == 'views_exposed_form' && in_array($view['view']->id(), $view_names)) {
+    if (isset($form['field_categories_target_id'])) {
+      if (count($form['field_categories_target_id']['#options']) <= 2) {
+        $form['field_categories_target_id']['#access'] = FALSE;
+      }
+    }
+    $form['created']['min'] = [
+      '#type' => 'date',
+      '#title' => "Date From",
+      '#size' => '30',
+    ];
+    $form['created']['max'] = [
+      '#type' => 'date',
+      '#title' => "To",
+      '#size' => '30',
+    ];
+    $form['actions']['submit']['#value'] = t('Search');
+    $form['body_value']['#access'] = FALSE;
+    $options_from_node = bhge_dynamic_filter_get_filter_types($view['view']->args[1]);
+    $new_options = ['All' => "- Any -"];
+    $result = array_intersect_key($form['type']['#options'], array_flip($options_from_node));
+    $final_options = array_merge($new_options, $result);
+    $form['type']['#options'] = $final_options;
+    // If only one option, make it a default one.
+    if (count($options_from_node) <= 1) {
+      unset($form['type']['#default_value']);
+      foreach ($options_from_node as $options) {
+        $form['type']['#value'] = $options;
+        $form['type']['#access'] = FALSE;
+      }
+    }
+    if (in_array('news_item', $options_from_node)) {
+      // Add a year options as well.
+      $options = &drupal_static(__FUNCTION__);
+      if (is_null($options)) {
+        $cid = 'bhge_dynamic_filter_comp:news_item:year';
+        $data = \Drupal::cache()->get($cid);
+        if (!$data) {
+          $options = [];
+          $options['all'] = t('- All -');
+          $query = \Drupal::entityQuery('node');
+          $query->condition('type', 'news_item')
+            ->condition('status', 1)
+            ->sort('created', 'ASC');
+          $result = $query->execute();
+          if ($result) {
+            $nodes = \Drupal::entityTypeManager()
+              ->getStorage('node')
+              ->loadMultiple($result);;
+            foreach ($nodes as $node) {
+              $date = $node->getCreatedTime();
+              if ($date) {
+                $year = format_date($date, '', $format = 'Y', $timezone = NULL, $langcode = NULL);
+                if (!isset($options[$year])) {
+                  $options[$year] = $year;
+                }
+              }
+            }
+          }
+
+          $cache_tags = ['node:news_item:year'];
+          \Drupal::cache()
+            ->set($cid, $options, CacheBackendInterface::CACHE_PERMANENT, $cache_tags);
+        }
+        else {
+          $options = $data->data;
+        }
+
+      }
+      $form['year'] = [
+        '#title' => t('Year'),
+        '#type' => 'select',
+        '#options' => $options,
+        '#size' => NULL,
+        '#default_value' => 'all',
+      ];
+    }
+    // Check if the filter needs to be shown or not.
+    $filer_enabled = bhge_dynamic_filter_get_filter_enabled_val($view['view']->args[1]);
+    if ($filer_enabled === '1') {
+      $form['#attributes']['class'][] = 'no-filter';
+    }
+  }
+}
+
+/**
+ * Implements hook_views_query_alter().
+ */
+function bhge_dynamic_filter_comp_views_query_alter(ViewExecutable $view, Sql $query) {
+  if ($view->id() == 'dyamic_cards_with_filters') {
+    $option_list = [];
+    if (isset($view->exposed_raw_input['type'])) {
+      if ($view->exposed_raw_input['type'] === 'All') {
+        // Take out Any from the list.
+        foreach ($view->exposed_widgets['type']['#options'] as $option_key => $option_val) {
+          if ($option_key !== 'All') {
+            $option_list[] = $option_key;
+          }
+        }
+        $query->addWhere('2', 'type', $option_list, 'IN');
+      }
+    }
+    // If the title field is searched.
+    // Use the same text to search the body field as well.
+    // Adding a left join to node__body table to capture the body_value.
+    if (!empty($view->exposed_widgets['title']['#value'])) {
+      $configuration = [
+        'type' => 'LEFT',
+        'table' => 'node__body',
+        'field' => 'entity_id',
+        'left_table' => 'node_field_data',
+        'left_field' => 'nid',
+        'operator' => '=',
+      ];
+      $join_obj = Views::pluginManager('join')
+        ->createInstance('standard', $configuration);
+      $query->addRelationship('node__body', $join_obj, 'entity_id');
+      $query->addWhere('1', 'node__body.body_value', '%' . db_like($view->exposed_widgets['title']['#value']) . "%", 'LIKE');
+    }
+    // If the year filter is selected. Use this only for news item.
+    if (in_array("News item", $view->exposed_widgets['type']['#options'])) {
+      if (!empty($view->exposed_widgets['year']['#value']) && $view->exposed_widgets['year']['#value'] !== 'all') {
+        $query->addWhere('', 'node_field_data.created', [
+          strtotime($view->exposed_widgets['year']['#value'] . '-01-01'),
+          strtotime($view->exposed_widgets['year']['#value'] . '-12-31'),
+        ], 'BETWEEN');
+      }
+    }
+
+    if (!empty($view->exposed_widgets['created']['min']['#value']) && !empty($view->exposed_widgets['created']['max']['#value'])) {
+      $query->addWhere('4', 'node_field_data.created', [
+        strtotime($view->exposed_widgets['created']['min']['#value']),
+        strtotime($view->exposed_widgets['created']['max']['#value']),
+      ], 'BETWEEN');
+    }
+  }
+}
+
+/**
+ * Implements hook_field_widget_form_alter().
+ */
+function bhge_dynamic_filter_comp_field_widget_form_alter(&$element, FormStateInterface $form_state, $context) {
+  if (isset($context['items']) && $context['items']->getName() == 'dynamic_filter_ctype') {
+    $org_options = $element['#options'];
+
+    $supportedTypes = [
+      'article',
+      'news_item',
+      'page',
+      'video_item',
+      'webcast_item',
+      'blog_post'
+    ];
+
+    foreach ($org_options as $key => $option) {
+      if (!in_array($key, $supportedTypes)) {
+        unset($element['#options'][$key]);
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_preprocess_page().
+ */
+function bhge_dynamic_filter_comp_preprocess_page(&$variables) {
+  // Attaching to the all the pages for now.
+  // So that this can be reused for youtube videos.
+  // This will open a youtube video in a popup if the a tag has #video-bhge.
+  // Eg <a href ="https://youtub..." id ="#video-bhge".
+  // See file bhge-youtube-popup.js for more info.
+  $variables['#attached']['library'][] = 'bhge_dynamic_filter_comp/bhge-video-popup';
+  $variables['#attached']['library'][] = 'bhge_dynamic_filter_comp/bhge-youtube-popup';
+}
+
+/**
+ * Find the filter type for this particular paragraphs.
+ *
+ * Get the entity_id from the view args.
+ */
+function bhge_dynamic_filter_get_filter_types($view_args) {
+  $p = Paragraph::load($view_args);
+  if ($p->get('type')
+    ->getValue()[0]['target_id'] == 'block_dynamic_cards_with_filter_') {
+    $ctypes = $p->get('dynamic_filter_ctype')->getValue();
+    foreach ($ctypes as $ctype) {
+      $arrCtypes[$ctype['target_id']] = $ctype['target_id'];
+    }
+    return $arrCtypes;
+  }
+}
+
+/**
+ * Check if the show filter option is enabled.
+ */
+function bhge_dynamic_filter_get_filter_enabled_val($view_args) {
+  $p = Paragraph::load($view_args);
+  if ($p->get('type')
+    ->getValue()[0]['target_id'] == 'block_dynamic_cards_with_filter_') {
+    $filter_val = $p->get('field_do_you_want_to_hide_the_fi')->getString();
+    return $filter_val;
+  }
+}
+
+/**
+ * Implements hook_ENTITY_TYPE_presave().
+ */
+function bhge_dynamic_filter_comp_node_presave(EntityInterface $entity) {
+  $bundle = $entity->bundle();
+  if ($bundle == 'news_item') {
+    $cid = 'bhge_dynamic_filter_comp:news_item:year';
+    $data = \Drupal::cache()->get($cid);
+    if ($data) {
+      $options = $data->data;
+      $date = $entity->created->value;
+      if ($date) {
+        $year = format_date($date, '', $format = 'Y', $timezone = NULL, $langcode = NULL);
+        if (!isset($options[$year])) {
+          Cache::invalidateTags(['node:news_item:year']);
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_preprocess_paragraph().
+ */
+function bhge_dynamic_filter_comp_preprocess_paragraph(&$variables) {
+  if (!empty($variables['elements']['#paragraph'])) {
+
+    /** @var \Drupal\paragraphs\Entity\Paragraph $paragraph */
+    $paragraph = $variables['elements']['#paragraph'];
+
+    /** @var \Drupal\node\Entity\Node $parent */
+    $parent = $paragraph->getParentEntity();
+    $id = $paragraph->get('type')->getValue();
+
+    // If its a dynamic card filter pass uri and title of the cta.
+    if (in_array($id[0]['target_id'], ['block_dynamic_cards_with_filter_'])) {
+      if (isset($paragraph->get('field_replace_load_more_button')->getValue()[0])) {
+        $variables['field_replace_load_more_button_url'] = $paragraph->get('field_replace_load_more_button')->first()->getUrl();
+        $variables['field_replace_load_more_button_title'] = $paragraph->get('field_replace_load_more_button')
+          ->getValue()[0]['title'];
+        $variables['remove_load_more'] = 1;
+      }
+    }
+  }
+}

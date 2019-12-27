@@ -1,0 +1,62 @@
+{#
+/**
+ * @file
+ * Default theme implementation for a horizontal tabs layout.
+ *
+ * Available variables:
+ * - content: The content for this layout.
+ * - attributes: HTML attributes for the layout <div>.
+ *
+ * @ingroup themeable
+ */
+#}
+{% set count = content.first | filter( (x,key) => key matches '/^[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}$/')|length %}
+
+{% if content %}
+  <div{{ attributes.addClass(classes) }} data-module="HorizontalTabsFactory">
+    <hr class="bh-layouts__border bh-layouts__border--above"/>
+    <div class="bh-layouts__container">
+
+      {% if content['#settings'].section_title is not empty %}
+        <div class="bh-layouts__header">
+          {% if content['#settings'].section_title is not empty %}
+            <h2 class="bh-layouts__title">{{ content['#settings'].section_title }}</h2>
+          {% endif %}
+        </div>
+      {% endif %}
+
+      <div class="bh-layouts__grid">
+        {% if content.first %}
+          <div {{ region_attributes.first.addClass('bh-layouts__horizontal-tabs') }}>
+            <div class="bh-horizontal-tabs">
+              {% if count > 1 %}
+                <div class="bh-horizontal-tabs__tabs span-full-width">
+                  {% for key, item in content.first if key matches '/^[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}$/' %}
+                    {% set active = loop.index == 1 ? 'bh-horizontal-tabs__tab--active' : '' %}
+                    {% set title = item.content.0['#node'].fields['field_tab_title'].value %}
+                    <div class="bh-horizontal-tabs__tab {{active}}" data-id="{{ title|clean_class }}">{{ title }}</div>
+                  {% endfor %}
+                </div>
+              {% endif%}
+              <div class="bh-horizontal-tabs__content">
+                {% for key, item in content.first if key matches '/^[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}$/' %}
+                  {% if loop.index == 1 %}
+                    <div class="bh-horizontal-tabs__content-item bh-horizontal-tabs__content-item--active">
+                      {{ item }}
+                    </div>
+                  {% else %}
+                    <div class="bh-horizontal-tabs__content-item">
+                      {{ item }}
+                    </div>
+                  {% endif %}
+                {% endfor %}
+              </div>
+            </div>
+            {{ content.first['layout_builder_add_block'] }}
+          </div>
+        {% endif %}
+      </div>
+    </div>
+     <hr class="bh-layouts__border bh-layouts__border--below"/>
+  </div>
+{% endif %}

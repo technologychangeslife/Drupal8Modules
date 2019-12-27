@@ -1,0 +1,24 @@
+<?php
+
+/**
+ * @file
+ * Custom bhge_gated_content.
+ */
+
+/**
+ * Implements hook_preprocess_HOOK().
+ */
+function bhge_gated_content_preprocess_marketo_form__gated(&$variables) {
+  // Add gated attributes.
+  $entity = $variables['data']['entity'];
+  $variables['#attached']['drupalSettings']['geMarketoForm']['marketo']['gatedUrl'] = $variables['data']['gatedUrl'];
+  $gatedDataAttributes = [
+    'data-date-created' => $variables['data']['dateCreated'],
+    'data-content-type' => $variables['data']['contentType'],
+    'data-marketo-gated-url' => $variables['data']['gatedUrl'],
+    'gatedurl' => $variables['data']['fullGatedUrl'],
+    'mCProductDownloadGEMkto' => $entity->get('title')->getValue()[0]['value'],
+    'mCProductDownloadURLGEMkto' => $variables['data']['gatedUrl'],
+  ];
+  $variables['#attached']['drupalSettings']['geMarketoForm']['marketo']['dataAttributes'] = array_merge($variables['#attached']['drupalSettings']['geMarketoForm']['marketo']['dataAttributes'], $gatedDataAttributes);
+}

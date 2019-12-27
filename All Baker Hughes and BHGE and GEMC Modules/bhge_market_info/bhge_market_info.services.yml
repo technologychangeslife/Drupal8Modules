@@ -1,0 +1,11 @@
+services:
+  bhge_market_info.class:
+    class: \Drupal\bhge_market_info\MarketInfoService
+    arguments: ['@state', '@bhge_commodities_info.class', '@cache.default', '@bhge_share_price.share_price_info.class']
+  bhge_market_info.market.info.class:
+    class: \Drupal\bhge_market_info\Controller\MarketInfoPreview
+    arguments: ['@state']
+  bhge_market_info.twig.MarketInfoExtension:
+    class: Drupal\bhge_market_info\Extension\MarketInfoExtension
+    tags:
+      - { name: twig.extension }

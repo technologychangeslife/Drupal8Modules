@@ -1,0 +1,9 @@
+services:
+  bhge_events.event_trail:
+    class: Drupal\bhge_events\EventTrail
+    arguments: ['@entity_type.manager', '@current_route_match']
+  bhge_events.breadcrumb_builder:
+    class: Drupal\bhge_events\Breadcrumb\BreadcrumbBuilder
+    arguments: ['@bhge_events.event_trail', '@current_user']
+    tags:
+      - { name: breadcrumb_builder, priority: 10001 }

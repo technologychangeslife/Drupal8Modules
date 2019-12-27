@@ -1,0 +1,9 @@
+gemc_c130_downloads.content.downloads:
+  path: 'api/v1/downloads'
+  defaults:
+    _controller: '\Drupal\gemc_c130_downloads\Controller\DownloadsController::getDownloads'
+  methods:  [GET]
+  requirements:
+    _permission: 'access content'
+  options:
+    no_cache: true

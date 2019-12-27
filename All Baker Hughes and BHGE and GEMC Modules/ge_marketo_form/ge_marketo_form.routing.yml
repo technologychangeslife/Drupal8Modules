@@ -1,0 +1,7 @@
+ge_marketo_form:
+  path: '/admin/config/system/marketo-form-settings'
+  defaults:
+    _form: '\Drupal\ge_marketo_form\Form\MarketoFormSettingsForm'
+    _title: 'Marketo Form Settings page'
+  requirements:
+    _permission: 'administer site configuration'

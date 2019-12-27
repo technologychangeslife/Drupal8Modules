@@ -1,0 +1,7 @@
+services:
+  gemc_c115_120_gallery.gallery_data:
+    class: Drupal\gemc_c115_120_gallery\GalleryData
+    arguments: ['@database', '@gemc_c115_120_gallery.gallery_data_helpers']
+  gemc_c115_120_gallery.gallery_data_helpers:
+    class: Drupal\gemc_c115_120_gallery\DataHelpers
+    arguments: ['@gemc_components.field_data_service']

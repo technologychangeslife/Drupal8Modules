@@ -1,0 +1,291 @@
+<?php
+
+/**
+ * @file
+ * Custom bhge_document_center.
+ */
+
+use Drupal\views\Views;
+use Drupal\Core\Form\FormStateInterface;
+
+/**
+ * Implements hook_form_alter().
+ */
+function bhge_document_center_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+  $view_names = ['download_center'];
+  $view = $form_state->getStorage('view');
+  if ($form_id == 'views_exposed_form' && in_array($view['view']->id(), $view_names)) {
+
+    // Hide the nid value.
+    $form['nid']['#attributes']['disabled'][] = 'disabled';
+    $form['nid']['#access'] = FALSE;
+
+    $form['select_brand_target_id']['#access'] = FALSE;
+
+    $options = bhge_document_center_get_product_nodes();
+    // Add results count to the product options.
+    $product_options = bhge_document_center_get_filter_options($options, 'count_document_by_product', 'block_1');
+    // Add results count to the language options.
+    $language_options = bhge_document_center_get_filter_options($form['field_language_target_id']['#options'], 'count_document', 'block_1');
+    if (empty($language_options)) {
+      $form['field_language_target_id']['#attributes']['class'][] = 'field_file_language_value_hide';
+    }
+
+    $form['field_language_target_id']['#options'] = $language_options;
+    $form['field_language_target_id']['#weight'] = -3;
+    // Add results count to the file category section.
+    $file_options = bhge_document_center_get_filter_options($form['tid']['#options'], 'count_document_by_filetype', 'block_1');
+    $form['tid']['#options'] = $file_options;
+    // Add additional classes.
+    $form['title']['#attributes']['class'][] = 'dc-edit-title';
+    $form['title']['#weight'] = -4;
+
+    if (!empty($options)) {
+      $product_field = 'nid2';
+      $form[$product_field]['#title'] = 'Select Product';
+      $form[$product_field]['#options']['All'] = t('Select Product/Service');
+      $form[$product_field]['#type'] = 'checkboxes';
+      $form[$product_field]['#multiple'] = TRUE;
+      // Specify the empty option for our select list.
+      $form[$product_field]['#empty_option'] = t('--Any--');
+      $form[$product_field]['#options'] = $product_options;
+      $form[$product_field]['#weight'] = -1;
+      unset($form[$product_field]['#size']);
+      /* if (!empty($product_options)) {
+      $form[$product_field]['#options_attributes'] =
+      bhge_document_center_get_brand_nid($product_options);
+      } */
+    }
+
+    // For Brand Filter.
+    $brand_options_list = bhge_document_center_get_brand_product_nodes();
+    if (!empty($brand_options_list)) {
+      // Add results count to the product options.
+      $brand_options = bhge_document_center_get_filter_options($brand_options_list, 'count_document_by_product_brand', 'block_1');
+      if ($brand_options) {
+        $brand_field = 'select_brand_target_id_1';
+        $form[$brand_field]['#title'] = 'Select Brand';
+        $form[$brand_field]['#options']['All'] = t('Select Brand');
+        $form[$brand_field]['#type'] = 'checkboxes';
+        $form[$brand_field]['#multiple'] = TRUE;
+        // Specify the empty option for our select list.
+        $form[$brand_field]['#empty_option'] = t('--Any--');
+        $form[$brand_field]['#options'] = $brand_options;
+        $form[$brand_field]['#weight'] = -2;
+        unset($form[$brand_field]['#size']);
+      }
+    }
+    $theme = \Drupal::theme()->getActiveTheme();
+    $theme_path = $theme->getPath();
+    $form['actions']['submit']['#type'] = 'image_button';
+    $form['actions']['#weight'] = '0';
+    $form['actions']['submit']['#src'] = $theme_path . '/image/case-study/search.png';
+    $form['actions']['submit']['#attributes']['class'][] = 'search-button';
+
+    $form['#attached']['library'][] = 'bhge_document_center/bhge-filter-brand';
+  }
+  if ($form_id === 'node_document_form' || $form_id === 'node_document_edit_form') {
+    $form['#validate'][] = 'bhge_document_center_node_document_form';
+  }
+}
+
+/**
+ * Implements hook_views_query_alter().
+ */
+function bhge_document_center_views_query_alter($view, $query) {
+  if ($view->id() === 'download_center') {
+    if (!empty($view->exposed_widgets['nid2']['#value'])) {
+      $query->addWhere('5', 'node_field_data_node__field_select_product.nid', $view->exposed_widgets['nid2']['#value'], 'IN');
+    }
+
+    if (!empty($view->exposed_widgets['select_brand_target_id_1']['#value'])) {
+      $query->addWhere('5', 'node_field_data_node__select_brand.nid', $view->exposed_widgets['select_brand_target_id_1']['#value'], 'IN');
+    }
+    // Group by was not working hence this.
+    $query->addField('node_field_data', 'nid', '', ['function' => 'groupby']);
+    // If title is searched.
+    // Than also search the part number with that with the same text.
+    if (!empty($view->exposed_widgets['title']['#value'])) {
+      $configuration = [
+        'type' => 'LEFT',
+        'table' => 'node__field_part_number',
+        'field' => 'entity_id',
+        'left_table' => 'node_field_data',
+        'left_field' => 'nid',
+        'operator' => '=',
+      ];
+
+      $configuration_1 = [
+        'type' => 'LEFT',
+        'table' => 'node__field_description',
+        'field' => 'entity_id',
+        'left_table' => 'node_field_data',
+        'left_field' => 'nid',
+        'operator' => '=',
+      ];
+      // Search part number.
+      $join_obj = Views::pluginManager('join')
+        ->createInstance('standard', $configuration);
+      $query->addRelationship('node__field_part_number', $join_obj, 'entity_id');
+      $query->addWhere('1', 'node__field_part_number.field_part_number_value', '%' . db_like($view->exposed_widgets['title']['#value']) . "%", 'LIKE');
+
+      // Also search document description field.
+      $join_obj_1 = Views::pluginManager('join')
+        ->createInstance('standard', $configuration_1);
+      $query->addRelationship('node__field_description', $join_obj_1, 'entity_id');
+      $query->addWhere('1', 'node__field_description.field_description_value', '%' . db_like($view->exposed_widgets['title']['#value']) . "%", 'LIKE');
+    }
+  }
+}
+
+/**
+ * Get the list of the product its subsection that is tagged to a document.
+ */
+function bhge_document_center_get_product_nodes() {
+  $options = [];
+  // Get the results from this view.
+  // Only get the nodes that have a document attached to it.
+  $result = views_get_view_result('get_product_tagged_document', 'block_1');
+  if (!$result) {
+    return $options;
+  }
+  foreach ($result as $data) {
+    $node = Drupal::getContainer()
+      ->get('entity_type.manager')
+      ->getStorage('node')->load($data->nid);
+    $options[$data->nid] = $node->getTitle();
+  }
+  return $options;
+}
+
+/**
+ * Get the list of the product and its subsection that is tagged to a document.
+ */
+function bhge_document_center_get_brand_product_nodes() {
+  $options = [];
+  // Get the results from this view.
+  // Only get the nodes that have a document attached to it.
+  $result = views_get_view_result('brand_tagged_documents', 'block_1');
+  if (!$result) {
+    return $options;
+  }
+  foreach ($result as $data) {
+    $node = Drupal::getContainer()
+      ->get('entity_type.manager')
+      ->getStorage('node')->load($data->nid);
+    $options[$data->nid] = $node->getTitle();
+  }
+  return $options;
+}
+
+/**
+ * Implements hook_preprocess_paragraph().
+ */
+function bhge_document_center_preprocess_paragraph(&$variables) {
+  if (!empty($variables['elements']['#paragraph'])) {
+    /** @var \Drupal\paragraphs\Entity\Paragraph $paragraph */
+    $paragraph = $variables['elements']['#paragraph'];
+    $id = $paragraph->get('type')->getValue();
+    $parent = NULL;
+    if ($id[0]['target_id'] === 'block_download_center') {
+      $variables['#attached']['library'][] = 'bhge_document_center/bhge-views-counter-download-center';
+      $variables['#attached']['library'][] = 'bhge_document_center/bhge-download-center';
+      // Defining veriables for theme path.
+      $theme = \Drupal::theme()->getActiveTheme();
+      $theme_path = $theme->getPath();
+      $variables['#attached']['drupalSettings']['bhge_document_center']['theme_path'] = $theme_path;
+
+      $configMarketo = Drupal::config('ge_marketo_form.settings');
+      $variables['marketo_form_id'] = $configMarketo->get('document.form_id');
+      $variables['marketo_munchkin_id'] = $configMarketo->get('marketo_id');
+      $variables['button_text'] = $configMarketo->get('document.button_text');
+      $variables['thank_you_text'] = $configMarketo->get('channel_partner_marketo_thank_you_text');
+    }
+  }
+}
+
+/**
+ * Custom validation for node document.
+ *
+ * User should either add a file or the DAM field.
+ */
+function bhge_document_center_node_document_form(&$form, FormStateInterface $form_state) {
+  if (!empty($form_state->getValue('field_file')[0]['fids']) && !empty($form_state->getValue('field_dam_file')['target_id'])) {
+    $form_state->setErrorByName('field_file', t('You can either have the File field or Acquia Dam file. Please choose one of them and not both.'));
+  }
+  // When both empty ask user to upload either one of them.
+  if (empty($form_state->getValue('field_file')[0]['fids']) && empty($form_state->getValue('field_dam_file')['target_id'])) {
+    $form_state->setErrorByName('', t('You have to either add File field or Acquia Dam file. Please choose one of them save.'));
+  }
+}
+
+/**
+ * Return the count of document based on the filter.
+ */
+function bhge_document_center_get_results_count($view_name, $block, $args) {
+  $count = '';
+  $result = views_get_view_result($view_name, $block, $args);
+  if (!$result) {
+    return $count;
+  }
+  foreach ($result as $data) {
+    $count = $data->nid;
+  }
+  return $count;
+}
+
+/**
+ * Return the options with count values.
+ */
+function bhge_document_center_get_filter_options($options, $view_name, $block) {
+  $filter_options = [];
+  foreach ($options as $key => $val) {
+    $file_language_count = bhge_document_center_get_results_count($view_name, $block, $key);
+    if (!empty($file_language_count)) {
+      $filter_options[$key] = $val . ' (' . $file_language_count . ')';
+    }
+    else {
+      unset($filter_options[$key]);
+    }
+  }
+  return $filter_options;
+}
+
+/*
+ *
+ * Returns the list of the brand that's tagged to the document.
+ *
+ *
+ */
+
+/*function bhge_document_center_get_brand_nid($options) {
+$attributes = [];
+if (!empty($options)) {
+if (count($options) > 1) {
+$nid_list = implode("+", array_keys($options));
+}
+else {
+$nid_list = $options;
+}
+}
+// Get the results from this view.
+// $result = views_get_view_result(
+// 'get_product_nid_from_that_has_brand',
+// 'block_1',
+// $nid_list);
+if (!$result) {
+return $attributes;
+}
+$result_fin = array();
+foreach ($result as $data ) {
+$result_fin[$data->node_field_data_node__field_select_product_nid]['data-brand'][]=
+$data->node_field_data_node__select_brand_nid;
+}
+
+foreach($result_fin as $key => $arr) {
+foreach($arr as $key1 => $val){
+$attributes[$key][$key1]= implode(', ',array_unique($val));
+}
+}
+return $attributes;
+}*/

@@ -1,0 +1,6 @@
+name: BHGE Internal Site Custom
+type: module
+description: 'Custom module for BHGE internal sites'
+package: Custom
+version: 8.x
+core: 8.x

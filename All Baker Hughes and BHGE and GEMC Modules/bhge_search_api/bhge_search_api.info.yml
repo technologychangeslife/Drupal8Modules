@@ -1,0 +1,8 @@
+name: BHGE Oil Search API
+type: module
+description: 'Custom BHGE search API module working with solr search'
+package: Custom
+version: 8.x
+core: 8.x
+dependencies:
+  - search_api

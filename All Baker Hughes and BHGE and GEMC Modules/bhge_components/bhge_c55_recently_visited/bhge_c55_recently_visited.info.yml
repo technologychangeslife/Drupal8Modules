@@ -1,0 +1,6 @@
+name: BHGE C55 Recently Visited
+type: module
+description: 'BHGE C55 Recently Visited'
+package: BHGE Components
+version: 8.x
+core: 8.x

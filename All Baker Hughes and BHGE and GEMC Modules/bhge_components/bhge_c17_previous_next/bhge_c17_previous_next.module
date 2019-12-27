@@ -1,0 +1,28 @@
+<?php
+
+/**
+ * @file
+ * This module is for previuos next functionality.
+ */
+
+/**
+ * Implements hook_entity_extra_field_info().
+ */
+function bhge_c17_previous_next_entity_extra_field_info() {
+  $extra = [];
+
+  $extra['node']['section']['display']['bhge_section_prev_next'] = [
+    'label' => t('BHGE section previous next'),
+    'description' => t('Previous next navigation for Product sectionpage.'),
+    'weight' => 6,
+    'visible' => TRUE,
+  ];
+  $extra['node']['product']['display']['bhge_product_prev_next'] = [
+    'label' => t('BHGE product previous next'),
+    'description' => t('Previous next navigation for Products.'),
+    'weight' => 6,
+    'visible' => TRUE,
+  ];
+
+  return $extra;
+}

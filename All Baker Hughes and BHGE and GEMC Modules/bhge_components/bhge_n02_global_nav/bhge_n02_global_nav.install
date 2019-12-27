@@ -1,0 +1,30 @@
+<?php
+
+/**
+ * @file
+ * Global navigation install.
+ */
+
+/**
+ * Implements hook_install().
+ */
+function bhge_n02_global_nav_install() {
+  bhge_n02_global_nav_update_8001();
+}
+
+/**
+ * Setting up global subnav variables to fetch.
+ */
+function bhge_n02_global_nav_update_8001() {
+
+  $host = \Drupal::request()->getHost();
+
+  $config = \Drupal::configFactory()->getEditable('bhge.general_settings');
+  $hseInfoConfig = \Drupal::configFactory()->getEditable('bhge.hse_info_settings');
+  $hseInfoConfig->set('hse_days_suffix', 'Perfect HSE Days')->save();
+
+  // Enable the global nav on all sites, except main public one.
+  if (strpos('www.bhge.com', $host) === FALSE) {
+    $config->set('enable_global_nav', 1)->save();
+  }
+}

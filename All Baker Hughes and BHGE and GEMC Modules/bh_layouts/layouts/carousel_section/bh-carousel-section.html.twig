@@ -1,0 +1,52 @@
+{#
+/**
+ * @file
+ * Default theme implementation for a carousel layout.
+ *
+ * Available variables:
+ * - content: The content for this layout.
+ * - attributes: HTML attributes for the layout <div>.
+ *
+ * @ingroup themeable
+ */
+#}
+
+{% if content %}
+    <div{{attributes.addClass(classes)}} data-module="CarouselFactory">
+      <hr class="bh-layouts__border bh-layouts__border--above"/>
+        <div class="bh-layouts__container">
+            <div class="bh-layouts__grid">
+                <div class="glide">
+                  <div class="bh-layouts__header">
+                    {% if content['#settings'].section_title is not empty %}
+                      <h2 class="bh-layouts__title">{{ content['#settings'].section_title }}</h2>
+                    {% endif %}
+                    <div class="glide__arrows" data-glide-el="controls">
+                      <svg class="icon icon--arrow-circle glide__arrow glide__arrow-left" data-glide-dir="<">
+                        <use xlink:href="/{{directory}}/dist/svg/sprite-symbol.svg#arrow-circle"></use>
+                      </svg>
+                      <svg class="icon icon--arrow-circle-gray glide__arrow glide__arrow-left--gray" data-glide-dir="<">
+                        <use xlink:href="/{{directory}}/dist/svg/sprite-symbol.svg#arrow-circle-gray"></use>
+                      </svg>
+                      <svg class="icon icon--arrow-circle glide__arrow glide__arrow-right" data-glide-dir=">">
+                        <use xlink:href="/{{directory}}/dist/svg/sprite-symbol.svg#arrow-circle"></use>
+                      </svg>
+                      <svg class="icon icon--arrow-circle-gray glide__arrow glide__arrow-right--gray" data-glide-dir=">">
+                        <use xlink:href="/{{directory}}/dist/svg/sprite-symbol.svg#arrow-circle-gray"></use>
+                      </svg>
+                    </div>
+                  </div>
+
+                  <div class="bh-layouts__carousel-track">
+                    {% if content.first %}
+                      <div {{ region_attributes.first.addClass('bh-layouts__carousel') }}>
+                        {{ content.first }}
+                      </div>
+                    {% endif %}
+                  </div>
+                </div>
+            </div>
+        </div>
+        <hr class="bh-layouts__border bh-layouts__border--below"/>
+    </div>
+{% endif %}

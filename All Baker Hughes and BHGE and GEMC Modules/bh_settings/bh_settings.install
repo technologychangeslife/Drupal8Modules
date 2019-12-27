@@ -1,0 +1,75 @@
+<?php
+
+/**
+ * @file
+ * Install, update and uninstall functions for the bh_settings module.
+ */
+
+use Drupal\Core\Database\Database;
+
+/**
+ * @file
+ * Install, update and uninstall functions for the bh_settings module.
+ */
+
+/**
+ * Hook_update_N().
+ *
+ * Change the minimal profile to bakerhughes_base.
+ */
+function bh_settings_update_8700() {
+  \Drupal::keyValue('state')->delete('system.profile.files');
+  $old = 'minimal';
+  $new = 'bakerhughes_base';
+  \Drupal::configFactory()->getEditable('core.extension')
+    ->set('profile', $new)
+    ->save();
+  drupal_flush_all_caches();
+
+  \Drupal::service('module_installer')->install([$new]);
+  \Drupal::service('module_installer')->uninstall([$old]);
+
+  $sc = \Drupal::keyValue('system.schema');
+  $weight = 8000;
+  if ($weight == $sc->get($old)) {
+    $sc->delete($old);
+  }
+  $sc->set($new, $weight);
+}
+
+/**
+ * Hook_update_N().
+ *
+ * Remove unused modules.
+ */
+function bh_settings_update_8702() {
+  $query = \Drupal::database()->delete('key_value');
+  $query->condition('name', 'bh_marketo');
+  $query->execute();
+}
+
+/**
+ * Hook_update_N().
+ *
+ * Remove unused modules.
+ */
+function bh_settings_update_8703() {
+  //Uninstall bhge modules.
+  \Drupal::service('module_installer')->uninstall(['bhge_rigcount']);
+  \Drupal::service('module_installer')->uninstall(['bhge_commodities_info']);
+  \Drupal::service('module_installer')->uninstall(['bhge_market_info']);
+  \Drupal::service('module_installer')->uninstall(['bhge_share_price']);
+
+  $stateFields = [
+    'stock_info_url',
+  ];
+
+  $config = \Drupal::configFactory()->getEditable('bh.stock_info_settings');
+  $state = \Drupal::service('state');
+
+  foreach ($stateFields as $stateField) {
+    if (!empty($state->get($stateField))) {
+      $config->set($stateField, $state->get($stateField))->save();
+    }
+  }
+}

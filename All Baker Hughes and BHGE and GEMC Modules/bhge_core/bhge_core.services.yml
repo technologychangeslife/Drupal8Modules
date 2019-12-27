@@ -1,0 +1,7 @@
+services:
+  bhge_core.twig.uiutilsextension:
+    class: Drupal\bhge_core\Extension\UIUtilsExtension
+    tags:
+      - { name: twig.extension }
+  bhge_core.data_helpers:
+    class: Drupal\bhge_core\DataHelpers

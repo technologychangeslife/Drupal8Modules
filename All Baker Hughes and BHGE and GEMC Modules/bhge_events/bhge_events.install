@@ -1,0 +1,27 @@
+<?php
+
+/**
+ * @file
+ * Install, update and uninstall functions for the bhge_events module.
+ */
+
+use Drupal\taxonomy\Entity\Term;
+
+/**
+ * Populate Event Topic Taxonomy with default values.
+ */
+function bhge_events_update_8403() {
+  $taxonomyMachineName = 'event_topic';
+  $defaultValues = ['Presentations',
+    'Technology Sessions',
+    'Speakers',
+    'Panel Discussion',
+  ];
+  foreach ($defaultValues as $value) {
+    Term::create([
+      'parent' => [],
+      'name' => $value,
+      'vid' => $taxonomyMachineName,
+    ])->save();
+  }
+}

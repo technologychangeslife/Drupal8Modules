@@ -1,0 +1,4 @@
+services:
+  bhge_page_access.default:
+    class: Drupal\bhge_page_access\DefaultService
+    arguments: []

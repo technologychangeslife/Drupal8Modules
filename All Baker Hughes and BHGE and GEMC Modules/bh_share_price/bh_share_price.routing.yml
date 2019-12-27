@@ -1,0 +1,6 @@
+bh_share_price.share_price_info.:
+  path: '/share_price_info'
+  defaults: { _controller: '\Drupal\bh_share_price\Controller\SharePriceInfoController::getSharePriceInfoUrl' }
+  methods:  [GET]
+  requirements:
+    _access: 'TRUE'

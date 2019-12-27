@@ -1,0 +1,127 @@
+<?php
+
+/**
+ * @file
+ * Custom gemc_events.
+ */
+
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\views\ViewExecutable;
+use Drupal\views\Plugin\views\query\QueryPluginBase;
+use Drupal\views\Views;
+use Drupal\node\NodeInterface;
+use Drupal\Core\Cache\Cache;
+
+/**
+ * Implements hook_views_query_alter().
+ */
+function gemc_events_views_query_alter(ViewExecutable $view, QueryPluginBase $query) {
+
+  if ($view->id() !== 'events' || $view->current_display !== 'block_1') {
+    return;
+  }
+
+  $node = \Drupal::routeMatch()->getParameter('node');
+
+  if (!$node instanceof NodeInterface || !in_array($node->bundle(), ['section', 'product', 'industry'])) {
+    return;
+  }
+
+  $categories = [];
+  $industries = [];
+
+  if ($node->bundle() === 'industry') {
+    // Filter by current industry.
+    $industries[] = $node->id();
+  }
+
+  foreach (['field_prod_section', 'field_section_parents'] as $field) {
+    if ($node->hasField($field)) {
+      foreach ($node->get($field)->getValue() as $value) {
+        $categories[] = $value['target_id'];
+      }
+
+      if ($node->bundle() === 'section') {
+        // Add current product category to the filters.
+        $categories[] = $node->id();
+      }
+    }
+  }
+
+  $filter_field = '';
+  $values = [];
+
+  if ($categories) {
+    $filter_field = 'field_prod_section';
+    $values = $categories;
+  }
+
+  if ($industries) {
+    $filter_field = 'field_prod_industry';
+    $values = $industries;
+  }
+
+  if ($filter_field && $values) {
+    $table = 'node__' . $filter_field;
+    $definition = [
+      'table' => $table,
+      'field' => 'entity_id',
+      'left_table' => 'node_field_data',
+      'left_field' => 'nid',
+    ];
+    $join = Views::pluginManager('join')->createInstance('standard', $definition);
+    $alias = $query->addTable($table, 'node_field_data', $join);
+    $query->addWhere('1', "{$alias}.{$filter_field}_target_id", $values, 'IN');
+  }
+}
+
+/**
+ * Implements hook_node_update().
+ */
+function gemc_events_node_update(NodeInterface $node) {
+  if ($node->getType() !== 'event') {
+    return;
+  }
+
+  $invalidate_tags = [];
+  foreach (['field_prod_section', 'field_prod_industry'] as $field) {
+    if ($node->hasField($field)) {
+      foreach ($node->get($field)->referencedEntities() as $entity) {
+        $invalidate_tags = Cache::mergeTags($invalidate_tags, $entity->getCacheTagsToInvalidate());
+      }
+    }
+  }
+
+  if ($invalidate_tags) {
+    Cache::invalidateTags($invalidate_tags);
+  }
+}
+
+/**
+ * Implements hook_field_widget_form_alter().
+ */
+function gemc_events_field_widget_form_alter(&$element, FormStateInterface $form_state, $context) {
+  // Check if it's a viewfield field type.
+  if (!isset($element["target_id"]["#field_type"]) || $element["target_id"]["#field_type"] !== 'viewfield') {
+    return;
+  }
+
+  // Process only for upcoming events field.
+  if (!isset($context['items']) || $context['items']->getName() !== 'field_upcoming_events_ref') {
+    return;
+  }
+
+  if (isset($element['arguments'])) {
+    $countries = \Drupal::service('country_manager')->getList();
+    $element['arguments'] = [
+      '#title' => t('Country'),
+      '#type' => 'select',
+      '#options' => $countries,
+      '#empty_value' => '',
+      '#default_value' => isset($element['arguments']['#default_value']) ? $element['arguments']['#default_value'] : NULL,
+      '#description' => t('Select a country'),
+      '#weight' => $element['arguments']['#weight']
+    ];
+    $element['token_help']['#access'] = FALSE;
+  }
+}

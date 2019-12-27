@@ -1,0 +1,7 @@
+node.type.*.third_party.ge_marketo_form:
+  type: mapping
+  label: 'Marketo Form'
+  mapping:
+    enabled:
+      type: boolean
+      label: 'Whether to enable the Marketo Form on this node type'

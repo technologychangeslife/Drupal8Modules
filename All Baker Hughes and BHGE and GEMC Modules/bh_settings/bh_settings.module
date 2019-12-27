@@ -1,0 +1,125 @@
+<?php
+
+/**
+ * @file
+ * Custom bh_settings module.
+ */
+
+use Drupal\Core\Render\BubbleableMetadata;
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\views\ViewExecutable;
+
+/**
+ * Implements hook_token_info().
+ */
+function bh_settings_token_info() {
+  $types['bh_tokens'] = [
+    'name' => t('BH Tokens'),
+    'description' => t('Custom tokens for Baker Hughes'),
+  ];
+  $bh_tokens['bh_news_no_results_messaging'] = [
+    'name' => t('No Results Messaging'),
+    'description' => t('A token to render the "No Results" messaging for the News Landing component.'),
+  ];
+  return [
+    'types' => $types,
+    'tokens' => [
+      'bh_tokens' => $bh_tokens,
+    ],
+  ];
+}
+
+/**
+ * Implements hook_tokens().
+ */
+function bh_settings_tokens($type, $tokens, array $data, array $options, BubbleableMetadata $bubbleable_metadata) {
+  $replacements = [];
+  if ($type == 'bh_tokens') {
+    foreach ($tokens as $name => $original) {
+      // Find the desired token by name.
+      switch ($name) {
+        case 'bh_news_no_results_messaging':
+          $message = [
+            '#type' => 'processed_text',
+            '#text' => \Drupal::config('bh.general_settings')->get('bh_news_no_results_messaging.value'),
+            '#format' => \Drupal::config('bh.general_settings')->get('bh_news_no_results_messaging.format'),
+            '#langcode' => 'en',
+          ];
+          $replacements[$original] = render($message);
+          break;
+      }
+    }
+  }
+  return $replacements;
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function bh_settings_form_views_exposed_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+
+  if ($form['#id'] == 'views-exposed-form-contacts-block-1') {
+    bh_settings_contacts_team_list_exposed_filter_overrides($form);
+  }
+}
+
+/**
+ * Provides overrides to exposed filter for the Contacts team list display.
+ *
+ *  - Removes the "All" options, e.g. "- Any -".
+ */
+function bh_settings_contacts_team_list_exposed_filter_overrides(&$form) {
+
+  $route = \Drupal::routeMatch()->getRouteObject();
+
+  $is_admin = \Drupal::service('router.admin_context')->isAdminRoute($route);
+
+  // Do not perform any overrides on the admin view page as it causes errors in
+  // the view while editing.
+  if ($is_admin) {
+    return;
+  }
+
+  $config = \Drupal::config('bh.general_settings');
+  $default_tab = $config->get('team_list_default_tab');
+  $filter_id = 'team_list';
+
+  // Remove the "- Any -" option.
+  if ($default_tab) {
+    unset($form[$filter_id]['#options']['All']);
+  }
+}
+
+/**
+ * Implements hook_views_pre_build().
+ */
+function bh_settings_views_pre_build(ViewExecutable $view) {
+  // Set default contact's team list tab.
+  bh_settings_set_contacts_team_list_default_tab($view);
+}
+
+/**
+ * Sets the default tab for the Contacts' default tab.
+ *
+ * @param \Drupal\views\ViewExecutable $view
+ *   Helper function.
+ */
+function bh_settings_set_contacts_team_list_default_tab(ViewExecutable $view) {
+
+  $view_id = ['contacts'];
+
+  if (in_array($view->id(), $view_id)) {
+
+    $config = \Drupal::config('bh.general_settings');
+    $default_tab = $config->get('team_list_default_tab');
+    $filter_id = 'team_list';
+
+    // Prevent caching may be a good idea:
+    \Drupal::service('page_cache_kill_switch')->trigger();
+    $exposedInput = $view->getExposedInput();
+
+    if (empty($exposedInput[$filter_id]) && $default_tab) {
+      $view->setExposedInput([$filter_id => $default_tab]);
+    }
+  }
+}

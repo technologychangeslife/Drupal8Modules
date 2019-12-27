@@ -1,0 +1,13 @@
+<?php
+
+/**
+ * @file
+ * Custom gemc_c129_forms module.
+ */
+
+/**
+ * Implements hook preprocess_page().
+ */
+function gemc_c129_forms_preprocess_page(&$variables) {
+  $variables['#attached']['library'][] = 'gemc_c129_forms/marketo';
+}

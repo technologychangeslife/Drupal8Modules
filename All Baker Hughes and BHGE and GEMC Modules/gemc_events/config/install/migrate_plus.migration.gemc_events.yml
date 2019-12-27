@@ -1,0 +1,112 @@
+langcode: en
+status: true
+dependencies:
+  enforced:
+    module:
+      - gemc_events
+id: gemc_events
+migration_group: gemc_events
+label: 'Events'
+source:
+  plugin: spreadsheet
+  file: modules/custom/gemc_events/resources/empty_events.xlsx
+  keys:
+    'Show Name':
+      type: string
+      max_length: 255
+      is_ascii: true
+  columns:
+    - 'Show Name'
+    - 'Start Date'
+    - 'End Date'
+    - 'Product Category'
+    - 'Product Category 2 (Optional)'
+    - 'Product Category 3 (Optional)'
+    - 'Industry'
+    - 'Industry 2 (Optional)'
+    - 'Industry 3 (Optional)'
+    - 'Country (Optional)'
+  worksheet: Sheet1
+  header_row: 1
+  ignore_map: false
+process:
+  title: 'Show Name'
+  field_dates/value:
+    -
+      plugin: callback
+      callable:
+        - '\PhpOffice\PhpSpreadsheet\Shared\Date'
+        - excelToTimestamp
+      source: "Start Date"
+    -
+      plugin: format_date
+      from_format: 'U'
+      to_format: 'Y-m-d\TH:i:s'
+  field_dates/end_value:
+    - plugin: callback
+      callable:
+        - '\PhpOffice\PhpSpreadsheet\Shared\Date'
+        - excelToTimestamp
+      source: "End Date"
+    - plugin: format_date
+      from_format: 'U'
+      to_format: 'Y-m-d\TH:i:s'
+  section:
+    -
+      plugin: get
+      source:
+        - 'Product Category'
+        - 'Product Category 2 (Optional)'
+        - 'Product Category 3 (Optional)'
+    -
+      plugin: callback
+      callable: array_filter
+  field_prod_section:
+    -
+      plugin: entity_lookup
+      entity_type: node
+      bundle_key: type
+      bundle: section
+      value_key: title
+      ignore_case: true
+      source: '@section'
+  industry:
+    -
+      plugin: get
+      source:
+        - 'Industry'
+        - 'Industry 2 (Optional)'
+        - 'Industry 3 (Optional)'
+    -
+      plugin: callback
+      callable: array_filter
+  field_prod_industry:
+    -
+      plugin: entity_lookup
+      entity_type: node
+      bundle_key: type
+      bundle: industry
+      value_key: title
+      ignore_case: true
+      source: '@industry'
+  status:
+    plugin: default_value
+    default_value: 0
+  field_country:
+    -
+      plugin: skip_on_empty
+      method: process
+      source: 'Country (Optional)'
+    -
+      plugin: substr
+      start: 0
+      length: 2
+destination:
+  plugin: 'entity:node'
+  default_bundle: event
+  overwrite_properties:
+    - field_dates/value
+    - field_dates/end_value
+    - field_prod_section
+    - field_prod_industry
+    - field_country

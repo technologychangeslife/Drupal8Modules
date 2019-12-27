@@ -1,0 +1,7 @@
+gemc_download_center.settings_form:
+  path: '/admin/config/system/download-center-settings'
+  defaults:
+    _form: '\Drupal\gemc_download_center\Form\DownloadCenterSettingsForm'
+    _title: 'Download Center Settings'
+  requirements:
+    _permission: 'administer site configuration'

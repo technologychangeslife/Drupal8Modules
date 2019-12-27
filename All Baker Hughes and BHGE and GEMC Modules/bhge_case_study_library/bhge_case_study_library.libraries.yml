@@ -1,0 +1,47 @@
+bhge-case-study-library:
+  version: 1.x
+  js:
+    js/bhge-case-study-library.js: {}
+  dependencies:
+    - core/jquery
+    - core/drupal
+    - core/drupalSettings
+    - core/drupal.ajax
+bhge-case-study-results-challenges:
+  version: 1.x
+  js:
+    js/bhge-case-study-results-challenges.js: {}
+  dependencies:
+    - core/jquery
+    - core/drupal
+    - core/drupalSettings
+bhge-case-study-library-popup:
+  version: 1.x
+  js:
+    js/bhge-case-study-library-popup.js: {}
+  dependencies:
+    - core/jquery
+    - core/drupal
+    - core/drupalSettings
+    - core/drupal.ajax
+  css:
+     theme:
+        css/bhge-case-study-library-popup.css: {}
+bhge-case-study-library-slider:
+  version: 1.x
+  js:
+    js/bhge-case-study-library-slider.js: {}
+  dependencies:
+    - core/jquery
+    - core/drupal
+    - core/drupalSettings
+    - core/drupal.ajax
+bhge-case-study-product-dropdown:
+  version: 1.x
+  js:
+    js/bhge-case-study-product-dropdown.js: {}
+  dependencies:
+    - core/jquery
+    - core/drupal
+    - core/drupalSettings
+    - core/drupal.ajax

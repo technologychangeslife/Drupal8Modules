@@ -1,0 +1,43 @@
+<?php
+
+/**
+ * @file
+ * The search api module.
+ */
+
+use Drupal\node\Entity\Node;
+use Drupal\search_api\IndexInterface;
+
+/**
+ * Implements hook_theme().
+ */
+function bhge_search_api_theme($existing, $type, $theme, &$path) {
+  $path = 'themes/custom/bhge';
+  $theme = [
+    'bhge_search' => [
+      'variables' => [
+        'productsAndServices' => NULL,
+        'searchResults' => NULL,
+        'facets' => NULL,
+        'totalResultCount' => 0,
+      ],
+      'template' => 'sources/s01-search/s01-section',
+    ],
+  ];
+  return $theme;
+}
+
+/**
+ * Implements hook_search_api_index_items_alter().
+ */
+function bhge_search_api_search_api_index_items_alter(IndexInterface $index, array &$items) {
+  foreach ($items as $key => $item) {
+    $entity = $item->getOriginalObject();
+    if (!empty($entity) && !empty($entity->getValue())) {
+      $entity = $entity->getValue();
+    }
+    if ($entity instanceof Node && $entity->getType() === 'section' && empty($entity->field_has_page->value)) {
+      unset($items[$key]);
+    }
+  }
+}

@@ -1,0 +1,9 @@
+name: BHGE Blog page
+type: module
+description: 'Blog over view page and ask question helpers and overrides.'
+package: BHGE Components
+version: 8.x
+core: 8.x
+dependencies:
+  - bhge_c55_gallery
+  - bhge_c20_quick_links

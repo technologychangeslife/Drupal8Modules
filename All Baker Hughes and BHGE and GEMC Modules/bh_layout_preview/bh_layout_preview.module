@@ -1,0 +1,148 @@
+<?php
+
+/**
+ * @file
+ * Bh layout module file.
+ */
+
+use Drupal\views\Plugin\views\query\Sql;
+use Drupal\views\ViewExecutable;
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Template\Attribute;
+use Drupal\Component\Serialization\Json;
+use Drupal\Core\Url;
+use Drupal\user\Entity\User;
+
+/**
+ * Implements hook_theme().
+ */
+function bh_layout_preview_theme($existing, $type, $theme, $path) {
+  return [
+    'bh_layout_preview_block_links' => [
+      'variables' => ['links' => NULL],
+      'preprocess functions' => [
+        'template_preprocess_links',
+        'template_preprocess_bh_layout_preview_block_links',
+      ],
+    ],
+    'bh_image_preview' => [
+      'variables' => ['image_path' => NULL],
+    ],
+  ];
+}
+
+/**
+ * Implments preprocess function.
+ *
+ * Add the preview link to layout builder blocks in "Add Block" UI.
+ */
+function template_preprocess_bh_layout_preview_block_links(&$variables) {
+  // Get the module path.
+  $module_handler = \Drupal::service('module_handler');
+  $module_path = $module_handler->getModule('bh_layout_preview')->getPath();
+
+  $links = $variables['links'];
+
+  if (!empty($links)) {
+    $config = \Drupal::service('config.factory')->getEditable('bh_layout_preview.layout_builder_settings');
+    foreach ($links as $key => $item) {
+      // Get the plugin id.
+      $route_parameters = $item['link']['#url']->getRouteParameters();
+      if (isset($route_parameters)) {
+        $plugin_id = $route_parameters['plugin_id'];
+        $image_path = $config->get($plugin_id);
+
+        if ($image_path) {
+          // Url object.
+          $url_object = \Drupal::service('path.validator')->getUrlIfValid($image_path);
+          if ($url_object === FALSE) {
+            $url_object = Url::fromUserInput("/layout-builder-preview/$plugin_id");
+          }
+          if ($plugin_id == 'entity_browser_block:hero_entity_browser') {
+            $width = '100%';
+          }
+          else {
+            $width = 'auto';
+          }
+          // Create link with preview icon.
+          $item['preview_link'] = [
+            '#type' => 'link',
+            '#title' => [
+              '#type' => 'html_tag',
+              '#tag' => 'img',
+              '#attributes' => ['src' => "/$module_path/assets/preview-icon.svg"],
+            ],
+            '#url' => $url_object,
+            '#attributes' => [
+              'class' => ['use-ajax', 'bh-preview'],
+              'data-dialog-type' => 'dialog',
+              'data-dialog-options' => Json::encode([
+                'width' => $width,
+                'height' => 'auto',
+                'modal' => TRUE,
+              ]),
+            ],
+          ];
+          // Add the item to the list of links.
+          $variables['links'][$key] = $item;
+        }
+      }
+    }
+    // Add the library.
+    $variables['#attached']['library'][] = 'bh_layout_preview/bh_layout_preview';
+  }
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function bh_layout_preview_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+  if ($form_id == 'views_exposed_form' && in_array($form_state->getStorage('view')['view']->id(), ['content']) && (\Drupal::currentUser()->id() != 1)) {
+    if (User::load(\Drupal::currentUser()->id())->hasRole('press_release_admin')) {
+      unset($form['type']['#options']);
+      $form['type']['#options'] = ['article'];
+      $form['type']['#value'] = 'article';
+    }
+    else {
+      $config = \Drupal::service('config.factory')->getEditable('bh_layout_preview.expose_content_type');
+      $selected_list = $config->get('selected_content_type');
+      if (array_filter($selected_list)) {
+        foreach ($selected_list as $key => $val) {
+          if (!$val) {
+            unset($form['type']['#options'][$key]);
+          }
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_views_query_alter().
+ */
+function bh_layout_preview_views_query_alter(ViewExecutable $view, Sql $query) {
+  if ($view->id() == 'content' && $view->getDisplay()->display['id'] == 'page_1' && (\Drupal::currentUser()->id() == 1)) {
+    // Traverse through the 'where' part of the query.
+    foreach ($query->where as &$condition_group) {
+      foreach ($condition_group['conditions'] as &$condition) {
+        if ($condition['field'] == 'node_field_data.type' && (count($condition['value']) > 2)) {
+          $types = \Drupal::entityTypeManager()
+            ->getStorage('node_type')
+            ->loadMultiple();
+          $condition['value'] = array_keys($types);
+          $condition['operator'] = 'in';
+        }
+      }
+    }
+  }
+  elseif ($view->id() == 'content' && $view->getDisplay()->display['id'] == 'page_1' && (User::load(\Drupal::currentUser()->id())->hasRole('press_release_admin'))) {
+    foreach ($query->where as &$condition_group) {
+      foreach ($condition_group['conditions'] as &$condition) {
+        if ($condition['field'] == 'node_field_data.type') {
+          $condition['value'] = ['article'];
+          $condition['operator'] = 'in';
+        }
+      }
+    }
+  }
+}

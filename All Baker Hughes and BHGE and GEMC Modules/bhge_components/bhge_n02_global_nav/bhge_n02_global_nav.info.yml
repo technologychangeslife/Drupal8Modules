@@ -1,0 +1,6 @@
+name: BHGE N02 Global Navigation
+type: module
+description: 'Global navigation accross BHGE sites'
+package: BHGE Components
+version: 8.x
+core: 8.x

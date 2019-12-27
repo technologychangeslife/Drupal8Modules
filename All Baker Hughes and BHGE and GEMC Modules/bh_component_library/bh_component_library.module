@@ -1,0 +1,39 @@
+<?php
+
+/**
+ * @file
+ * Allows authendicated users to access component library pages.
+ */
+
+use Drupal\Core\Session\AccountInterface;
+use Drupal\node\NodeInterface;
+use Drupal\Core\Access\AccessResult;
+
+/**
+ * Restrict compontent library page view access only for authendicated user.
+ *
+ * @param \Drupal\node\NodeInterface|string $node
+ *   Node entity.
+ * @param string $op
+ *   The operation to be performed.
+ * @param \Drupal\Core\Session\AccountInterface $account
+ *   User object.
+ *
+ * @return \Drupal\Core\Access\AccessResultInterface
+ *   The access result.
+ *
+ * @ingroup node_access
+ */
+function bh_component_library_node_access(NodeInterface $node, $op, AccountInterface $account) {
+  switch ($op) {
+    case 'view':
+      if (($node->getType() == 'basic_page') &&
+        (strpos($node->toUrl()->toString(), '/component-library/') !== FALSE)) {
+        return AccessResult::allowedIf($account->isAuthenticated() && $account->hasPermission('can view bh component library'));
+      }
+
+    default:
+      // No opinion.
+      return AccessResult::neutral();
+  }
+}

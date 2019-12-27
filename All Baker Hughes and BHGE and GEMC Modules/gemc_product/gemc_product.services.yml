@@ -1,0 +1,3 @@
+services:
+  gemc_product.filters_service:
+    class: Drupal\gemc_product\ProductFiltersService

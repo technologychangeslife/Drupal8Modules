@@ -1,0 +1,9 @@
+name: GEMC C17 Products and Sections
+type: module
+description: 'GEMC Products Navigation'
+package: GEMC Components
+version: 8.x
+core: 8.x
+dependencies:
+  - gemc_c115_120_section
+  - gemc_c17_browser

@@ -1,0 +1,8 @@
+services:
+  gemc_search.twig.searchextension:
+    class: Drupal\gemc_search\Extension\SearchExtension
+    tags:
+      - { name: twig.extension }
+  gemc_search.search_helpers:
+      class: Drupal\gemc_search\SearchHelpers
+      arguments: ['@gemc_search.twig.searchextension']

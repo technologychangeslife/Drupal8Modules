@@ -1,0 +1,6 @@
+name: BHGE Oil Rig count
+type: module
+description: 'Rig Count module for BHGE Oil'
+package: Custom
+version: 8.x
+core: 8.x

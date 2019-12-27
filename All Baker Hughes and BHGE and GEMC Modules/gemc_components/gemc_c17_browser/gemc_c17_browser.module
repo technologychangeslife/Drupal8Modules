@@ -1,0 +1,23 @@
+<?php
+
+/**
+ * @file
+ * Custom gemc_c17_browser module.
+ */
+
+/**
+ * Implements hook_theme().
+ */
+function gemc_c17_browser_theme($existing, $type, $theme, &$path) {
+
+  $path = 'themes/custom/gemc';
+  $theme = [
+    'gemc_c17_browser' => [
+      'variables' => [
+        'data' => [],
+      ],
+      'template' => 'components/c17-browser/c17-browser',
+    ],
+  ];
+  return $theme;
+}

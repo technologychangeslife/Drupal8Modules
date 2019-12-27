@@ -1,0 +1,11 @@
+bh_layout_preview.bhge_layout_builder_preview_settings:
+  route_name : bh_layout_preview.bhge_layout_builder_preview_settings
+  title: Layout Builder Preview Config Form
+  base_route: bh_settings.general_settings_form
+  weight: 11
+
+bh_layout_preview.bhge_expose_content_type_settings:
+  route_name : bh_layout_preview.bhge_expose_content_type_settings
+  title: Expose Content Type Config Form
+  base_route: bh_settings.general_settings_form
+  weight: 12

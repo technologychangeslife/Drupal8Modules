@@ -1,0 +1,3 @@
+administer bh settings:
+  title: 'Administer BH Settings'
+  description: 'Allow access to BH Settings form'

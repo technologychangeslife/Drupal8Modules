@@ -1,0 +1,8 @@
+name: BH Component Library
+type: module
+description: Creates a navigation to view the entire library of BH components.
+package: BH
+version: VERSION
+core: '8.x'
+dependencies:
+  - bh_layout_preview

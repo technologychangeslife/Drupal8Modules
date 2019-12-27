@@ -1,0 +1,24 @@
+ge-form-js:
+  version: VERSION
+  js:
+    js/ge-form.js: {}
+  dependencies:
+  - core/jquery
+  - core/drupal
+  - core/drupalSettings
+  - core/drupal.ajax
+  css:
+    theme:
+      css/registrationform.css: {}
+nonge-form-js:
+  version: VERSION
+  js:
+    js/nonge-form.js: {}
+  dependencies:
+  - core/jquery
+  - core/drupal
+  - core/drupalSettings
+  - core/drupal.ajax
+  css:
+    theme:
+      css/registrationform.css: {}

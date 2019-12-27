@@ -1,0 +1,347 @@
+<?php
+
+/**
+ * @file
+ * BHGE User registration Module.
+ */
+
+use Drupal\Core\Entity\EntityInterface;
+use Symfony\Component\HttpFoundation\RedirectResponse;
+use Symfony\Component\HttpFoundation\Request;
+use Drupal\user\Entity\User;
+
+/**
+ * Implements hook_theme().
+ */
+function bhge_user_registration_theme($existing, $type, $theme, $path) {
+  return [
+    'Requestpendingmessage' => [
+      'variables' => ['pendingmessage' => NULL],
+    ],
+    'Requestnotapprovedmessage' => [
+      'variables' => ['notapprovedmessage' => NULL],
+    ],
+    'ge_registrationform' => [
+      'render element' => 'form',
+      'template' => 'ge_registrationform',
+    ],
+    'nonge_registrationform' => [
+      'render element' => 'form',
+      'template' => 'nonge_registrationform',
+    ],
+  ];
+}
+
+/**
+ * Implements hook_user_login().
+ */
+function bhge_user_registration_user_login($account) {
+
+  $usermail = $account->get('mail')->value;
+  $userrole = $account->get('roles')->target_id;
+  $status = $account->get('status')->value;
+  $approvalstatus = $account->field_useraccountstatus->value;
+  $firstname = $account->field_first_name->value;
+  $current_uri = \Drupal::request()->getRequestUri();
+  /*bug fix for login issue start */
+  $roles = $account->getRoles();
+  if (in_array('customer', $roles)) {
+    $rolecheck = 1;
+  }
+  else {
+    $rolecheck = 0;
+  }
+  /*bug fix for login issue end */
+  if ($firstname == '') {
+    if ((strpos($usermail, '@bhge') !== FALSE) ||(strpos($usermail, '@ge') !== FALSE)) {
+
+      $url = \Drupal::request()->getSchemeAndHttpHost() . "/bhge_user_registration/geform";
+      $response = new RedirectResponse($url);
+      $response->send();
+      return;
+    }
+    else {
+      $url = \Drupal::request()->getSchemeAndHttpHost() . "/bhge_user_registration/nongeform";
+      $response = new RedirectResponse($url);
+      $response->send();
+    }
+  }
+  elseif (($firstname != '')&&($userrole == '')&&($approvalstatus == '')) {
+    $url = \Drupal::request()->getSchemeAndHttpHost() . "/bhge_user_registration/requestpendingmessage";
+    $response = new RedirectResponse($url);
+    $response->send();
+  }
+  elseif (($firstname != '')&&($rolecheck == 0)&&($approvalstatus == 1)) {/*bug fix for login issue  */
+    $url = \Drupal::request()->getSchemeAndHttpHost() . "/bhge_user_registration/requestpendingmessage";
+    $response = new RedirectResponse($url);
+    $response->send();
+  }
+  elseif (($firstname != '')&&($userrole == '')&&($approvalstatus == 0)) {
+    $url = \Drupal::request()->getSchemeAndHttpHost() . "/bhge_user_registration/notapproved";
+    $response = new RedirectResponse($url);
+    $response->send();
+  }
+  else {
+    if ($current_uri == '/document') {
+      $url = 'https://www.engagerecip.com/engagerecip/homePage%23/NewDocument';
+      $response = new RedirectResponse($url);
+      $response->send();
+    }
+    else {
+      $url = \Drupal::request()->getSchemeAndHttpHost();
+      $response = new RedirectResponse($url);
+      $response->send();
+    }
+  }
+
+}
+
+/**
+ * Implements hook_entity_update().
+ */
+function bhge_user_registration_entity_update(EntityInterface $entity) {
+  $path = \Drupal::request()->getpathInfo();
+  $arg = explode('/', $path);
+  $firstargument = $arg[1];
+
+  if ($entity->getEntityTypeId() == 'user') {
+
+    $sso = $entity->get('field_sso_id')->value;
+    $firstname = $entity->get('field_first_name')->value;
+    $lastname = $entity->get('field_last_name')->value;
+    $email_nonge = $entity->get('mail')->value;
+    $jobtitle_nonge = $entity->get('field_jobtitle')->value;
+    $companyname_nonge = $entity->get('field_customer_group')->value;
+    $phonenumber_nonge = $entity->get('field_phonenumber')->value;
+    $address_nonge = $entity->get('field_address')->value;
+    $city_nonge = $entity->get('field_city')->value;
+    $state_nonge = $entity->get('field_state')->value;
+    $country_nonge = $entity->get('field_country')->value;
+    $zipcode_nonge = $entity->get('field_zip_code')->value;
+    $geemployeecontant_nonge = $entity->get('field_ge_emp_contact')->value;
+    $accountstatus = $entity->get('field_useraccountstatus')->value;
+    $dlemailidconfig = \Drupal::config('bhge_user_registration.engagereceipsettings');
+    $dlemailid = $dlemailidconfig->get('gedlemailid');
+    $mailManager = \Drupal::service('plugin.manager.mail');
+    $module = 'bhge_user_registration';
+    $to = $email_nonge;
+    $cc = $dlemailid;
+    $langcode = \Drupal::currentUser()->getPreferredLangcode();
+    $accountstatusoriginalvalue = $entity->original->get('field_useraccountstatus')->value;
+
+    if (($accountstatus == 1) && ($accountstatusoriginalvalue != $accountstatus)) {
+      $subject = 'Access granted to ' . $email_nonge;
+      $message = '
+        <html>
+        <body>
+		<p>
+		<img src="https://engagerecip.bhge.com/sites/g/files/cozyhq656/files/2019-06/EmailHeader_new.png"><br>
+		<br>
+		Hi ' . $firstname . ',<br>
+		<br>
+		<br>
+		Welcome! You have been provided access to engagerecip.bhge.com. engageRecip is your one-stop shop for product & service information, documentation & sizing software. Let us know if there’s anything you need help with by contacting <a href="mailto:engagerecip@bhge.com" target="_blank">engagerecip@bhge.com</a>.
+        <br>
+		<br>
+		Want someone to contact you? Check out <a href=" https://engagerecip.bhge.com/Contact-Us" target="_blank"> https://engagerecip.bhge.com/Contact-Us</a>.<br>
+		<br>
+		<br>
+		Thanks for joining – we look forward to working with you!<br>
+		<br>
+		Sincerely,<br>
+		<br>
+		The engageRecip Team
+		<br>
+		<br>
+		<span style="background:gray">This is an auto-generated email.</span></p>
+        </body>
+        </html>';
+      $key = 'account_approved';
+      $params['message'] = $message;
+      $params['subject'] = $subject;
+      $params['Cc'] = $cc;
+      $send = TRUE;
+      $result = $mailManager->mail($module, $key, $to, $langcode, $params, NULL, $send);
+    }
+    elseif (($accountstatus == '0') &&($accountstatusoriginalvalue != $accountstatus)) {
+      $subject = 'Access has not been provided for ' . $sso;
+      $message = '
+      <html>
+      <body>
+      <p>Hello ' . $firstname . ',
+	  <br>
+	  <br>
+	  You have not been provided access to the engageRecip Portal.
+	  <br>
+	  <br>
+	  Please reach out to <a href="mailto:engagerecip@ge.com" target="_blank" rel="noopener noreferrer">engagerecip@ge.com</a> for more information.
+	  <br>
+	  <br>
+	  Thanks,
+	  <br>
+	  engageRecip team</p>
+     </body>
+     </html>';
+      $params['message'] = $message;
+      $key = 'account_notapproved';
+      $params['subject'] = $subject;
+      $params['Cc'] = $cc;
+      $send = TRUE;
+      $result = $mailManager->mail($module, $key, $to, $langcode, $params, NULL, $send);
+
+    }
+    else {
+
+    }
+
+  }
+  else {
+
+  }
+
+}
+
+/**
+ * Implements hook_file_download().
+ *
+ * To redirect Anonymous users to login page when try to download the software.
+ * can be added more software file names to the array.
+ *
+ * @array $software_arr to hold the software file names which should be restricted
+ * @ $software_str to retrieve the software file name form the current URL.
+ */
+function bhge_user_registration_file_download($uri) {
+
+  if (Drupal::currentUser()->isAnonymous()) {
+    $softwarelinkconfig = \Drupal::config('bhge_user_registration.engagereceipsettings');
+    $softwarelink = $softwarelinkconfig->get('softwarefile');
+    $softwarelink_str = array_pop(explode("/", $softwarelink));
+    $tmp_url_str = $uri;
+    $software_str = array_pop(explode("/", $tmp_url_str));
+
+    if ($software_str == $softwarelink_str) {
+      $response = new RedirectResponse("/saml_login?destination=/software");
+      $response->send();
+    }
+  }
+}
+
+/**
+ * Implements hook_mail().
+ */
+function bhge_user_registration_mail($key, &$message, $params) {
+  $options = [
+    'langcode' => $message['langcode'],
+  ];
+  switch ($key) {
+    case 'ge_form_submit':
+      $message['from'] = 'noreply@engageRecip.com <noreply@engageRecip.com>';
+      $message['subject'] = 'EngageRecip- Request Access';
+      $message['body'][] = htmlentities($params['message']);
+      $message['headers']['Cc'] = $params['Cc'];
+      $message['headers']['Sender'] = 'noreply@engageRecip.com <noreply@engageRecip.com>';
+      $message['headers']['From'] = 'noreply@engageRecip.com <noreply@engageRecip.com>';
+      $message['headers']['Return-Path'] = 'noreply@engageRecip.com <noreply@engageRecip.com>';
+      $message['headers']['Content-Type'] = 'text/html; charset=UTF-8; format=flowed';
+      $message['headers']['Content-Transfer-Encoding'] = '8Bit';
+      break;
+
+    case 'nonge_form_submit':
+      $message['from'] = 'noreply@engageRecip.com <noreply@engageRecip.com>';
+      $message['subject'] = 'EngageRecip- Request Access';
+      $message['body'][] = htmlentities($params['message']);
+      $message['headers']['Cc'] = $params['Cc'];
+      $message['headers']['Sender'] = 'noreply@engageRecip.com <noreply@engageRecip.com>';
+      $message['headers']['From'] = 'noreply@engageRecip.com <noreply@engageRecip.com>';
+      $message['headers']['Return-Path'] = 'noreply@engageRecip.com <noreply@engageRecip.com>';
+      $message['headers']['Content-Type'] = 'text/html; charset=UTF-8; format=flowed';
+      $message['headers']['Content-Transfer-Encoding'] = '8Bit';
+      break;
+
+    case 'account_notapproved':
+      $message['from'] = '@GE Oil & Gas engageRecip <engagerecip@ge.com>';
+      $message['subject'] = $params['subject'];
+      $message['body'][] = htmlentities($params['message']);
+      $message['headers']['Cc'] = $params['Cc'];
+      $message['headers']['Sender'] = 'noreply@engageRecip.com <noreply@engageRecip.com>';
+      $message['headers']['From'] = 'noreply@engageRecip.com <noreply@engageRecip.com>';
+      $message['headers']['Return-Path'] = 'noreply@engageRecip.com <noreply@engageRecip.com>';
+      $message['headers']['Content-Type'] = 'text/html; charset=UTF-8; format=flowed';
+      $message['headers']['Content-Transfer-Encoding'] = '8Bit';
+      break;
+
+    case 'account_approved':
+      $message['from'] = '@GE Oil & Gas engageRecip <engagerecip@ge.com>';
+      $message['subject'] = $params['subject'];
+      $message['body'][] = htmlentities($params['message']);
+      $message['headers']['Cc'] = $params['Cc'];
+      $message['headers']['Sender'] = '@GE Oil & Gas engageRecip <engagerecip@ge.com>';
+      $message['headers']['From'] = '@GE Oil & Gas engageRecip <engagerecip@ge.com>';
+      $message['headers']['Return-Path'] = '@GE Oil & Gas engageRecip <engagerecip@ge.com>';
+      $message['headers']['Content-Type'] = 'text/html; charset=UTF-8; format=flowed';
+      $message['headers']['Content-Transfer-Encoding'] = '8Bit';
+      break;
+
+    case 'account_deleted':
+      $message['from'] = 'noreply@engageRecip.com <noreply@engageRecip.com>';
+      $message['subject'] = 'EngageRecip- Account Deleted';
+      $message['body'][] = htmlentities($params['message']);
+      $message['headers']['Cc'] = $params['Cc'];
+      $message['headers']['Sender'] = 'noreply@engageRecip.com <noreply@engageRecip.com>';
+      $message['headers']['From'] = 'noreply@engageRecip.com <noreply@engageRecip.com>';
+      $message['headers']['Return-Path'] = 'noreply@engageRecip.com <noreply@engageRecip.com>';
+      $message['headers']['Content-Type'] = 'text/html; charset=UTF-8; format=flowed';
+      $message['headers']['Content-Transfer-Encoding'] = '8Bit';
+      break;
+  }
+}
+
+/**
+ * Implements hook_entity_delete().
+ */
+function bhge_user_registration_entity_delete($entity) {
+  if ($entity->getEntityTypeId() == 'user') {
+    $entity_type = $entity->getEntityTypeId();
+    $entity_id = $entity->id();
+    $user_name = $entity->get('name')->value;;
+    $sso = $entity->get('field_sso_id')->value;
+    $firstname = $entity->get('field_first_name')->value;
+    $lastname = $entity->get('field_last_name')->value;
+    $email_nonge = empty($entity->get('mail')->value) ? "No non-GE email" : $entity->get('mail')->value;
+    $jobtitle_nonge = $entity->get('field_jobtitle')->value;
+    $companyname_nonge = $entity->get('field_customer_group')->value;
+    $phonenumber_nonge = $entity->get('field_phonenumber')->value;
+    $address_nonge = $entity->get('field_address')->value;
+    $city_nonge = $entity->get('field_city')->value;
+    $state_nonge = $entity->get('field_state')->value;
+    $country_nonge = $entity->get('field_country')->value;
+    $zipcode_nonge = $entity->get('field_zip_code')->value;
+    $geemployeecontant_nonge = $entity->get('field_ge_emp_contact')->value;
+    $accountstatus = $entity->get('field_useraccountstatus')->value;
+
+    $message = "Account deleted: sso - ' . $sso . '<br />\r\n User Name: " . $user_name . "<br />\r\n Name: " . $firstname . " " . $lastname . "<br />\r\n Company: " . $companyname_nonge . "<br />\r\n Phone: " . $phonenumber_nonge . "<br />\r\n City: " . $city_nonge . "<br />\r\n State: " . $state_nonge . "<br />\r\n Country: " . $country_nonge . "<br />\r\n Contact: " . $geemployeecontant_nonge . "<br />\r\n";
+    $dlemailidconfig = \Drupal::config('bhge_user_registration.engagereceipsettings');
+    $dlemailid = $dlemailidconfig->get('gedlemailid');
+    $module = 'bhge_user_registration';
+    $accountstatus = $entity->get('field_useraccountstatus')->value;
+    $dlemailidconfig = \Drupal::config('bhge_user_registration.engagereceipsettings');
+    $dlemailid = $dlemailidconfig->get('gedlemailid');
+    $mailManager = \Drupal::service('plugin.manager.mail');
+    $subject = "User Account Deleted";
+    $key = 'account_deleted';
+    $module = 'bhge_user_registration';
+    $to = 'donald@fane.com';
+    $cc = 'dpickerel@yahoo.com';
+    $params['message'] = $message;
+    $params['subject'] = $subject;
+    $params['Cc'] = $cc;
+    $send = TRUE;
+    $langcode = \Drupal::currentUser()->getPreferredLangcode();
+    $result = $mailManager->mail($module, $key, $to, $langcode, $params, NULL, $send);
+    \Drupal::logger('bhge_user_registration')->notice('user: @user: sso: %title.',
+        [
+          '@user' => $email_nonge,
+          '%title' => $sso,
+        ]);
+  }
+}

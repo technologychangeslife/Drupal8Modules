@@ -1,0 +1,8 @@
+name: BHGE C55 DSOC
+type: module
+description: 'Dynamic Set of Cards'
+package: BHGE Components
+version: 8.x
+core: 8.x
+dependencies:
+  - bhge_c55_gallery

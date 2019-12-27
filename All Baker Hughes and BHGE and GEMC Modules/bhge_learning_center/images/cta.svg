@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="28.064" viewBox="0 0 32 28.064">
+  <g id="cta" transform="translate(0 -2)">
+    <path id="Path_75" data-name="Path 75" d="M17.993,30.064a1.984,1.984,0,0,1-1.488-.674L10.824,23H5.06A5.066,5.066,0,0,1,0,17.939V7.06A5.065,5.065,0,0,1,5.06,2H26.94A5.065,5.065,0,0,1,32,7.06v10.88A5.066,5.066,0,0,1,26.94,23H20v5.063a1.985,1.985,0,0,1-1.29,1.869A2.008,2.008,0,0,1,17.993,30.064ZM5.06,4A3.063,3.063,0,0,0,2,7.06v10.88A3.064,3.064,0,0,0,5.06,21h6.214a1,1,0,0,1,.748.336L18,28.063V22a1,1,0,0,1,1-1h7.94A3.064,3.064,0,0,0,30,17.939V7.06A3.063,3.063,0,0,0,26.94,4Z" fill="#1870ca"/>
+    <g id="Group_1" data-name="Group 1">
+      <circle id="Ellipse_1" data-name="Ellipse 1" cx="2.099" cy="2.099" r="2.099" transform="translate(7.606 10.401)" fill="#1870ca"/>
+      <circle id="Ellipse_2" data-name="Ellipse 2" cx="2.099" cy="2.099" r="2.099" transform="translate(13.901 10.401)" fill="#1870ca"/>
+      <circle id="Ellipse_3" data-name="Ellipse 3" cx="2.099" cy="2.099" r="2.099" transform="translate(20.197 10.401)" fill="#1870ca"/>
+    </g>
+  </g>
+</svg>

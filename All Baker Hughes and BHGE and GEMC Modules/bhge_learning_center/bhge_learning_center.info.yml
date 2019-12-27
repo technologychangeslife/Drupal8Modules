@@ -1,0 +1,5 @@
+name: bhge_learning_center
+type: module
+description: 'Florence learning center'
+core: 8.x
+package: Custom

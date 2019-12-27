@@ -1,0 +1,8 @@
+services:
+  bh_share_price.share_price_info.class:
+    class: \Drupal\bh_share_price\Controller\SharePriceInfoController
+    arguments: ['@config.factory']
+  bh_share_price.twig.SharePriceInfoExtension:
+    class: Drupal\bh_share_price\Extension\SharePriceInfoExtension
+    tags:
+      - { name: twig.extension }

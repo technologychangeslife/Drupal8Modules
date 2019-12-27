@@ -1,0 +1,73 @@
+<?php
+
+/**
+ * @file
+ * Custom bhge_c55_contextual_cards module.
+ */
+
+use Drupal\Core\Url;
+
+/**
+ * Implements hook_preprocess_field().
+ */
+function bhge_c55_contextual_cards_preprocess_field(&$variables, $hook) {
+
+  $fields = ['field_case_studies'];
+
+  if (!empty($variables['element']['#field_name']) && in_array($variables['element']['#field_name'], $fields)) {
+
+    // Init empty custom variable.
+    $variables['dataset'] = [];
+    $cards = $variables['items'];
+    $variables['dataset']['total'] = count($cards);
+    $dataHelpers = \Drupal::service('bhge_core.data_helpers');
+    foreach ($cards as $card) {
+      $entity = $card['content']['#options']['entity'];
+      $image = $dataHelpers->getImageUri($entity);
+      $description = $dataHelpers->getDescription($entity);
+      $buttons = _bhge_c55_contextual_cards_get_links($entity);
+      $variables['dataset']['results'][] = [
+        'contentType' => !empty($image) ? 'image' : 'text',
+        'image' => $image,
+        'title' => $entity->getTitle(),
+        'url' => !empty($buttons[0]['url']) ? $buttons[0]['url'] : '',
+        'type' => !empty($entity->field_label->value) ? $entity->field_label->value : '',
+        'description' => $description,
+        'buttons' => $buttons,
+      ];
+    }
+  }
+}
+
+/**
+ * Function to get contextual card links.
+ */
+function _bhge_c55_contextual_cards_get_links($card) {
+  $links = [];
+
+  if (!empty($card->field_target->title) && !empty($card->field_target->uri)) {
+    $links[] = [
+      'title' => $card->field_target->title,
+      'url' => Url::fromUri($card->field_target->uri),
+      'class' => 'outline',
+      'target' => '_blank',
+    ];
+  }
+  if (!empty($card->field_dam_cta_dld->entity)) {
+    $links[] = [
+      'title' => t('Download'),
+      'url' => file_create_url($card->field_dam_cta_dld->entity->field_asset->entity->uri->value),
+      'class' => 'outline',
+      'target' => '_blank',
+    ];
+  }
+  elseif (!empty($card->field_file->entity)) {
+    $links[] = [
+      'title' => t('Download'),
+      'url' => file_create_url($card->field_file->entity->uri->value),
+      'class' => 'outline',
+      'target' => '_blank',
+    ];
+  }
+  return $links;
+}

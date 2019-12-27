@@ -1,0 +1,270 @@
+<?php
+
+/**
+ * @file
+ * GEMC Core install functions.
+ */
+
+use Drupal\Core\Database\Database;
+use Drupal\Core\Entity\Sql\SqlEntityStorageInterface;
+use Drupal\Core\Field\BaseFieldDefinition;
+use Drupal\pathauto\Entity\PathautoPattern;
+use Drupal\pathauto\PathautoState;
+use Drupal\taxonomy\Entity\Term;
+/**
+ * Implements hook_install().
+ */
+function gemc_core_install() {
+  gemc_core_update_8001();
+}
+
+/**
+ * Cleanup db for missing modules.
+ */
+function gemc_core_update_8002() {
+  // Delete the disbanded module record from key_value table.
+  \Drupal::database()->delete('key_value')
+    ->condition('collection', 'system.schema')
+    ->condition('name', ['hsts', 'csp'], 'IN')
+    ->execute();
+}
+
+/**
+ * Set maxlength for text fields.
+ */
+function gemc_core_update_8001() {
+
+  if (!$field_storage_configs = \Drupal::entityTypeManager()
+    ->getStorage('field_storage_config')
+    ->loadByProperties(['type' => 'string'])) {
+    return;
+  }
+
+  $property = 'value';
+  $db_schema = Database::getConnection()->schema();
+
+  foreach ($field_storage_configs as $field_storage) {
+    /** @var \Drupal\Core\Field\FieldStorageDefinitionInterface $field_storage */
+    $schema = $field_storage->getSchema();
+    $field_spec = $schema['columns'][$property];
+
+    // Skip fields with default length and special fields(ex. used for stats).
+    if ($field_spec['length'] < 10 || $field_spec['length'] >= 255) {
+      continue;
+    }
+
+    $field_spec['length'] = 255;
+    $entity_type_id = $field_storage->getTargetEntityTypeId();
+    /** @var \Drupal\Core\Entity\Sql\SqlEntityStorageInterface $entity_storage */
+    $entity_storage = \Drupal::entityTypeManager()->getStorage($entity_type_id);
+    /** @var \Drupal\Core\Entity\Sql\DefaultTableMapping $table_mapping */
+    $table_mapping = $entity_storage->getTableMapping();
+    $tables = [$table_mapping->getDedicatedDataTableName($field_storage)];
+    if ($field_storage->isRevisionable()) {
+      $tables[] = $table_mapping->getDedicatedRevisionTableName($field_storage);
+    }
+    $column = $table_mapping->getFieldColumnName($field_storage, $property);
+
+    foreach ($tables as $table) {
+      if ($db_schema->tableExists($table)) {
+        $db_schema->changeField($table, $column, $column, $field_spec);
+      }
+    }
+
+    $config = \Drupal::configFactory()->getEditable('field.storage.' . $field_storage->id());
+    $config->set('settings.max_length', $field_spec['length']);
+    $config->save(TRUE);
+  }
+}
+
+/**
+ * Entity updates see https://www.drupal.org/node/3034742 article.
+ */
+function gemc_core_update_8004() {
+  $fields = [
+    'node.field_contact_name',
+    'paragraph.field_associated_header',
+    'paragraph.field_carousel_slide_header',
+    'paragraph.field_carousel_slide_subheader',
+    'paragraph.field_contact_heading',
+    'paragraph.field_kpi_value',
+    'paragraph.field_longtextimage_subtitle',
+    'paragraph.field_solutions_cont_description',
+    'paragraph.field_solutions_stat_description',
+    'paragraph.field_solutions_subheader',
+    'paragraph.field_solutions_sub_header'
+  ];
+
+  $entity_storage_schema_sql = \Drupal::keyValue('entity.storage_schema.sql');
+  $entity_definition_update_manager = \Drupal::entityDefinitionUpdateManager();
+  $last_installed_schema_repository = \Drupal::service('entity.last_installed_schema.repository');
+
+  foreach ($fields as $field) {
+    list($e_type, $field_name) = explode('.', $field);
+    if ($e_type && $field_name) {
+
+      $field_storage = $entity_definition_update_manager->getFieldStorageDefinition($field_name, $e_type);
+      $entity_type_id = $field_storage->getTargetEntityTypeId();
+      /** @var \Drupal\Core\Entity\Sql\SqlEntityStorageInterface $entity_storage */
+      $entity_storage = \Drupal::entityTypeManager()->getStorage($entity_type_id);
+      if (!$entity_storage instanceof SqlEntityStorageInterface) {
+        continue;
+      }
+
+      /** @var \Drupal\Core\Entity\Sql\DefaultTableMapping $table_mapping */
+      $table_mapping = $entity_storage->getTableMapping();
+      $tables = [$table_mapping->getDedicatedDataTableName($field_storage)];
+      if ($field_storage->isRevisionable()) {
+        $tables[] = $table_mapping->getDedicatedRevisionTableName($field_storage);
+      }
+      $column = $table_mapping->getFieldColumnName($field_storage, 'value');
+
+      // Update the tracked entity table schema.
+      $schema_key = "$e_type.field_schema_data.$field_name";
+      $field_schema_data = $entity_storage_schema_sql->get($schema_key);
+      foreach ($field_schema_data as $tableName => $fieldSchema) {
+        if (isset($field_schema_data[$tableName]['fields'][$column]['length'])) {
+          $field_schema_data[$tableName]['fields'][$column]['length'] = 255;
+        }
+      }
+      $entity_storage_schema_sql->set($schema_key, $field_schema_data);
+
+      $definitions = $last_installed_schema_repository->getLastInstalledFieldStorageDefinitions($entity_type_id);
+      if (isset($definitions[$field_name])) {
+        $field_storage->setSetting('max_length', '255');
+        $definitions[$field_name] = $field_storage;
+        $last_installed_schema_repository->setLastInstalledFieldStorageDefinitions($entity_type_id, $definitions);
+      }
+    }
+  }
+
+  $definition_update_manager = \Drupal::entityDefinitionUpdateManager();
+  $entity_type = $definition_update_manager->getEntityType('taxonomy_term');
+  if (($fields = $last_installed_schema_repository->getLastInstalledFieldStorageDefinitions($entity_type->id())) && empty($fields['moderation_state'])) {
+    $definition = BaseFieldDefinition::create('entity_reference')
+      ->setLabel(t('Moderation state'))
+      ->setDescription(t('The moderation state of this piece of content.'))
+      ->setSetting('target_type', 'moderation_state')
+      ->setRevisionable(TRUE)
+      ->setTranslatable(TRUE)
+      ->setDisplayOptions('view', [
+        'label' => 'hidden',
+        'type' => 'hidden',
+        'weight' => -5,
+      ])
+      ->setDisplayOptions('form', [
+        'type' => 'moderation_state_default',
+        'weight' => 5,
+        'settings' => [],
+      ])
+      ->addConstraint('ModerationState', [])
+      ->setDisplayConfigurable('form', FALSE)
+      ->setDisplayConfigurable('view', FALSE);
+
+    $definition_update_manager->installFieldStorageDefinition('moderation_state', $entity_type->id(), 'workbench_moderation', $definition);
+  }
+}
+
+/**
+ * Entity updates see https://www.drupal.org/node/3034742 article.
+ */
+function gemc_core_update_8005() {
+  $last_installed_schema_repository = \Drupal::service('entity.last_installed_schema.repository');
+  $definition_update_manager = \Drupal::entityDefinitionUpdateManager();
+  $entity_type = $definition_update_manager->getEntityType('node');
+  if (($fields = $last_installed_schema_repository->getLastInstalledFieldStorageDefinitions($entity_type->id())) && empty($fields['published_at'])) {
+    $definition = BaseFieldDefinition::create('published_at')
+      ->setLabel(t('Published on'))
+      ->setDescription(t('Keep the publication timestamp for each node.'))
+      ->setRevisionable(TRUE)
+      ->setTranslatable(TRUE)
+      ->setDisplayOptions('view', [
+        'type' => 'hidden',
+      ])
+      ->setDisplayConfigurable('view', TRUE)
+      ->setDisplayOptions('form', [
+        'type' => 'publication_date_timestamp',
+        'weight' => 10,
+      ])
+      ->setDisplayConfigurable('form', TRUE);
+
+    $definition_update_manager->installFieldStorageDefinition('published_at', $entity_type->id(), 'publication_date', $definition);
+  }
+
+  if (!function_exists('_publication_date_populate_database_field')) {
+    module_load_include('install', 'publication_date');
+    _publication_date_populate_database_field();
+  }
+}
+
+/**
+ * Set pathauto minimal config required.
+ */
+function gemc_core_update_8006() {
+  PathautoPattern::create([
+    'uuid' => 'a7cebed7-de0d-4d83-b1c2-fd3a65e0ce8f',
+    'langcode' => 'en',
+    'status' => 1,
+    'id' => 'taxonomy',
+    'type' => 'canonical_entities:taxonomy_term',
+    'pattern' => '[term:vocabulary:machine-name]/[term:name]',
+  ])->save();
+}
+/**
+ * Set pathauto checked for all terms.
+ */
+function gemc_core_update_8007(&$sandbox) {
+  $sandbox['last_tid'] = isset($sandbox['last_tid']) ? $sandbox['last_tid'] : 0;
+  $query = \Drupal::entityQuery('taxonomy_term')
+    ->condition('tid', $sandbox['last_tid'], '>')
+    ->accessCheck(FALSE)
+    ->sort('tid');
+
+  // Initialize some variables during the first pass through.
+  if (!isset($sandbox['total'])) {
+    $sandbox['current'] = 0;
+    $sandbox['total'] = count($query->execute());
+  }
+  $items_per_batch = 25;
+
+  // Handle one pass through.
+  $tids = $query->range(0, $items_per_batch)->execute();
+
+  foreach ($tids as $tid) {
+    $term = Term::load($tid);
+    $sandbox['last_tid'] = $term->id();
+    $sandbox['current']++;
+
+    if ($term->hasField('path') && !$term->get('path')->pathauto) {
+      $term->get('path')[0]->set('pathauto', PathautoState::CREATE);
+      $term->save();
+    }
+  }
+
+  if ($sandbox['total'] == 0) {
+    $sandbox['#finished'] = 1;
+  }
+  else {
+    $sandbox['#finished'] = ($sandbox['current'] / $sandbox['total']);
+  }
+}
+
+/**
+ * Bulk updating URL aliases.
+ */
+function gemc_core_update_8008() {
+  $batch = [
+    'title' => 'Bulk updating URL aliases',
+    'operations' => [
+      ['Drupal\pathauto\Form\PathautoBulkUpdateForm::batchStart', []],
+    ],
+    'finished' => 'Drupal\pathauto\Form\PathautoBulkUpdateForm::batchFinished',
+  ];
+
+  $batch['operations'][] = [
+    'Drupal\pathauto\Form\PathautoBulkUpdateForm::batchProcess',
+    ['canonical_entities:taxonomy_term', 'create']
+  ];
+
+  batch_set($batch);
+}

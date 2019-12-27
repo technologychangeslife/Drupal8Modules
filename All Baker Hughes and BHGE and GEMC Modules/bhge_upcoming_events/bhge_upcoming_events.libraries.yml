@@ -1,0 +1,18 @@
+bhge-events-summary:
+  version: 1.x
+  js:
+    js/bhge-events-summary.js: {}
+  dependencies:
+    - core/jquery
+    - core/drupal
+    - core/drupalSettings
+    - core/drupal.ajax
+bhge-upcoming-events:
+  version: 1.x
+  js:
+    js/bhge-upcoming-events.js: {}
+  dependencies:
+    - core/jquery
+    - core/drupal
+    - core/drupalSettings
+    - core/drupal.ajax

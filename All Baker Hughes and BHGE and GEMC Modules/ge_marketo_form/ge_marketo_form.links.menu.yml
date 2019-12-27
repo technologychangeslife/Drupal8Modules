@@ -1,0 +1,14 @@
+
+# Marketo Form menu items definition
+entity.marketo_form.collection:
+  title: 'Marketo Form entities list'
+  route_name: entity.marketo_form.collection
+  description: 'List Marketo Form entities'
+  parent: system.admin_content
+  weight: 100
+
+ge_digital_settings.admin:
+  title: 'Marketo Form Settings'
+  description: 'Manage Marketo Form settings for your site'
+  parent: system.admin_config_system
+  route_name: ge_marketo_form

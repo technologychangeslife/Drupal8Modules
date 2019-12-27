@@ -1,0 +1,8 @@
+name: BHGE C55 Downloads
+type: module
+description: 'BHGE C55 Component For Downloads'
+package: BHGE Components
+version: 8.x
+core: 8.x
+dependencies:
+  - bhge_c55_gallery

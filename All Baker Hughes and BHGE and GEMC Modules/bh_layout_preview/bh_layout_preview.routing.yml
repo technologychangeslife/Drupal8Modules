@@ -1,0 +1,24 @@
+bh_layout_preview.bhge_layout_builder_preview_settings:
+  path: '/admin/config/bh-layout-builder-preview-settings'
+  defaults:
+    _form: '\Drupal\bh_layout_preview\Form\LayoutBuilderPreviewConfigForm'
+    _title: 'Layout Builder Preview Config Form'
+  requirements:
+    _permission: 'administer site configuration'
+
+bh_layout_preview.bhge_layout_builder_preview_link:
+  path: '/layout-builder-preview/{plugin_id}'
+  defaults:
+    _form: 'Form\LayoutBuilderPreviewConfigForm'
+    _controller: '\Drupal\bh_layouts\Controller\PreviewImageController::dispalyImage' 
+#    _title: 'Image PopUp'
+  requirements:
+    _permission: 'access content'
+    
+bh_layout_preview.bhge_expose_content_type_settings:
+  path: '/admin/config/bh-expose-content-type-settings'
+  defaults:
+    _form: '\Drupal\bh_layout_preview\Form\ExposeContentTypeConfigForm'
+    _title: 'Expose Content Type Config Form'
+  requirements:
+    _permission: 'administer site configuration'

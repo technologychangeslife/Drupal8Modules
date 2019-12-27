@@ -1,0 +1,6 @@
+name: BHGE Filter For Downloads
+type: module
+description: 'BHGE Filter For Downloads'
+package: Custom
+version: 8.x
+core: 8.x

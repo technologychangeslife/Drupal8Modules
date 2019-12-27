@@ -1,0 +1,42 @@
+<?php
+
+/**
+ * @file
+ * Custom bhge_c55_double_cards module.
+ */
+
+/**
+ * Implements hooks_preprocess_paragraph().
+ */
+function bhge_c55_double_cards_preprocess_paragraph(&$variables) {
+  if (!empty($variables['elements']['#paragraph'])) {
+    /** @var \Drupal\paragraphs\Entity\Paragraph $paragraph */
+    $paragraph = $variables['elements']['#paragraph'];
+    $id = $paragraph->get('type')->getValue();
+    $parent = NULL;
+    if ($id[0]['target_id'] == 'block_double_card') {
+      $cards = $paragraph->field_double_cards;
+      $dataHelpers = \Drupal::service('bhge_core.data_helpers');
+      $count = count($cards);
+      foreach ($cards as $card) {
+        $card = $card->entity;
+        if ($count == '2') {
+          $image = $dataHelpers->getImage($card, 'field_image', 'field_dam_image', 'double_card_img');
+        }
+        else {
+          $image = $dataHelpers->getImage($card, 'field_image', 'field_dam_image', 'single_card_img');
+        }
+        $variables['dataset']['results'][] = [
+          'contentType' => 'image',
+          'image' => $image,
+          'title' => $card->field_title->value,
+          'type' => $card->field_label->value,
+          'gradient' => !empty($card->field_gradient_background_image->value) ? 'has-gradient' : '',
+          'description' => $dataHelpers->getDescription($card),
+          'buttons' => $dataHelpers->getLinks($card),
+        ];
+      }
+      $variables['dataset']['total'] = count($cards);
+    }
+  }
+}

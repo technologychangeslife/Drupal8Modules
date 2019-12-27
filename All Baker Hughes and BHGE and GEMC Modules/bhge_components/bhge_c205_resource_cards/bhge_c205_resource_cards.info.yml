@@ -1,0 +1,6 @@
+name: BHGE C-205 Resource Cards
+type: module
+description: 'C-205 Resource Cards'
+package: BHGE Components
+version: 8.x
+core: 8.x

@@ -1,0 +1,6 @@
+name: BHGE C24 Body Text.
+type: module
+description: 'BHGE C24 Body Text'
+package: BHGE Componenets
+version: 8.x
+core: 8.x

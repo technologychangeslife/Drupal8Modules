@@ -1,0 +1,7 @@
+services:
+  bhge_search_api.twig.SearchApiExtension:
+    class: Drupal\bhge_search_api\Extension\SearchApiExtension
+    tags:
+      - { name: twig.extension }
+  bhge_search_api.search_helpers:
+      class: Drupal\bhge_search_api\SearchHelpers

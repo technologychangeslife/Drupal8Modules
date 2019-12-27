@@ -1,0 +1,9 @@
+services:
+  plugin.manager.marketo_form_manager:
+    class: Drupal\ge_marketo_form\Plugin\MarketoFormManager
+    parent: default_plugin_manager
+  marketo_form.uuid_lookup:
+    class: \Drupal\ge_marketo_form\MarketoFormUuidLookup
+    arguments: ['@cache.bootstrap', '@lock', '@entity_type.manager']
+    tags:
+      - { name: needs_destruction }

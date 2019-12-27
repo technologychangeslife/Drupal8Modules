@@ -1,0 +1,4 @@
+services:
+  gemc_product_listing_page.product_data:
+    class: Drupal\gemc_product_listing_page\ProductData
+    arguments: ['@request_stack', '@database', '@gemc_c115_120_gallery.gallery_data', '@gemc_c115_120_gallery.gallery_data_helpers']

@@ -1,0 +1,58 @@
+{#
+/**
+ * @file
+ * Default theme implementation for a vertical tabs layout.
+ *
+ * Available variables:
+ * - content: The content for this layout.
+ * - attributes: HTML attributes for the layout <div>.
+ *
+ * @ingroup themeable
+ */
+#}
+
+{% if content %}
+  <div{{ attributes.addClass(classes) }} data-module="VerticalTabsFactory">
+    <hr class="bh-layouts__border bh-layouts__border--above"/>
+    <div class="bh-layouts__container">
+
+      {% if content['#settings'].section_title is not empty %}
+          <div class="bh-layouts__title">
+              <h2>{{ content['#settings'].section_title }}</h2>
+          </div>
+      {% endif %}
+
+      <div class="bh-layouts__grid">
+        {% if content.first %}
+          <div {{ region_attributes.first.addClass('bh-layouts__vertical-tabs') }}>
+            <div class="bh-vertical-tabs">
+              <div class="bh-vertical-tabs__tabs span-full-width">
+                {# Check to see if the item is a node to filter out the layout block and such. #}
+                {% for key, item in content.first if key matches '/^[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}$/' %}
+                  {% set active = loop.index == 1 ? 'bh-vertical-tabs__tab--active' : '' %}
+                  {% set title = item.content.0['#node'].fields['field_tab_title'].value %}
+                  <div class="bh-vertical-tabs__tab {{active}}" data-id="{{ title|clean_class }}">{{ title }}</div>
+                {% endfor %}
+              </div>
+              <div class="bh-vertical-tabs__content">
+                {% for key, item in content.first if key matches '/^[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}$/' %}
+                  {% if loop.index == 1 %}
+                    <div class="bh-vertical-tabs__content-item bh-vertical-tabs__content-item--active">
+                      {{ item }}
+                    </div>
+                  {% else %}
+                    <div class="bh-vertical-tabs__content-item">
+                      {{ item }}
+                    </div>
+                  {% endif %}
+                {% endfor %}
+              </div>
+            </div>
+            {{ content.first['layout_builder_add_block'] }}
+          </div>
+        {% endif %}
+      </div>
+    </div>
+    <hr class="bh-layouts__border bh-layouts__border--below"/>
+  </div>
+{% endif %}

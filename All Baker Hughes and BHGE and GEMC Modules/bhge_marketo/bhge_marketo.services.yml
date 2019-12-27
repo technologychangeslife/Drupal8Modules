@@ -1,0 +1,3 @@
+services:
+  bhge_marketo.helpers:
+    class: Drupal\bhge_marketo\MarketoHelpers

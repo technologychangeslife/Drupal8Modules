@@ -1,0 +1,8 @@
+bhge-machine-conversation:
+  version: 1.x
+  js:
+    js/Modernizr/modernizr.js: {scope: header }
+    static/js/main.f15972ee.js: {scope: footer }
+  css:
+     theme:
+        static/css/main.0728de4f.css: {scope: header }

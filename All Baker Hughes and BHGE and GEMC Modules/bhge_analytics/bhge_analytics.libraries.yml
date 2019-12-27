@@ -1,0 +1,6 @@
+bhge_analytics:
+  version: 1.x
+  js:
+    js/bhge_analytics.js: {preprocess: false}
+  dependencies:
+    - core/drupalSettings

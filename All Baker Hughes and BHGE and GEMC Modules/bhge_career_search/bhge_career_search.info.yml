@@ -1,0 +1,6 @@
+name: BHGE Career Search
+type: module
+description: 'Custom Career Search for BHGE Oil'
+package: Custom
+version: 8.x
+core: 8.x

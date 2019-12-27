@@ -1,0 +1,3 @@
+services:
+  bhge_blog_page.data_helpers:
+    class: Drupal\bhge_blog_page\DataHelpers

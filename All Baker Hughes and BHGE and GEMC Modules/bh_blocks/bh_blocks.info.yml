@@ -1,0 +1,6 @@
+name: BH Blocks
+type: module
+description: 'Custom Blocks for BH.'
+package: BH
+version: VERSION
+core: '8.x'

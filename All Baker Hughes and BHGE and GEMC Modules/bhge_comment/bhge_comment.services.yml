@@ -1,0 +1,3 @@
+services:
+  bhge_comment.comment_data:
+    class: Drupal\bhge_comment\CommentData

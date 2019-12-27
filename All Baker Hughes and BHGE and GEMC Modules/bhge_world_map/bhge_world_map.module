@@ -1,0 +1,99 @@
+<?php
+
+/**
+ * @file
+ * BHGE World Map Module.
+ */
+
+use Drupal\paragraphs\Entity\Paragraph;
+
+/**
+ * Implements hook_preprocess_paragraph().
+ */
+function bhge_world_map_preprocess_paragraph(&$variables) {
+
+  if (!empty($variables['elements']['#paragraph'])) {
+    /** @var \Drupal\paragraphs\Entity\Paragraph $paragraph */
+    $paragraph = $variables['elements']['#paragraph'];
+    $id = $paragraph->get('type')->getValue();
+    if ($id[0]['target_id'] === 'image_map') {
+      if (isset($paragraph->get('field_imap_code')->value)) {
+        $field_imap_code = $paragraph->get('field_imap_code')->value;
+      }
+      // Get the target_id of entity reference field pop up.
+      $field_pop_up = $paragraph->get('field_pop_up')->target_id;
+      // Load the pop up details.
+      $field_pop_up_val = Paragraph::load($field_pop_up);
+      // Getting the Pop Up Titles and description from load.
+      if (count($field_pop_up_val->get('field_pop_up_title')->getValue()) > 0) {
+        for ($i = 0; $i < count($field_pop_up_val->get('field_pop_up_title')->getValue()); $i++) {
+          // Loading the pop up tiles in array.
+          $popup_title_desc[] = "title=" . $field_pop_up_val->get('field_pop_up_title')->getValue()[$i]['value'];
+          // Loading the pop up description in array.
+          $popup_title_desc[] = "desc===" . $field_pop_up_val->get('field_po')->getValue()[$i]['value'];
+        }
+        // Passing the pop details array to twig template.
+        $variables['popup_title_desc'] = $popup_title_desc;
+      }
+
+      // Fetching Right top box details.
+      $field_right_top_box = $paragraph->get('field_right_top_box')->target_id;
+      $field_right_top_box_val = Paragraph::load($field_right_top_box);
+      if (isset($field_right_top_box_val->get('field_bo')->getValue()[0]['value'])) {
+        // Get right top right box title and passing it to twig template.
+        $variables['right_top_box_title'] = $field_right_top_box_val->get('field_bo')->getValue()[0]['value'];
+      }
+
+      if (isset($field_right_top_box_val->get('field_right_top_image_map')->getValue()[0]['target_id'])) {
+        // Get right top right box image and link it to twig template.
+        $variables['image_map_right_top_box_url'] = file_create_url($field_right_top_box_val->get('field_right_top_image_map')->entity->uri->value);
+        $variables['image_map_right_top_box_alt'] = $field_right_top_box_val->get('field_right_top_image_map')->getValue()[0]['alt'];
+        if (count($field_right_top_box_val->get('field_right_top_image_map_link')->getValue()) > 0) {
+          $variables['right_top_image_map_link'] = $field_right_top_box_val->get('field_right_top_image_map_link')->getValue()[0]['uri'];
+        }
+      }
+
+      if (count($field_right_top_box_val->get('field_link_and_text')->getValue()) > 0) {
+        // Get right top right box text and their links.
+        for ($i = 0; $i < count($field_right_top_box_val->get('field_link_and_text')->getValue()); $i++) {
+          // Storing link and text of top right box in array.";.
+          $right_top_url_text[] = $field_right_top_box_val->get('field_link_and_text')->getValue()[$i]['uri'];
+          $right_top_url_text[] = $field_right_top_box_val->get('field_link_and_text')->getValue()[$i]['title'];
+        }
+        // Passing the right top box array into twig template.
+        $variables['right_top_url_text'] = $right_top_url_text;
+      }
+
+      // Fetching Bottom right box details.
+      $field_right_bottom_box = $paragraph->get('field_right_bottom_box')->target_id;
+      $field_right_bottom_box_val = Paragraph::load($field_right_bottom_box);
+      if (isset($field_right_bottom_box_val->get('field_bottom_right_box_title')->getValue()[0]['value'])) {
+        // Get bottom right box title and passing to the twig template.
+        $variables['bottom_right_box_title'] = $field_right_bottom_box_val->get('field_bottom_right_box_title')->getValue()[0]['value'];
+      }
+      if (isset($field_right_bottom_box_val->get('field_right_bottom_image_map')->getValue()[0]['target_id'])) {
+        // Get right bottom right box image and link it to twig template.
+        $variables['image_map_right_bottom_box_url'] = file_create_url($field_right_bottom_box_val->get('field_right_bottom_image_map')->entity->uri->value);
+        $variables['image_map_right_bottom_box_alt'] = $field_right_bottom_box_val->get('field_right_bottom_image_map')->getValue()[0]['alt'];
+        if (count($field_right_bottom_box_val->get('field_right_bottom_image_link')->getValue()) > 0) {
+          $variables['right_bottom_image_map_link'] = $field_right_bottom_box_val->get('field_right_bottom_image_link')->getValue()[0]['uri'];
+        }
+      }
+      if (count($field_right_bottom_box_val->get('field_bottom_right_box_links_and')->getValue()) > 0) {
+        // Get bottom right box text and their links.
+        for ($i = 0; $i < count($field_right_bottom_box_val->get('field_bottom_right_box_links_and')->getValue()); $i++) {
+          // Print "field_bottom_right_box_links_and = ";
+          // print "<br>";.
+          $field_right_bottom_box_val->get('field_bottom_right_box_links_and')->getValue()[$i]['uri'];
+          // Print "<br>";.
+          $field_right_bottom_box_val->get('field_bottom_right_box_links_and')->getValue()[$i]['title'];
+          $field_bottom_right_box_links_and_text[] = $field_right_bottom_box_val->get('field_bottom_right_box_links_and')->getValue()[$i]['uri'];
+          $field_bottom_right_box_links_and_text[] = $field_right_bottom_box_val->get('field_bottom_right_box_links_and')->getValue()[$i]['title'];
+        }
+        // Passing the bottom right box title and links array to twig.
+        $variables['bottom_right_box_links_and_text'] = $field_bottom_right_box_links_and_text;
+      }
+      $variables['#attached']['library'][] = 'bhge_world_map/world-map';
+    }
+  }
+}

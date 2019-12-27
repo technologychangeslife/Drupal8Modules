@@ -1,0 +1,3 @@
+services:
+  bhge_n02_global_nav.processor:
+    class: Drupal\bhge_n02_global_nav\MenuProcessor

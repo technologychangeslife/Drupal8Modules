@@ -1,0 +1,14 @@
+bh_settings.general_settings_form:
+  title: 'BH Settings'
+  description: 'Manage BH settings.'
+  route_name: bh_settings.general_settings_form
+  parent: system.admin_config_system
+  menu_name: bh_settings
+  weight: 1
+bh_settings.external_api_settings_form:
+  title: 'BH External API Settings'
+  description: 'Manage BH External API settings.'
+  route_name: bh_settings.external_api_settings_form
+  parent: bh_settings.general_settings_form
+  menu_name: bh_settings
+  weight: 2

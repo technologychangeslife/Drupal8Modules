@@ -1,0 +1,23 @@
+<?php
+
+/**
+ * @file
+ * Download Center module file.
+ */
+
+/**
+ * Implements hook_theme().
+ */
+function gemc_download_center_theme($existing, $type, $theme, $path) {
+  return [
+    'download_center_filter_block' => [
+      'variables' => [
+        'blocks' => [],
+        'instructions' => [
+          'label' => '',
+          'body' => '',
+        ],
+      ],
+    ],
+  ];
+}

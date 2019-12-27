@@ -1,0 +1,84 @@
+<?php
+
+/**
+ * @file
+ * GEMC C119 Recently Visited component module.
+ */
+
+use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
+use Drupal\Core\Entity\EntityInterface;
+use Drupal\node\NodeInterface;
+
+/**
+ * Implements hook_theme().
+ */
+function gemc_c119_recently_visited_theme($existing, $type, $theme, &$path) {
+
+  $path = 'themes/custom/gemc';
+  $theme = [
+    'gemc_c119_card_grid_carousel' => [
+      'variables' => [
+        'data' => [],
+      ],
+      'template' => 'components/c119-card-grid-carousel/c119-card-grid-carousel',
+    ],
+  ];
+  return $theme;
+}
+
+/**
+ * Implements hook_entity_extra_field_info().
+ */
+function gemc_c119_recently_visited_entity_extra_field_info() {
+  $extra['node']['product']['display']['c119_recently_visited'] = [
+    'label' => t('GEMC Recently visited products'),
+    'description' => t('Recently visited products.'),
+    'weight' => 3,
+    'visible' => TRUE,
+  ];
+
+  return $extra;
+}
+
+/**
+ * Implements hook_ENTITY_TYPE_view().
+ */
+function gemc_c119_recently_visited_node_view(array &$build, EntityInterface $entity, EntityViewDisplayInterface $display, $view_mode) {
+  if ($entity->bundle() != 'product') {
+    return;
+  }
+
+  if ($display->getComponent('c119_recently_visited')) {
+    $data = [
+      'scrollComponent' => TRUE,
+      'blockTopOffset' => 3,
+      'title' => t('Recently visited products'),
+      'recentType' => 'product',
+      'api' => [
+        'action' => '/api/v1/recently-visited-products',
+        'pagination' => [
+          'limit' => 3,
+          'offset' => 0,
+        ],
+      ],
+    ];
+    $build['c119_recently_visited'] = [
+      '#theme' => 'gemc_c119_card_grid_carousel',
+      '#data' => $data,
+      '#cache' => ['contexts' => ['url']],
+      '#id' => 'recently-visited',
+    ];
+  }
+
+}
+
+/**
+ * Implements hook_preprocess_HOOK().
+ */
+function gemc_c119_recently_visited_preprocess_html(&$variables) {
+  if (($node = \Drupal::routeMatch()->getParameter('node')) && $node instanceof NodeInterface) {
+    if ($node->getType() == 'product') {
+      $variables['app_root_attributes'] = "data-storage-product-id={$node->id()}";
+    }
+  }
+}

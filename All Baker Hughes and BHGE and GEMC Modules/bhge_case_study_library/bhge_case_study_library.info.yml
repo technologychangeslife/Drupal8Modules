@@ -1,0 +1,6 @@
+name: BHGE Case Study Library
+type: module
+description: 'BHGE Case Study Library.'
+package: Custom
+version: 8.x
+core: 8.x

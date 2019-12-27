@@ -1,0 +1,138 @@
+<?php
+
+/**
+ * @file
+ * Global navigation module.
+ */
+
+/**
+ * Implements hook theme.
+ */
+function bhge_n02_global_nav_theme($existing, $type, $theme, &$path) {
+
+  return [
+    'n02_global_nav_block' => [
+      'variables' => [
+        'user' => NULL,
+        'subsites' => NULL,
+        'microsites' => NULL,
+        'hsedata' => NULL,
+        'welcome_text' => NULL,
+      ],
+      'template' => 'n02-global-nav',
+    ],
+  ];
+}
+
+/**
+ * Implements hook_preprocess_region().
+ */
+function bhge_n02_global_nav_preprocess_region__navigation(&$variables) {
+  $config = \Drupal::configFactory()->get('bhge.general_settings');
+  $variables['global_nav_enabled'] = $config->get('enable_global_nav') ? TRUE : FALSE;
+
+  /* Display announcement if it is front page */
+  $node = \Drupal::routeMatch()->getParameter('node');
+  if ($node) {
+    if ($node->hasField('field_announcement')) {
+      $entity_ref = $node->get('field_announcement');
+      // If announcement field has data.
+      if ($entity_ref->count() > 0) {
+        $variables['announcement'] = entity_view($entity_ref->entity, 'default');
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_preprocess_menu().
+ */
+function bhge_n02_global_nav_preprocess_menu(&$variables) {
+  if (!empty($variables['menu_name'] == 'main')) {
+    $variables['regional_nav'] = \Drupal::service('bhge_n02_global_nav.processor')->processor('regional-navigation');
+
+    /* if current node is translatable then show language switcher */
+    $language_key = 0; $enable_language_menu = FALSE;
+    foreach ($variables['items'] as $key => $item) {
+      if ($item['title'] == 'Language') {
+        $language_key = $key;
+      }
+    }
+    $node = \Drupal::routeMatch()->getParameter('node');
+    if ($node && $node->getType() == 'page') {
+      $enable_language_switcher = $node->get('field_display_language_selector')->getValue();
+      if ($enable_language_switcher and $enable_language_switcher[0]['value'] == '1') {
+        $enable_language_menu = TRUE;
+      }
+    }
+    if (!$enable_language_menu) {
+      unset($variables['items'][$language_key]);
+    }
+  }
+  return $variables;
+}
+
+/**
+ * Implements hook_cron().
+ */
+function bhge_n02_global_nav_cron() {
+
+  $general = \Drupal::configFactory()->get('bhge.general_settings');
+  if (!empty($general->get('enable_global_nav'))) {
+
+    $config = \Drupal::configFactory()->getEditable('bhge.hse_info_settings');
+    $data = fetch_global_nav_data($config);
+    $subsites = json_encode($data['subsites_navigation']);
+    $microsites = json_encode($data['microsites_navigation']);
+
+    if ($data['checksum'] != $config->get('checksum')) {
+      $config->set('subsites_navigation', $subsites)->save();
+      $config->set('microsites_navigation', $microsites)->save();
+      $config->set('hse_imported', json_encode($data['hse']))->save();
+      $config->set('checksum', $data['checksum'])->save();
+      drupal_flush_all_caches();
+    }
+  }
+}
+
+/**
+ * HSE Parser.
+ *
+ * @param object $config
+ *   The config object.
+ *
+ * @returns the global nav data.
+ */
+function fetch_global_nav_data($config) {
+
+  $fetchUrl = $config->get('hse_fetch_url') . '?' . time();
+
+  if (empty($fetchUrl)) {
+    return;
+  }
+
+  try {
+    $client = \Drupal::httpClient();
+    $request = $client->get($fetchUrl);
+
+    if ($request->getStatusCode() != 200) {
+      return;
+    }
+
+    $body = $request->getBody()->getContents();
+
+    if (!empty($body)) {
+      $result = json_decode($body);
+
+      if (!empty($result->data)) {
+        return (array) $result->data;
+      }
+    }
+
+  }
+  catch (\Exception $e) {
+    \Drupal::logger('bhge_n02_global_nav')
+      ->error('Failed to parse global nav data from public site.');
+  }
+
+}

@@ -1,0 +1,8 @@
+name: BHGE C55 Gallery Component
+type: module
+description: 'C55 BHGE Gallery'
+package: BHGE Components
+version: 8.x
+core: 8.x
+dependencies:
+  - bhge_core

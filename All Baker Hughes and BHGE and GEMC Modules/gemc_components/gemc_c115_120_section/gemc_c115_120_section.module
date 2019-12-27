@@ -1,0 +1,217 @@
+<?php
+
+/**
+ * @file
+ * Custom gemc_c115_120_section module.
+ */
+
+use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
+use Drupal\node\Entity\Node;
+use Drupal\paragraphs\Entity\Paragraph;
+use Drupal\Core\Form\FormStateInterface;
+
+/**
+ * Helper function used to generate solutions. Can be removed after all solutions are moved to paragraphs.
+ */
+function _gemc_components_solutions(Node $entity) {
+
+  $product_data = \Drupal::service('gemc_c115_120_section.product_data');
+  $limit = 200;
+  $offset = 0;
+  $solutions_results = $product_data->getSubsections($entity->id(), $offset, $limit, TRUE, FALSE, FALSE);
+  $solutions = [];
+  $category_solutions = [];
+
+  // Check subproducts for current section.
+  $solutions_children = $product_data->getSubproducts([$entity->id()], $offset, $limit, FALSE, FALSE, FALSE, TRUE);
+  if ($solutions_children['items']) {
+    $solutions[$entity->id()] = [];
+    foreach ($solutions_children['items'] as $child) {
+      $solutions[$entity->id()][] = $child->id;
+    }
+  }
+
+  foreach ($solutions_results['items'] as $solution) {
+    $solutions_children = $product_data->getSubsections($solution->id, $offset, $limit, TRUE, FALSE, FALSE);
+    if (!$solutions_children['items']) {
+      // If no subsections, see if there are subproducts.
+      $solutions_children = $product_data->getSubproducts([$solution->id], $offset, $limit, FALSE, FALSE, FALSE, TRUE);
+    }
+    $solutions[$solution->id] = [];
+    foreach ($solutions_children['items'] as $child) {
+      $solutions[$solution->id][] = $child->id;
+    }
+  }
+
+  if ($entity->hasField('field_category_solutions_order') && !$entity->get('field_category_solutions_order')->isEmpty()) {
+    // Check existing data.
+    $field_items = $entity->get('field_category_solutions_order');
+    foreach ($field_items as $paragraph_item) {
+      $paragraph = $paragraph_item->entity;
+      if (!$paragraph->hasField('field_category')) {
+        continue;
+      }
+      $category = $paragraph->get('field_category')->getValue()[0]['target_id'];
+      if (array_key_exists($category, $solutions)) {
+        $paragraph_updated = FALSE;
+        $subcategories = $paragraph->get('field_subcategory');
+        foreach ($subcategories as $subcategory) {
+          if ($subcategories[$subcategory->getName()]->isEmpty()) {
+            continue;
+          }
+          $subcategory_id = $subcategories[$subcategory->getName()]->getValue()['target_id'];
+          $s_index = array_search($subcategory_id, $solutions[$category]);
+          if ($s_index === FALSE) {
+            // Delete outdated subcategory.
+            $subcategories->removeItem($subcategory->getName());
+          }
+          else {
+            unset($solutions[$category][$s_index]);
+          }
+        }
+        if ($solutions[$category]) {
+          // Add remaining items to the existing paragraph.
+          foreach ($solutions[$category] as $new_solution) {
+            $subcategories->appendItem(['target_id' => $new_solution]);
+          }
+        }
+
+        unset($solutions[$category]);
+        $existing_solution = $paragraph->createDuplicate();
+        $existing_solution->save();
+        $category_solutions[] = ['target_id' => $existing_solution->id(), 'target_revision_id' => $existing_solution->getRevisionId()];
+      }
+
+      // Cleanup.
+      $field_items->removeItem($paragraph_item->getName());
+    }
+  }
+
+  $new_category_solutions = [];
+  // After cleanup only new items should remain so let's create them.
+  foreach ($solutions as $solution_id => $subsolutions) {
+    $solution_paragraph = Paragraph::create([
+      'type' => 'category_solutions',
+      'field_category' => [
+        'target_id'  => $solution_id,
+      ],
+    ]);
+    if ($subsolutions) {
+      $solution_paragraph->set('field_subcategory', $subsolutions);
+    }
+    $solution_paragraph->save();
+    $new_category_solutions[] = ['target_id' => $solution_paragraph->id(), 'target_revision_id' => $solution_paragraph->getRevisionId()];
+  }
+
+  $category_solutions = array_merge($category_solutions, $new_category_solutions);
+  if ($category_solutions) {
+    $solutions_paragraph = Paragraph::create([
+      'type' => 'product_category_solutions',
+    ]);
+
+    $solutions_paragraph->set('field_category_solution', $category_solutions);
+    $solutions_paragraph->save();
+
+    return $solutions_paragraph;
+  }
+
+  return NULL;
+}
+
+/**
+ * Implements hook_ENTITY_TYPE_view().
+ */
+function gemc_c115_120_section_paragraph_view(array &$build, EntityInterface $entity, EntityViewDisplayInterface $display, $view_mode) {
+  if ($entity->bundle() != 'product_category_solutions') {
+    return;
+  }
+
+  if ($component = $display->getComponent('c115_120_prod_gal')) {
+    /* @var $node Drupal\node\Entity\Node */
+    $node = $entity->getParentEntity();
+    $nid = $node->id();
+
+    $data = \Drupal::service('gemc_c115_120_section.product_gallery_initial')
+      ->getInitialData($nid, 0, $node->getTitle());
+
+    // Only display component if initial results.
+    if (!empty($data['items']) || !empty($data['categories'])) {
+
+      $data['loadMore'] = t('Load more');
+      $data['title'] = t('Solutions');
+
+      // Build total gallery.
+      $build['c115_120_section'] = [
+        '#theme' => 'gemc_c115_120_gallery',
+        '#data' => $data,
+        '#cache' => ['contexts' => ['url']],
+        '#id' => 'section-gallery',
+        '#weight' => $component['weight'],
+      ];
+    }
+  }
+
+}
+
+/**
+ * Implements hook_preprocess_HOOK().
+ */
+function gemc_c115_120_section_preprocess_node(&$variables) {
+  $node = $variables['node'];
+
+  if ($variables['view_mode'] == 'full' && $node->getType() == 'section') {
+    $variables['section_type'] = '';
+    if (isset($variables['content']['c115_120_product_gallery']['#filter_initial'])) {
+      $variables['section_type'] = $variables['content']['c115_120_product_gallery']['#filter_initial'];
+    }
+  }
+}
+
+/**
+ * Implements hook_entity_extra_field_info().
+ */
+function gemc_c115_120_section_entity_extra_field_info() {
+  $extra = [];
+
+  $extra['paragraph']['product_category_solutions']['display']['c115_120_prod_gal'] = [
+    'label' => t('GEMC Product gallery'),
+    'description' => t('Product gallery, contains child products and -product sectionpages.'),
+    'weight' => 3,
+    'visible' => TRUE,
+  ];
+
+  return $extra;
+}
+
+/**
+ * Implements hook_field_widget_WIDGET_TYPE_form_alter().
+ */
+function gemc_c115_120_section_field_widget_entity_reference_paragraphs_form_alter(&$element, FormStateInterface $form_state, $context) {
+  if (empty($element['#paragraph_type'])) {
+    return;
+  }
+
+  if ($element['#paragraph_type'] == 'category_solutions') {
+    $element['subform']['field_subcategory']['widget']['add_more']['#access'] = FALSE;
+    $element['top']['links']['remove_button']['#access'] = FALSE;
+  }
+
+  if ($element['#paragraph_type'] == 'product_category_solutions') {
+    $element['subform']['field_category_solution']['widget']['add_more']['#access'] = FALSE;
+  }
+}
+
+/**
+ * Implements hook_field_widget_WIDGET_TYPE_form_alter().
+ */
+function gemc_c115_120_section_field_widget_entity_reference_autocomplete_form_alter(&$element, FormStateInterface $form_state, $context) {
+  if (is_array($element['target_id']['#field_parents'])
+    && in_array('field_category_solution', $element['target_id']['#field_parents'])
+    && $entity = $context['items']->getEntity()
+  ) {
+    if ($entity->getEntityTypeId() == 'paragraph' && $entity->bundle() == 'category_solutions') {
+      $element['target_id']['#attributes']['disabled'] = 'disabled';
+    }
+  }
+}

@@ -1,0 +1,1233 @@
+<?php
+
+/**
+ * @file
+ * Install, update and uninstall functions for the gemc_components module.
+ */
+
+use Drupal\node\Entity\Node;
+use Drupal\paragraphs\Entity\Paragraph;
+use Drupal\paragraphs\Entity\ParagraphsType;
+use Drupal\field\Entity\FieldConfig;
+use Drupal\field\Entity\FieldStorageConfig;
+use Drupal\block_content\Entity\BlockContentType;
+use Drupal\taxonomy\Entity\Vocabulary;
+
+/**
+ * Set all contact links to node/1161.
+ */
+function gemc_components_update_8501() {
+  foreach (['paragraph__field_contact_links', 'paragraph_revision__field_contact_links'] as $table) {
+    Drupal::database()->update($table)
+      ->fields(['field_contact_links_uri' => 'entity:node/1161'])
+      ->execute();
+  }
+
+}
+
+/**
+ * Fix text format selected for content.
+ */
+function gemc_components_update_8502() {
+  $paragraph_types = [
+    'c100_product_hero',
+    'c102_product_feature',
+    'c111_two_column_text',
+    'c126_product_specification',
+  ];
+  foreach (['paragraph__field_description', 'paragraph_revision__field_description'] as $table) {
+    Drupal::database()->update($table)
+      ->condition('bundle', $paragraph_types, 'IN')
+      ->condition('field_description_format', 'plain_text')
+      ->fields(['field_description_format' => 'basic_html'])
+      ->expression('field_description_value', "CONCAT('<p>', REPLACE(field_description_value, '\n', '<br/>'), '</p>')")
+      ->execute();
+  }
+}
+
+/**
+ * Delete remaining data of removed block_marketo_form paragraph.
+ */
+function gemc_components_update_8504() {
+  Drupal::database()->delete('paragraphs_item')
+    ->condition('type', 'block_marketo_form')
+    ->execute();
+
+  Drupal::database()->delete('paragraphs_item_field_data')
+    ->condition('type', 'block_marketo_form')
+    ->execute();
+
+  $field_tables = [
+    'paragraph__field_id',
+    'paragraph_revision__field_id',
+    'paragraph__field_label',
+    'paragraph_revision__field_label',
+    'paragraph__field_munchkin_id',
+    'paragraph_revision__field_munchkin_id',
+  ];
+  foreach ($field_tables as $field_table) {
+    Drupal::database()->delete($field_table)
+      ->condition('bundle', 'block_marketo_form')
+      ->execute();
+  }
+}
+
+/**
+ * Fix text format selected for C19.
+ */
+function gemc_components_update_8505() {
+  foreach (['paragraph__field_copy', 'paragraph_revision__field_copy'] as $table) {
+    Drupal::database()->update($table)
+      ->condition('bundle', 'c19_block_copy')
+      ->condition('field_copy_format', 'plain_text')
+      ->fields(['field_copy_format' => 'basic_html'])
+      ->expression('field_copy_value', "CONCAT('<p>', REPLACE(field_copy_value, '\n', '<br/>'), '</p>')")
+      ->execute();
+  }
+}
+
+/**
+ * Minimum config expected for data imports & updates.
+ */
+function gemc_components_update_8506() {
+  $pt_config = [
+    [
+      'uuid' => 'f19d01e5-678a-4ce7-b2b7-2fc9704246ce',
+      'label' => 'Product Feature',
+      'id' => 'product_feature',
+    ],
+    [
+      'uuid' => 'da72b367-69b2-44bd-8d48-c39ed91173a6',
+      'label' => 'Product Features Accordions',
+      'id' => 'product_features_accordions',
+    ],
+  ];
+
+  $fs_config = [
+    [
+      'uuid' => 'd34dc6df-b7d3-43d5-963d-1ac1ff777055',
+      'field_name' => 'field_product_feature',
+      'entity_type' => 'paragraph',
+      'settings' => ['target_type' => 'paragraph'],
+      'type' => 'entity_reference_revisions',
+      'cardinality' => -1,
+
+    ],
+    [
+      'uuid' => '78ea13ba-3e41-48bc-8d9a-257c1d13da33',
+      'field_name' => 'field_product_features',
+      'entity_type' => 'node',
+      'settings' => ['target_type' => 'paragraph'],
+      'type' => 'entity_reference_revisions',
+
+    ],
+  ];
+
+  $f_config = [
+    [
+      'uuid' => 'e89761ab-fcbc-47b7-bcfd-573d8264929b',
+      'field_name' => 'field_title',
+      'entity_type' => 'paragraph',
+      'bundle' => 'product_features_accordions',
+      'label' => 'Heading',
+    ],
+    [
+      'uuid' => 'accefad8-043b-4730-83b7-027ab5d7825e',
+      'field_name' => 'field_product_feature',
+      'entity_type' => 'paragraph',
+      'bundle' => 'product_features_accordions',
+      'label' => 'Features',
+    ],
+    [
+      'uuid' => 'cb4bc60c-aba5-45d1-8d5b-90ab0248f5e1',
+      'field_name' => 'field_title',
+      'entity_type' => 'paragraph',
+      'bundle' => 'product_feature',
+      'label' => 'Heading',
+    ],
+    [
+      'uuid' => '46f60436-92f9-43ee-9fcd-7ee6bcaa97c2',
+      'field_name' => 'field_description',
+      'entity_type' => 'paragraph',
+      'bundle' => 'product_feature',
+      'label' => 'Description',
+    ],
+    [
+      'uuid' => '36b53fd3-f23c-4864-bce9-a9093ab86b3b',
+      'field_name' => 'field_product_features',
+      'entity_type' => 'node',
+      'bundle' => 'product',
+      'label' => 'Product Features',
+    ],
+  ];
+
+  foreach ($pt_config as $config) {
+    ParagraphsType::create($config)->save();
+  }
+
+  foreach ($fs_config as $config) {
+    FieldStorageConfig::create($config)->save();
+  }
+
+  foreach ($f_config as $config) {
+    FieldConfig::create($config)->save();
+  }
+}
+
+/**
+ * Move data to the new field for Product CT.
+ */
+function gemc_components_update_8507(&$sandbox) {
+  $sandbox['last_nid'] = isset($sandbox['last_nid']) ? $sandbox['last_nid'] : 0;
+  $query = \Drupal::entityQuery('node')
+    ->condition('type', 'product')
+    ->condition('field_c102_product_features', 'NULL', '!=')
+    ->condition('nid', $sandbox['last_nid'], '>')
+    ->sort('nid');
+
+  // Initialize some variables during the first pass through.
+  if (!isset($sandbox['total'])) {
+    $sandbox['current'] = 0;
+    $sandbox['total'] = count($query->execute());
+  }
+  $nodes_per_batch = 25;
+
+  // Handle one pass through.
+  $nids = $query->range(0, $nodes_per_batch)->execute();
+
+  foreach ($nids as $nid) {
+    $node = Node::load($nid);
+    if ($node->hasField('field_c102_product_features')) {
+      $field_items = $node->get('field_c102_product_features');
+      $product_features = [];
+      foreach ($field_items as $index => $field_item) {
+        $product_features_heading = $field_item->entity->get('field_title')->value;
+        $product_feature = [];
+        if ($field_item->entity->hasField('field_product_features')) {
+          $features = $field_item->entity->get('field_product_features');
+          foreach ($features as $feature) {
+            $feature_heading = $feature->entity->get('field_title')->value;
+            $feature_description = $feature->entity->get('field_description')->value;
+            $description_format = $feature->entity->get('field_description')->format;
+
+            $feature_paragraph = Paragraph::create([
+              'type' => 'product_feature',
+              'field_title' => [
+                'value'  => $feature_heading,
+              ],
+              'field_description' => [
+                'value'  => $feature_description,
+                'format' => $description_format,
+              ],
+            ]);
+            $feature_paragraph->save();
+
+            $product_feature[] = ['target_id' => $feature_paragraph->id(), 'target_revision_id' => $feature_paragraph->getRevisionId()];
+          }
+        }
+        $features_paragraph = Paragraph::create([
+          'type' => 'product_features_accordions',
+          'field_title' => [
+            'value'  => $product_features_heading,
+          ],
+        ]);
+        $features_paragraph->set('field_product_feature', $product_feature);
+        $features_paragraph->save();
+
+        $product_features[] = ['target_id' => $features_paragraph->id(), 'target_revision_id' => $features_paragraph->getRevisionId()];
+        $field_items->removeItem($index);
+      }
+
+      if ($product_features) {
+        $node->set('field_product_features', $product_features);
+        $node->save();
+      }
+    }
+    $sandbox['last_nid'] = $node->id();
+    $sandbox['current']++;
+
+  }
+
+  if ($sandbox['total'] == 0) {
+    $sandbox['#finished'] = 1;
+  }
+  else {
+    $sandbox['#finished'] = ($sandbox['current'] / $sandbox['total']);
+  }
+}
+
+/**
+ * Move data from field_c02_video to the field_c103_media_gallery field.
+ *
+ * For Product CT.
+ */
+function gemc_components_update_8508(&$sandbox) {
+  $sandbox['last_nid'] = isset($sandbox['last_nid']) ? $sandbox['last_nid'] : 0;
+  $query = \Drupal::entityQuery('node')
+    ->condition('type', 'product')
+    ->condition('nid', $sandbox['last_nid'], '>')
+    ->sort('nid');
+
+  // Initialize some variables during the first pass through.
+  if (!isset($sandbox['total'])) {
+    $sandbox['current'] = 0;
+    $sandbox['total'] = count($query->execute());
+  }
+  $nodes_per_batch = 25;
+
+  // Handle one pass through.
+  $nids = $query->range(0, $nodes_per_batch)->execute();
+
+  foreach ($nids as $nid) {
+    $node = Node::load($nid);
+
+    $new_values = [];
+    $mf_values = [];
+
+    if ($node->hasField('field_c100_product_hero') && !$node->get('field_c100_product_hero')->isEmpty()) {
+      $hero_paragraph = $node->get('field_c100_product_hero')[0]->entity;
+      if ($hero_paragraph->hasField('field_video_paragraph') && !$hero_paragraph->get('field_video_paragraph')->isEmpty()) {
+        $field_items = $hero_paragraph->get('field_video_paragraph');
+
+        foreach ($field_items as $index => $field_item) {
+          $duplicate = $field_item->entity->createDuplicate();
+          $duplicate->save();
+          $new_values[] = [
+            'target_id' => $duplicate->id(),
+            'target_revision_id' => $duplicate->getRevisionId(),
+          ];
+        }
+      }
+    }
+
+    if ($node->hasField('field_c02_video')) {
+      $field_items = $node->get('field_c02_video');
+
+      foreach ($field_items as $index => $field_item) {
+        $duplicate = $field_item->entity->createDuplicate();
+        $duplicate->save();
+        $new_values[] = [
+          'target_id' => $duplicate->id(),
+          'target_revision_id' => $duplicate->getRevisionId(),
+        ];
+        $field_items->removeItem($index);
+      }
+    }
+
+    if ($new_values) {
+      if ($node->hasField('field_c103_media_gallery')) {
+        $gallery_paragraph = NULL;
+        if (!$node->get('field_c103_media_gallery')->isEmpty()) {
+          $gallery_paragraph = $node->get('field_c103_media_gallery')[0]->entity;
+          if ($gallery_paragraph->hasField('field_media_items') && !$gallery_paragraph->get('field_media_items')->isEmpty()) {
+            $gallery_paragraph_values = $gallery_paragraph->get('field_media_items')
+              ->getValue();
+            $new_values = array_merge($new_values, $gallery_paragraph_values);
+          }
+        }
+        else {
+          $gallery_paragraph = Paragraph::create([
+            'type' => 'c103_media_gallery',
+          ]);
+        }
+
+        $gallery_paragraph->set('field_media_items', $new_values);
+        $gallery_paragraph->save();
+
+        $mf_values[] = [
+          'target_id' => $gallery_paragraph->id(),
+          'target_revision_id' => $gallery_paragraph->getRevisionId(),
+        ];
+
+        $node->set('field_c103_media_gallery', $mf_values);
+        $node->save();
+      }
+    }
+
+    $sandbox['last_nid'] = $node->id();
+    $sandbox['current']++;
+  }
+
+  if ($sandbox['total'] == 0) {
+    $sandbox['#finished'] = 1;
+  }
+  else {
+    $sandbox['#finished'] = ($sandbox['current'] / $sandbox['total']);
+  }
+}
+
+/**
+ * Minimum config expected for data imports & updates.
+ */
+function gemc_components_update_8509() {
+  FieldConfig::create([
+    'uuid' => '542b5cf9-5068-45c0-8817-567ea4ea7c3c',
+    'field_name' => 'field_label',
+    'entity_type' => 'paragraph',
+    'bundle' => 'c100_product_hero',
+    'label' => 'Decorative Cutout',
+  ])->save();
+}
+
+/**
+ * Copy data to the new field for Product CT.
+ */
+function gemc_components_update_8510(&$sandbox) {
+  $sandbox['last_paragraph_id'] = isset($sandbox['last_paragraph_id']) ? $sandbox['last_paragraph_id'] : 0;
+  $query = \Drupal::entityQuery('paragraph')
+    ->condition('type', 'c100_product_hero')
+    ->condition('id', $sandbox['last_paragraph_id'], '>')
+    ->sort('id');
+
+  // Initialize some variables during the first pass through.
+  if (!isset($sandbox['total'])) {
+    $sandbox['current'] = 0;
+    $sandbox['total'] = count($query->execute());
+  }
+  $entities_per_batch = 25;
+
+  // Handle one pass through.
+  $p_ids = $query->range(0, $entities_per_batch)->execute();
+
+  foreach ($p_ids as $p_id) {
+    $paragraph = Paragraph::load($p_id);
+    if ($paragraph->hasField('field_title')) {
+      $hero_title = $paragraph->get('field_title')->get(0)->value;
+      $paragraph->set('field_label', $hero_title);
+      $paragraph->save();
+
+    }
+    $sandbox['last_paragraph_id'] = $paragraph->id();
+    $sandbox['current']++;
+  }
+
+  if ($sandbox['total'] == 0) {
+    $sandbox['#finished'] = 1;
+  }
+  else {
+    $sandbox['#finished'] = ($sandbox['current'] / $sandbox['total']);
+  }
+}
+
+/**
+ * Creates the required block for the marketo form.
+ */
+function gemc_components_update_8511() {
+  BlockContentType::create([
+    'uuid' => 'cae63033-7c14-458d-b4fe-11dae093d86c',
+    'id' => 'marketo_form',
+    'label' => 'Marketo form',
+  ])->save();
+
+  FieldStorageConfig::create([
+    'uuid' => 'fb9fca23-7da9-49d9-aa6a-21f5ed90f0a3',
+    'field_name' => 'field_marketo_form',
+    'entity_type' => 'block_content',
+    'settings' => ['target_type' => 'paragraph'],
+    'type' => 'entity_reference_revisions',
+  ])->save();
+
+  FieldConfig::create([
+    'uuid' => '83864e4e-de5f-45b7-9131-185aa4e21cfc',
+    'field_name' => 'field_marketo_form',
+    'entity_type' => 'block_content',
+    'bundle' => 'marketo_form',
+    'label' => 'Marketo form',
+  ])->save();
+
+  $storage = \Drupal::entityTypeManager()->getStorage('block_content');
+  $block_content = [
+    'uuid' => '42211938-f303-4ff7-916f-c2b693f30321',
+    'info' => 'Marketo Orbit form',
+    'type' => 'marketo_form',
+  ];
+  $entity = $storage->create($block_content);
+
+  $marketo_paragraph = Paragraph::create([
+    'type' => 'c129_forms',
+    'field_marketo_id' => '5964',
+    'field_munchkin_id' => '400-ZOJ-998',
+  ]);
+  $marketo_paragraph->save();
+
+  $field_marketo_form[] = [
+    'target_id' => $marketo_paragraph->id(),
+    'target_revision_id' => $marketo_paragraph->getRevisionId(),
+  ];
+  $entity->set('field_marketo_form', $field_marketo_form);
+  $entity->save();
+}
+
+/**
+ * Minimum config expected for c04_contact field_contact_heading to get default value.
+ */
+function gemc_components_update_8512() {
+  FieldStorageConfig::create([
+    'uuid' => 'ea792086-5beb-4ed8-bbc9-f8d4c25f9cb8',
+    'langcode' => 'en',
+    'field_name' => 'field_contact_heading',
+    'entity_type' => 'paragraph',
+    'type' => 'string',
+    'settings' => [
+      'max_length' => 32,
+      'is_ascii' => FALSE,
+      'case_sensitive' => FALSE,
+    ],
+    'cardinality' => 1,
+    'translatable' => TRUE,
+  ])->save();
+
+  FieldConfig::create([
+    'uuid' => '6be331f6-e87d-47c7-97c6-c1d9711dc809',
+    'field_name' => 'field_contact_heading',
+    'entity_type' => 'paragraph',
+    'bundle' => 'c04_contact',
+    'label' => 'Heading',
+  ])->save();
+}
+
+/**
+ * Add default value to existing c04_contact paragraph field_contact_heading fields.
+ */
+function gemc_components_update_8513(&$sandbox) {
+  $sandbox['last_paragraph_id'] = isset($sandbox['last_paragraph_id']) ? $sandbox['last_paragraph_id'] : 0;
+
+  $query = \Drupal::entityQuery('paragraph')
+    ->condition('type', 'c04_contact')
+    ->condition('id', $sandbox['last_paragraph_id'], '>')
+    ->sort('id');
+
+  // Initialize some variables during the first pass through.
+  if (!isset($sandbox['total'])) {
+    $sandbox['current'] = 0;
+    $sandbox['total'] = count($query->execute());
+  }
+  $entities_per_batch = 25;
+
+  // Handle one pass through.
+  $p_ids = $query->range(0, $entities_per_batch)->execute();
+
+  foreach ($p_ids as $p_id) {
+    $paragraph = Paragraph::load($p_id);
+    $paragraph->set('field_contact_heading', 'Get In Touch');
+    $paragraph->save();
+    $sandbox['last_paragraph_id'] = $paragraph->id();
+    $sandbox['current']++;
+  }
+
+  if (($sandbox['total'] - $sandbox['current']) == 0) {
+    $sandbox['#finished'] = 1;
+  }
+  else {
+    $sandbox['#finished'] = ($sandbox['current'] / $sandbox['total']);
+  }
+}
+
+/**
+ * Delete paragraph content for related_posts components.
+ */
+function gemc_components_update_8514() {
+
+  // Delete paragraph content.
+  $paragraphTypes = [
+    'c200_infographic_card',
+    'c200_featured_infographic',
+    'c205_resource_card',
+    'c205_resource_cards',
+    'c118_accordion_2_segment',
+    'c118_accordion_2',
+    'c125_highlighted_text',
+    'c119_featured_prod_and_cats',
+    'product_attributes',
+    'related_posts'
+  ];
+
+  foreach ($paragraphTypes as $paragraphType) {
+    $paragraphs = \Drupal::entityTypeManager()
+      ->getStorage('paragraph')
+      ->loadByProperties(['type' => $paragraphType]);
+    foreach ($paragraphs as $paragraph) {
+      $paragraph->delete();
+    }
+  }
+
+  // Delete vocabularies.
+  $vocabularies = [
+    'product_attributes'
+  ];
+  foreach ($vocabularies as $vocabulary) {
+    $vocab = Vocabulary::load($vocabulary);
+    if ($vocab) {
+      $vocab->delete();
+    }
+  }
+
+  // Delete the disabled module record from key_value table.
+  \Drupal::database()->delete('key_value')
+    ->condition('collection', 'system.schema')
+    ->condition('name', ['gemc_c34_product_comparison'], 'IN')
+    ->execute();
+}
+
+/**
+ * Minimum config expected for block data imports & updates.
+ */
+function gemc_components_update_8515() {
+
+  $default_content = [
+    // Keyed by entity type.
+    'block_content' => [
+        // Then by UUID.
+      'a5561b2d-0e0c-4aa8-80bc-d894b7deeb00' => [
+        'info' => 'Product repair form instructions',
+        'type' => 'basic',
+        'body' => 'Product repair form instructions to be added via admin UI',
+      ],
+      '735aa263-7db2-4ce1-ae64-a6ef9dea1a58' => [
+        'info' => 'Gas shipment form instructions',
+        'type' => 'basic',
+        'body' => 'Gas shipment form instructions to be added via admin UI',
+      ],
+      '61851414-793a-4435-93b2-65d25089cb02' => [
+        'info' => 'Credit form instructions',
+        'type' => 'basic',
+        'body' => 'Credit form instructions to be added via admin UI',
+      ],
+    ],
+  ];
+
+  foreach ($default_content as $entity_type_id => $items) {
+    $storage = \Drupal::entityTypeManager()->getStorage($entity_type_id);
+    foreach ($items as $uuid => $item) {
+      $entity = $storage->create($item + ['uuid' => $uuid]);
+      $entity->save();
+    }
+  }
+}
+
+/**
+ * Minimum config expected for new fields.
+ */
+function gemc_components_update_8516() {
+  // Featured Industries paragraph.
+  ParagraphsType::create([
+    'uuid' => '90cf20a1-066f-4c71-a9a0-edc21565a17b',
+    'label' => 'Featured Industries',
+    'id' => 'featured_industries'
+  ])->save();
+
+  FieldStorageConfig::create([
+    'uuid' => '8dd13789-8acf-4528-bac2-2991bab201cd',
+    'langcode' => 'en',
+    'field_name' => 'field_featured_industries',
+    'entity_type' => 'paragraph',
+    'type' => 'entity_reference',
+    'settings' => [
+      'target_type' => 'node',
+    ],
+    'cardinality' => -1,
+    'translatable' => TRUE,
+  ])->save();
+
+  FieldConfig::create([
+    'uuid' => 'dbdd3f98-763f-4bdd-8499-b39e3cf5063c',
+    'field_name' => 'field_featured_industries',
+    'entity_type' => 'paragraph',
+    'bundle' => 'featured_industries',
+    'label' => 'Featured Industries',
+  ])->save();
+
+  // Category Solutions paragraph.
+  ParagraphsType::create([
+    'uuid' => 'b64e2906-a0ff-4f11-af09-1a2063b1f6e4',
+    'label' => 'Category solutions',
+    'id' => 'product_category_solutions',
+  ])->save();
+
+  FieldStorageConfig::create([
+    'uuid' => '3a508c91-9497-4199-82bd-de82be96181f',
+    'langcode' => 'en',
+    'field_name' => 'field_category_solution',
+    'entity_type' => 'paragraph',
+    'type' => 'entity_reference_revisions',
+    'settings' => [
+      'target_type' => 'paragraph',
+    ],
+    'cardinality' => -1,
+    'translatable' => TRUE,
+  ])->save();
+
+  FieldConfig::create([
+    'uuid' => 'c72a16ac-4a47-41b7-9ac2-4be46574296b',
+    'field_name' => 'field_category_solution',
+    'entity_type' => 'paragraph',
+    'bundle' => 'product_category_solutions',
+    'label' => 'Category solutions',
+  ])->save();
+
+  // field_prod_category_components for section node type.
+  FieldStorageConfig::create([
+    'uuid' => 'e6bfa839-0b05-4b25-9aa4-05c1e5a34c6e',
+    'langcode' => 'en',
+    'field_name' => 'field_prod_category_components',
+    'entity_type' => 'node',
+    'type' => 'entity_reference_revisions',
+    'settings' => [
+      'target_type' => 'paragraph',
+    ],
+    'cardinality' => -1,
+    'translatable' => TRUE,
+  ])->save();
+
+  FieldConfig::create([
+    'uuid' => '9851e7da-6d4e-49ee-8862-1aa9f5f00770',
+    'field_name' => 'field_prod_category_components',
+    'entity_type' => 'node',
+    'bundle' => 'section',
+    'label' => 'Components',
+  ])->save();
+}
+
+/**
+ * Copy paragraphs content to new field Product Category CT.
+ */
+function gemc_components_update_8517(&$sandbox) {
+  $fields_order = [
+    'field_c131_section_hero',
+    'field_category_information',
+    'field_section_kaon',
+    'field_statistics_solutions',
+    'field_section_events',
+    'field_c102_product_features',
+    'field_section_associated',
+    'field_c04_contact',
+    'field_c112_kpis',
+    'field_category_solutions_order',
+    'field_c02_video',
+    'field_c14_case_studies',
+    'field_featured_industries',
+    'field_section_media_gallery',
+    'field_c130_downloads',
+    'field_c113_promotional_banner',
+    'field_marketo_form',
+    'field_c203_floating_form',
+  ];
+
+  $sandbox['last_nid'] = isset($sandbox['last_nid']) ? $sandbox['last_nid'] : 0;
+  $query = \Drupal::entityQuery('node')
+    ->condition('type', 'section')
+    ->condition('nid', $sandbox['last_nid'], '>')
+    ->sort('nid');
+
+  // Initialize some variables during the first pass through.
+  if (!isset($sandbox['total'])) {
+    $sandbox['current'] = 0;
+    $sandbox['total'] = count($query->execute());
+  }
+  $nodes_per_batch = 25;
+
+  // Handle one pass through.
+  $nids = $query->range(0, $nodes_per_batch)->execute();
+
+  foreach ($nids as $nid) {
+    $node = Node::load($nid);
+    $sandbox['last_nid'] = $node->id();
+    $sandbox['current']++;
+    $new_values = [];
+
+    if (!$node->hasField('field_prod_category_components')) {
+      continue;
+    }
+
+    foreach ($fields_order as $field) {
+      if ($node->hasField($field) && !$node->get($field)->isEmpty()) {
+        $field_items = $node->get($field);
+
+        // Move field_featured_industries values into a new featured_industries
+        // paragraph field of the same name. Adding that paragraph to the common
+        // components field.
+        if ($field == 'field_featured_industries') {
+          $target_entities = [];
+          foreach ($field_items as $index => $field_item) {
+            $target_entities[] = ['target_id' => $field_item->target_id];
+          }
+          $node->set($field, NULL);
+          $paragraph = Paragraph::create([
+            'type' => 'featured_industries'
+          ]);
+          $paragraph->set('field_featured_industries', $target_entities);
+          $paragraph->save();
+
+          $new_values[] = [
+            'target_id' => $paragraph->id(),
+            'target_revision_id' => $paragraph->getRevisionId(),
+          ];
+          continue;
+        }
+        if ($field == 'field_category_solutions_order') {
+          if (function_exists('_gemc_components_solutions')) {
+            $category_solutions = _gemc_components_solutions($node);
+            if ($category_solutions) {
+              $new_values[] = [
+                'target_id' => $category_solutions->id(),
+                'target_revision_id' => $category_solutions->getRevisionId(),
+              ];
+            }
+          }
+          continue;
+        }
+        foreach ($field_items as $index => $field_item) {
+          $duplicate = $field_item->entity->createDuplicate();
+          $duplicate->save();
+
+          $new_values[] = [
+            'target_id' => $duplicate->id(),
+            'target_revision_id' => $duplicate->getRevisionId(),
+          ];
+
+          $field_items->removeItem($index);
+        }
+      }
+    }
+
+    if ($new_values) {
+      if ($node->hasField('field_prod_category_components')) {
+        $node->set('field_prod_category_components', $new_values);
+        $node->save();
+      }
+    }
+  }
+
+  if ($sandbox['total'] == 0) {
+    $sandbox['#finished'] = 1;
+  }
+  else {
+    $sandbox['#finished'] = ($sandbox['current'] / $sandbox['total']);
+  }
+}
+
+/**
+ * Move data from c01_hero component to the carousel component.
+ */
+function gemc_components_update_8518(&$sandbox) {
+  $sandbox['current_node'] = isset($sandbox['current_node']) ? $sandbox['current_node'] : -1;
+  $query = \Drupal::entityQuery('node')
+    ->condition('type', ['showcase', 'page'], 'IN')
+    ->condition('nid', $sandbox['current_node'], '>')
+    ->sort('nid')
+    ->accessCheck(FALSE);
+
+  // Initialize some variables during the first pass through.
+  if (!isset($sandbox['progress'])) {
+    $sandbox['progress'] = 0;
+    $sandbox['max'] = count($query->execute());
+  }
+  $nodes_per_batch = 25;
+
+  // Handle one pass through.
+  $nids = $query->range(0, $nodes_per_batch)->execute();
+
+  foreach ($nids as $nid) {
+    $node = Node::load($nid);
+    $node_changed = FALSE;
+    $fields = ['field_c01_hero', 'field_showcase_components'];
+
+    foreach ($fields as $field) {
+      if ($node->hasField($field) && !$node->get($field)->isEmpty()) {
+        $field_items = $node->get($field);
+        foreach ($field_items as $index => $field_item) {
+          if ($field_item->entity->bundle() != 'c01_hero') {
+            continue;
+          }
+          $c0_hero = $field_item->entity;
+          if ($c0_hero->hasField('field_c01_hero_slides') && !$c0_hero->get('field_c01_hero_slides')->isEmpty()) {
+            $carousel = Paragraph::create([
+              'type' => 'carousel',
+            ]);
+
+            $slides = [];
+            foreach ($c0_hero->get('field_c01_hero_slides') as $c0_slide) {
+              $carousel_slide = Paragraph::create([
+                'type' => 'carousel_slide',
+              ]);
+
+              if ($c0_slide->entity->hasField('field_title') && !$c0_slide->entity->get('field_title')
+                ->isEmpty()) {
+                $title = $c0_slide->entity->get('field_title')
+                  ->first()
+                  ->getValue();
+                $carousel_slide->set('field_carousel_slide_header', [$title]);
+                $carousel_slide->set('field_carousel_slide_subheader', [$title]);
+              }
+
+              if ($c0_slide->entity->hasField('field_background_image') && !$c0_slide->entity->get('field_background_image')
+                ->isEmpty()) {
+                $new_slide_image = $c0_slide->entity->get('field_background_image')
+                  ->first()
+                  ->getValue();
+                $carousel_slide->set('field_carousel_slide_image', [$new_slide_image]);
+              }
+
+              if ($c0_slide->entity->hasField('field_cta_link') && !$c0_slide->entity->get('field_cta_link')
+                ->isEmpty()) {
+                $links = $c0_slide->entity->get('field_cta_link')->getValue();
+                $carousel_slide->set('field_carousel_slide_cta', $links);
+              }
+
+              $carousel_slide->save();
+              $slides[] = [
+                'target_id' => $carousel_slide->id(),
+                'target_revision_id' => $carousel_slide->getRevisionId()
+              ];
+            }
+
+            $carousel->set('field_carousel_slides', $slides);
+            $carousel->save();
+
+            $field_items->set($index, [
+              'target_id' => $carousel->id(),
+              'target_revision_id' => $carousel->getRevisionId()
+            ]);
+            $node_changed = TRUE;
+          }
+
+        }
+
+        if ($node_changed) {
+          $node->save();
+        }
+      }
+    }
+
+    $sandbox['progress']++;
+    $sandbox['current_node'] = $node->id();
+  }
+
+  $sandbox['#finished'] = $sandbox['progress'] >= $sandbox['max'] ? TRUE : $sandbox['progress'] / $sandbox['max'];
+}
+
+/**
+ * Delete C01 Hero paragraph content.
+ */
+function gemc_components_update_8519() {
+  // Delete paragraph content.
+  $paragraphTypes = [
+    'c01_hero_slide',
+    'c01_hero'
+  ];
+
+  foreach ($paragraphTypes as $paragraphType) {
+    $paragraphs = \Drupal::entityTypeManager()
+      ->getStorage('paragraph')
+      ->loadByProperties(['type' => $paragraphType]);
+    foreach ($paragraphs as $paragraph) {
+      $paragraph->delete();
+    }
+  }
+}
+
+/**
+ * Delete paragraph content for c17_browser and browser_link components.
+ */
+function gemc_components_update_8520() {
+
+  // Delete paragraph content.
+  $paragraphTypes = [
+    'browser_link',
+    'c17_browser'
+  ];
+
+  foreach ($paragraphTypes as $paragraphType) {
+    $paragraphs = \Drupal::entityTypeManager()
+      ->getStorage('paragraph')
+      ->loadByProperties(['type' => $paragraphType]);
+    foreach ($paragraphs as $paragraph) {
+      $paragraph->delete();
+    }
+  }
+}
+
+/**
+ * Minimum config expected for new fields.
+ */
+function gemc_components_update_8521() {
+  // field_product_components for product node type.
+  FieldStorageConfig::create([
+    'uuid' => '50a63f22-0d4a-406e-8cfa-895b50656c7e',
+    'langcode' => 'en',
+    'field_name' => 'field_product_components',
+    'entity_type' => 'node',
+    'type' => 'entity_reference_revisions',
+    'settings' => [
+      'target_type' => 'paragraph',
+    ],
+    'cardinality' => -1,
+    'translatable' => TRUE,
+  ])->save();
+
+  FieldConfig::create([
+    'uuid' => '6d00a516-4b53-49f4-b547-d68e3e129d8e',
+    'field_name' => 'field_product_components',
+    'entity_type' => 'node',
+    'bundle' => 'product',
+    'label' => 'Components',
+  ])->save();
+}
+
+/**
+ * Copy paragraphs content to new field Product CT.
+ */
+function gemc_components_update_8522(&$sandbox) {
+  $fields_order = [
+    'field_c100_product_hero',
+    'field_product_kaon',
+    'field_c20_quick_links',
+    'field_c14_case_studies',
+    'field_c04_contact',
+    'field_product_features',
+    'field_c103_media_gallery',
+    'field_c130_downloads',
+    'field_c126_product_specification',
+    'field_marketo_form',
+    'field_product_events',
+    'field_product_associated',
+    'field_c203_floating_form',
+  ];
+
+  $sandbox['last_nid'] = isset($sandbox['last_nid']) ? $sandbox['last_nid'] : 0;
+  $query = \Drupal::entityQuery('node')
+    ->condition('type', 'product')
+    ->condition('nid', $sandbox['last_nid'], '>')
+    ->accessCheck(FALSE)
+    ->sort('nid');
+
+  // Initialize some variables during the first pass through.
+  if (!isset($sandbox['total'])) {
+    $sandbox['current'] = 0;
+    $sandbox['total'] = count($query->execute());
+  }
+  $nodes_per_batch = 25;
+
+  // Handle one pass through.
+  $nids = $query->range(0, $nodes_per_batch)->execute();
+  $components_field = 'field_product_components';
+
+  foreach ($nids as $nid) {
+    $node = Node::load($nid);
+    $sandbox['last_nid'] = $node->id();
+    $sandbox['current']++;
+    $new_values = [];
+
+    if (!$node->hasField($components_field)) {
+      continue;
+    }
+
+    foreach ($fields_order as $field) {
+      if ($node->hasField($field) && !$node->get($field)->isEmpty()) {
+        $field_items = $node->get($field);
+        foreach ($field_items as $index => $field_item) {
+          $duplicate = $field_item->entity->createDuplicate();
+          $duplicate->save();
+
+          $new_values[] = [
+            'target_id' => $duplicate->id(),
+            'target_revision_id' => $duplicate->getRevisionId(),
+          ];
+
+          $field_items->removeItem($index);
+        }
+      }
+    }
+
+    if ($new_values) {
+      if ($node->hasField($components_field)) {
+        $node->set($components_field, $new_values);
+        $node->save();
+      }
+    }
+  }
+
+  if ($sandbox['total'] == 0) {
+    $sandbox['#finished'] = 1;
+  }
+  else {
+    $sandbox['#finished'] = ($sandbox['current'] / $sandbox['total']);
+  }
+}
+
+/**
+ * Minimum config expected for new fields.
+ */
+function gemc_components_update_8523() {
+  // field_product_components for product node type.
+  FieldStorageConfig::create([
+    'uuid' => '4b7c5454-8a5e-4d8c-bafc-7d40c0748059',
+    'langcode' => 'en',
+    'field_name' => 'field_industry_components',
+    'entity_type' => 'node',
+    'type' => 'entity_reference_revisions',
+    'settings' => [
+      'target_type' => 'paragraph',
+    ],
+    'cardinality' => -1,
+    'translatable' => TRUE,
+  ])->save();
+
+  FieldConfig::create([
+    'uuid' => '1b113031-b6c7-4ace-b55d-0a3b11418870',
+    'field_name' => 'field_industry_components',
+    'entity_type' => 'node',
+    'bundle' => 'industry',
+    'label' => 'Components',
+  ])->save();
+}
+
+/**
+ * Copy paragraphs content to new field Industry CT.
+ */
+function gemc_components_update_8524(&$sandbox) {
+  $fields_order = [
+    'field_c131_section_hero',
+    'field_c19_block_copy',
+    'field_value_prop_deck',
+    'field_solutions_grid',
+    'field_industry_kaon',
+    'field_c16_accordion',
+    'field_c112_kpis',
+    'field_c14_case_studies',
+    'field_c105_latest_news',
+    'field_c04_contact',
+    'field_c113_promotional_banner',
+    'field_c130_downloads',
+    'field_industry_events',
+  ];
+
+  $sandbox['last_nid'] = isset($sandbox['last_nid']) ? $sandbox['last_nid'] : 0;
+  $query = \Drupal::entityQuery('node')
+    ->condition('type', 'industry')
+    ->condition('nid', $sandbox['last_nid'], '>')
+    ->accessCheck(FALSE)
+    ->sort('nid');
+
+  // Initialize some variables during the first pass through.
+  if (!isset($sandbox['total'])) {
+    $sandbox['current'] = 0;
+    $sandbox['total'] = count($query->execute());
+  }
+  $nodes_per_batch = 25;
+
+  // Handle one pass through.
+  $nids = $query->range(0, $nodes_per_batch)->execute();
+  $components_field = 'field_industry_components';
+
+  foreach ($nids as $nid) {
+    $node = Node::load($nid);
+    $sandbox['last_nid'] = $node->id();
+    $sandbox['current']++;
+    $new_values = [];
+
+    if (!$node->hasField($components_field)) {
+      continue;
+    }
+
+    foreach ($fields_order as $field) {
+      if ($node->hasField($field) && !$node->get($field)->isEmpty()) {
+        $field_items = $node->get($field);
+        foreach ($field_items as $index => $field_item) {
+          $duplicate = $field_item->entity->createDuplicate();
+          $duplicate->save();
+
+          $new_values[] = [
+            'target_id' => $duplicate->id(),
+            'target_revision_id' => $duplicate->getRevisionId(),
+          ];
+
+          $field_items->removeItem($index);
+        }
+      }
+    }
+
+    if ($new_values) {
+      if ($node->hasField($components_field)) {
+        $node->set($components_field, $new_values);
+        $node->save();
+      }
+    }
+  }
+
+  if ($sandbox['total'] == 0) {
+    $sandbox['#finished'] = 1;
+  }
+  else {
+    $sandbox['#finished'] = ($sandbox['current'] / $sandbox['total']);
+  }
+}
+
+/**
+ * Move paragraphs content from field_c01_hero to components_field Page CT.
+ */
+function gemc_components_update_8525(&$sandbox) {
+  $sandbox['last_nid'] = isset($sandbox['last_nid']) ? $sandbox['last_nid'] : 0;
+  $query = \Drupal::entityQuery('node')
+    ->accessCheck(FALSE)
+    ->condition('type', 'page')
+    ->condition('nid', $sandbox['last_nid'], '>')
+    ->sort('nid');
+
+  // Initialize some variables during the first pass through.
+  if (!isset($sandbox['total'])) {
+    $sandbox['current'] = 0;
+    $sandbox['total'] = count($query->execute());
+  }
+  $nodes_per_batch = 25;
+
+  // Handle one pass through.
+  $nids = $query->range(0, $nodes_per_batch)->execute();
+  $components_field = 'field_components';
+
+  foreach ($nids as $nid) {
+    $node = Node::load($nid);
+    $sandbox['last_nid'] = $node->id();
+    $sandbox['current']++;
+    $new_values = [];
+
+    if (!$node->hasField($components_field)) {
+      continue;
+    }
+
+    $field = 'field_c01_hero';
+    if ($node->hasField($field) && !$node->get($field)->isEmpty()) {
+      $field_items = $node->get($field);
+      foreach ($field_items as $index => $field_item) {
+        $duplicate = $field_item->entity->createDuplicate();
+        $duplicate->save();
+
+        $new_values[] = [
+          'target_id' => $duplicate->id(),
+          'target_revision_id' => $duplicate->getRevisionId(),
+        ];
+
+         $field_items->removeItem($index);
+      }
+    }
+
+    if ($new_values) {
+      if ($node->hasField($components_field)) {
+        if (!$node->get($components_field)->isEmpty()) {
+          $components_field_values = $node->get($components_field)->getValue();
+          $new_values = array_merge($new_values, $components_field_values);
+        }
+
+        $node->set($components_field, $new_values);
+        $node->save();
+      }
+    }
+  }
+
+  if ($sandbox['total'] == 0) {
+    $sandbox['#finished'] = 1;
+  }
+  else {
+    $sandbox['#finished'] = ($sandbox['current'] / $sandbox['total']);
+  }
+}

@@ -1,0 +1,231 @@
+<?php
+
+/**
+ * @file
+ * Custom bhge_c55_gallery module.
+ */
+
+use Drupal\Core\Form\FormStateInterface;
+
+/**
+ * Implements hook_theme().
+ */
+function bhge_c55_gallery_theme($existing, $type, $theme, &$path) {
+
+  $path = 'themes/custom/bhge';
+  $theme = [
+    'c55_bhge_gallery' => [
+      'variables' => [
+        'class' => FALSE,
+        'results' => NULL,
+        // Doesnt seem to be used: 'nid' => NULL,.
+        'pid' => NULL,
+        'limit' => 200,
+        'apiUrl' => '',
+        'topics' => [],
+        'tabs' => [],
+        'content_type' => 'section',
+        'dataset' => [],
+        'title' => 'Gallery',
+        'sort_by' => 'created',
+        'display_mode' => 2,
+        'offset' => 0,
+        'new_offset' => 0,
+        'total' => 0,
+        'count' => 0,
+        'show_more' => FALSE,
+        'this_url' => NULL,
+        'filter_nid' => 0,
+        'filter_type' => NULL,
+        'initial_filter' => NULL,
+        'id' => NULL,
+        'category' => NULL,
+        'like_api_url' => '',
+      ],
+      'template' => 'sources/c55-card-gallery/c55-card-gallery',
+    ],
+  ];
+  return $theme;
+}
+
+/**
+ * Implements hook_field_widget_form_alter().
+ */
+function bhge_c55_gallery_field_widget_form_alter(&$element, FormStateInterface $form_state, $context) {
+  if (isset($context['items']) && $context['items']->getName() == 'field_gallery_content_type') {
+    $org_options = $element['#options'];
+
+    $supportedTypes = [
+      'event',
+      'event_item',
+      'news_item',
+      'article',
+      'blog_post',
+      'page',
+      'video_item',
+      'question',
+    ];
+
+    foreach ($org_options as $key => $option) {
+      if (!in_array($key, $supportedTypes)) {
+        unset($element['#options'][$key]);
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_preprocess_paragraph().
+ */
+function bhge_c55_gallery_preprocess_paragraph(&$variables) {
+  if (!empty($variables['elements']['#paragraph'])) {
+
+    /* clear cache on query parameter change */
+    $variables['#cache']['contexts'][] = 'url.query_args';
+
+    /** @var \Drupal\paragraphs\Entity\Paragraph $paragraph */
+    $paragraph = $variables['elements']['#paragraph'];
+    $id = $paragraph->get('type')->getValue();
+    $parent = NULL;
+
+    /* attached library */
+    $variables['#attached']['library'][] = 'bhge_c55_gallery/c55-gallery';
+
+    if ($id[0]['target_id'] == 'block_gallery') {
+
+      if (!empty($paragraph->get('field_gallery_content_type')) && !empty($paragraph->get('field_gallery_content_type')->getValue()[0]['target_id'])) {
+
+        $ctype = $paragraph->get('field_gallery_content_type')
+          ->getValue()[0]['target_id'];
+        $variables['has_filters'] = !empty($paragraph->get('field_expose_filters')
+          ->getValue()[0]['value']) ? 1 : 0;
+        $variables['sort_by'] = !empty($paragraph->get('field_sort_by')
+          ->getValue()[0]['value']) ? 'created' : 'weight';
+
+        // Get filter categories.
+        $categories = array_column($paragraph->get('field_gallery_filter_category')
+          ->getValue(), 'target_id');
+        $variables['category'] = NULL;
+        if (isset($categories[0])) {
+          $variables['category'] = $categories[0];
+        }
+        $variables['display_mode'] = $paragraph->get('field_expose_filters')->getValue()[0]['value'];
+
+        // Set items per row dependend on filter collumn available.
+        if ($variables['has_filters']) {
+          $row_items = 3;
+        }
+        else {
+          $row_items = 4;
+        }
+
+        $variables['limit'] = $paragraph->get('field_dsoc_more')
+          ->getValue()[0]['value'] * $row_items;
+
+        $variables['offset'] = 0;
+
+        $parent = $paragraph->getParentEntity();
+
+        // For auto filtering event_items.
+        $pid = NULL;
+        if (!empty($parent->id()) && $parent->getType() == 'event') {
+          $pid = $parent->id();
+        }
+
+        if ($variables['has_filters']) {
+          // Setting topics sidebar data.
+          $topics = \Drupal::service('bhge_c55_gallery.gallery_data')
+            ->topics($ctype, $pid, $variables['category']);
+
+          if (!empty($topics)) {
+            $query_args = \Drupal::request()->query->all();
+            /* if filter provided in query arguments. Link in Announcement banner of hompegae */
+            if (count($query_args) > 0 && isset($query_args['type']) && !empty($query_args['type'])) {
+              foreach ($topics as $key => $topic) {
+                $topic_title = strtolower(str_replace(' ', '-', $topic->title));
+                if ($topic_title == $query_args['type']) {
+                  $variables['filter'] = $topic->filter . ($key + 2);
+                  $variables['initial_filter'] = $topic->filter;
+                  break;
+                }
+              }
+            }
+            $allContent[] = [
+              'filter' => '',
+              'title' => 'All',
+            ];
+            $variables['topics'] = array_merge($allContent, array_unique($topics, SORT_REGULAR));
+          }
+        }
+
+        // Initial load dataset if type parameter in url query args.
+        if (isset($variables['initial_filter']) && isset($variables['filter']) && !empty($variables['initial_filter'])) {
+          $variables['dataset'] = \Drupal::service('bhge_c55_gallery.gallery_data')
+            ->prepareData([$ctype], $pid, $variables['initial_filter'], $variables['sort_by'], 0, $paragraph->get('field_dsoc_initial')
+              ->getValue()[0]['value'] * $row_items, $variables['category']);
+        }
+        else {
+          // Initial load dataset without parameters.
+          $variables['dataset'] = \Drupal::service('bhge_c55_gallery.gallery_data')
+            ->prepareData([$ctype], $pid, NULL, $variables['sort_by'], 0, $paragraph->get('field_dsoc_initial')
+              ->getValue()[0]['value'] * $row_items, $variables['category']);
+        }
+
+        $variables['total'] = !empty($variables['dataset']['count']) ? $variables['dataset']['count'] : 0;
+        $variables['count'] = !empty($variables['results']) ? count($variables['results']) : 0;
+
+      }
+    }
+    $hero_arr = [];
+    if ($id[0]['target_id'] == 'block_hero_carousel') {
+      $language = \Drupal::languageManager()->getCurrentLanguage()->getId();
+      foreach ($paragraph->get('field_slides') as $key => $value) {
+        $headline = !empty($value->entity->field_headline->entity->hasTranslation($language)) ? $value->entity->field_headline->entity->getTranslation($language)->field_label->getValue() : $value->entity->field_headline->entity->field_label->getValue();
+        if (!empty($value->entity->field_subtitle->entity->field_label)) {
+          $subtitle = !empty($value->entity->field_subtitle->entity->hasTranslation($language)) ? $value->entity->field_subtitle->entity->getTranslation($language)->field_label->getValue() : $value->entity->field_subtitle->entity->field_label->getValue();
+        }
+        if (!empty($value->entity->field_copy)) {
+          $copy = !empty($value->entity->hasTranslation($language)) ? $value->entity->getTranslation($language)->field_copy->getValue() : $value->entity->field_copy->getValue();
+        }
+        if (!empty($value->entity->field_image->getValue())) {
+          $hero_arr[$key]['image']['alt'] = !empty($value->entity->hasTranslation($language)) ? $value->entity->getTranslation($language)->field_image->getValue()[0]['alt'] : $value->entity->field_image->getValue()[0]['alt'];
+          $hero_arr[$key]['image']['title'] = !empty($value->entity->hasTranslation($language)) ? $value->entity->getTranslation($language)->field_image->getValue()[0]['title'] : $value->entity->field_image->getValue()[0]['title'];
+          $hero_arr[$key]['image']['uri'] = !empty($value->entity->hasTranslation($language)) ? $value->entity->getTranslation($language)->field_image->entity->uri->getValue()[0]['value'] : $value->entity->field_image->entity->uri->getValue()[0]['value'];
+        }
+        $gradient = !empty($value->entity->hasTranslation($language)) ? $value->entity->getTranslation($language)->field_gradient_background_image->getValue() : $value->entity->field_gradient_background_image->getValue();
+        $is_header = $value->entity->is_header;
+        if (!empty($value->entity->field_video->getValue())) {
+          $video = !empty($value->entity->hasTranslation($language)) ? $value->entity->getTranslation($language)->field_video->getValue() : $value->entity->field_video->getValue();
+          $hero_arr[$key]['video'] = $video[0]['value'];
+        }
+        if (!empty($value->entity->field_link->entity->field_label)) {
+          $cta_label = !empty($value->entity->field_link->entity->hasTranslation($language)) ? $value->entity->field_link->entity->getTranslation($language)->field_label->getValue() : $value->entity->field_link->entity->field_label->getValue();
+        }
+        if (!empty($value->entity->field_link->entity->field_target)) {
+          $cta_link = !empty($value->entity->field_link->entity->hasTranslation($language)) ? $value->entity->field_link->entity->getTranslation($language)->field_target->getValue() : $value->entity->field_link->entity->field_target->getValue();
+          $hero_arr[$key]['cta_link'] = !empty($cta_link) ? (object) $cta_link[0] : '';
+        }
+        if (!empty($value->entity->field_link->entity->field_target_destination)) {
+          if (!empty($value->entity->field_link->entity->field_target_destination->entity)) {
+            $cta_target = $value->entity->field_link->entity->field_target_destination->entity->field_link_target_destination->value;
+          }
+          else {
+            $cta_target = '';
+          }
+        }
+
+        $hero_arr[$key]['headline'] = !empty($headline) ? $headline[0]['value'] : '';
+        $hero_arr[$key]['subtitle'] = !empty($subtitle) ? $subtitle[0]['value'] : '';
+        $allowedtags = "<br>";
+        $hero_arr[$key]['copy'] = !empty($copy) ? str_replace('&nbsp;', '', strip_tags($copy[0]['value'], $allowedtags)) : '';
+        $hero_arr[$key]['is_header'] = !empty($is_header) ? $is_header : '';
+        $hero_arr[$key]['gradient'] = $gradient[0]['value'];
+        $hero_arr[$key]['cta_label'] = !empty($cta_label) ? $cta_label[0]['value'] : '';
+        $hero_arr[$key]['cta_target'] = !empty($cta_target) ? $cta_target : '';
+
+      }
+      $variables['hero_data'] = $hero_arr;
+
+    }
+  }
+}

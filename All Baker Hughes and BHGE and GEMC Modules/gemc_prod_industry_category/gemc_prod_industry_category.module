@@ -1,0 +1,152 @@
+<?php
+
+/**
+ * @file
+ * Contains gemc_prod_industry_category.module.
+ */
+
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\taxonomy\Entity\Term;
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function gemc_prod_industry_category_form_views_exposed_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+
+  if ($form['#id'] != 'views-exposed-form-industry-product-category-page-1') {
+    return FALSE;
+  }
+
+  $entity_manager = Drupal::getContainer()->get('entity_type.manager');
+  $n_storage = $entity_manager->getStorage('node');
+  $t_storage = $entity_manager->getStorage('taxonomy_term');
+  $current_lng = \Drupal::languageManager()->getCurrentLanguage()->getId();
+  $renderer = \Drupal::service('renderer');
+
+  $parent_terms = $t_storage->loadTree('product_type', 0, 1);
+  $options['product_type'] = [];
+  // We need to get all terms starting from second level.
+  foreach ($parent_terms as $parent_term) {
+    $terms = $t_storage->loadChildren($parent_term->tid, 'product_type');
+    foreach ($terms as $sterm) {
+      $renderer->addCacheableDependency($form, $sterm);
+      $term_lng = $sterm->get('langcode')->value;
+      if ($current_lng !== $term_lng && $sterm->hasTranslation($current_lng)) {
+        $sterm = $sterm->getTranslation($current_lng);
+      }
+      $tterms = $t_storage->loadChildren($sterm->id(), 'product_type');
+      if ($tterms) {
+        foreach ($tterms as $tterm) {
+          $renderer->addCacheableDependency($form, $tterm);
+          $term_lng = $tterm->get('langcode')->value;
+          if ($current_lng !== $term_lng && $tterm->hasTranslation($current_lng)) {
+            $tterm = $tterm->getTranslation($current_lng);
+          }
+          // Skip field if checkbox not selected.
+          if ($tterm->hasField('field_display_in_prod_cat_sel') && !$tterm->get('field_display_in_prod_cat_sel')->value) {
+            continue;
+          }
+
+          if ($tterm->hasField('field_product_category') && !$tterm->get('field_product_category')->isEmpty()) {
+            $key = $tterm->get('field_product_category')->getValue()[0]['target_id'];
+            $options['product_type'][$key] = $sterm->label() . ' - ' . $tterm->label();
+          }
+        }
+      }
+      else {
+        // Skip field if checkbox not selected.
+        if ($sterm->hasField('field_display_in_prod_cat_sel') && $sterm->get('field_display_in_prod_cat_sel')->isEmpty()) {
+          continue;
+        }
+        if ($sterm->hasField('field_product_category') && !$sterm->get('field_product_category')->isEmpty()) {
+          $key = $sterm->get('field_product_category')->getValue()[0]['target_id'];
+          $options['product_type'][$key] = $sterm->label();
+        }
+      }
+    }
+  }
+
+  $nids_query = $n_storage->getQuery();
+  // Gather published nodes and sort by title.
+  $nids_query->condition('type', 'industry')
+    ->condition('status', 1)
+    ->sort('title');
+  $nids = $nids_query->execute();
+
+  $options['industry'] = [];
+  $nodes = $n_storage->loadMultiple($nids);
+
+  foreach ($nodes as $node) {
+    $node_lng = $node->get('langcode')->value;
+    // Check if translation exists.
+    if ($current_lng !== $node_lng && $node->hasTranslation($current_lng)) {
+      $options['industry'][$node->id()] = $node->getTranslation($current_lng)->getTitle();
+    }
+    // Fallback to default if no translation available.
+    else {
+      $options['industry'][$node->id()] = $node->getTitle();
+    }
+
+  }
+
+  foreach (['industry', 'product_type'] as $field) {
+    asort($options[$field]);
+    $empty_option = ($field == 'industry') ? t('select an industry') : t('select a product category');
+
+    $form[$field]['#type'] = 'select';
+    $form[$field]['#multiple'] = FALSE;
+    $form[$field]['#empty_option'] = $empty_option;
+
+    // Add the $options from above to our select list.
+    $form[$field]['#options'] = $options[$field];
+    unset($form[$field]['#size']);
+  }
+
+  // Changing the button text.
+  $form['actions']['submit']['#value'] = 'Find It!';
+
+}
+
+/**
+ * Create terms if not exists.
+ */
+function _gemc_prod_industry_category_add_terms($terms, $vocabulary, $pid = 0) {
+  foreach ($terms as $key => $term_children) {
+    $term = NULL;
+    $term_name = is_array($term_children) ? $key : $term_children;
+    $tid = _gemc_prod_industry_category_get_term_by_name($term_name, $vocabulary);
+    // Create term.
+    if (!$tid) {
+      $term = Term::create([
+        'name' => $term_name,
+        'vid'  => $vocabulary,
+        'langcode' => 'en',
+        'parent' => [$pid],
+      ]);
+      $term->save();
+      $tid = $term->id();
+    }
+
+    if (is_array($term_children) && !empty($term_children)) {
+      _gemc_prod_industry_category_add_terms($term_children, $vocabulary, $tid);
+    }
+  }
+}
+
+/**
+ * Get category by name.
+ */
+function _gemc_prod_industry_category_get_term_by_name($name = NULL, $vocabulary = NULL) {
+  $properties = [];
+  if (!empty($name)) {
+    $properties['name'] = $name;
+  }
+  if (!empty($vocabulary)) {
+    $properties['vid'] = $vocabulary;
+  }
+  /* @var \Drupal\Core\Entity\EntityManagerInterface $entity_manager */
+  $entity_manager = \Drupal::service('entity.manager');
+  $terms = $entity_manager->getStorage('taxonomy_term')->loadByProperties($properties);
+  $term = reset($terms);
+  return !empty($term) ? $term->id() : 0;
+}

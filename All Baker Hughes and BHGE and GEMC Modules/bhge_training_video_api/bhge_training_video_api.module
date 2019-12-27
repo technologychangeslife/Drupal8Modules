@@ -1,0 +1,106 @@
+<?php
+
+/**
+ * @file
+ * Training Video API Module.
+ */
+
+/**
+ * Function to call the API.
+ *
+ * @return mixed
+ *   Returns variable which contains API token.
+ */
+function bhge_training_video_api_fetch_training_videos_by_id($vid) {
+  if (($_SERVER['HTTP_HOST'] === 'dev.bhge.com') || ($_SERVER['HTTP_HOST'] === 'dev.ge_oil_gas.local')) {
+    // Dev url and password.
+    $fetchUrl = "https://staging60.gechannelconnect.com/lms/datacore/api/GET/ActivityLink/?cm_id=" . $vid;
+    $username = "bhgevalves";
+    $password = "28bb7d4d1d03aff5bd2f895722d53d";
+  }
+  if ($_SERVER['HTTP_HOST'] === 'valves.bhge.com') {
+    // Production url and password.
+    $fetchUrl = "https://www.gechannelconnect.com/lms/datacore/api/GET/ActivityLink/?cm_id=" . $vid;
+    $username = "bhgevalves";
+    $password = "2d1eb3fb8f76352eb98b55ade2cd65";
+  }
+
+  // Base64 encode username and password.
+  // In this format, username:password.
+  $actual_auth = base64_encode($username . ':' . $password);
+  \Drupal::logger('bhge_training_video_api')->notice('Host: ' . $_SERVER['HTTP_HOST']);
+  \Drupal::logger('bhge_training_video_api')->notice('URL: ' . $fetchUrl);
+  \Drupal::logger('bhge_training_video_api')
+    ->notice('Password: ' . $password);
+
+  try {
+    \Drupal::logger('bhge_training_video_api')
+      ->notice('Inside try');
+
+    $client = \Drupal::httpClient();
+    $request = $client->get($fetchUrl, [
+      'headers' => [
+        'Authorization' => 'Basic ' . $actual_auth,
+        'Content-Type' => 'application/x-www-form-urlencoded',
+      ],
+    ]);
+
+    if ($request->getStatusCode() === NULL && $request->getStatusCode() != 200) {
+      \Drupal::logger('bhge_training_video_api')
+        ->warning('Couldn\'t connect to the channel connect API');
+      return '';
+    }
+    else {
+      $body = $request->getBody();
+      if (!empty($body)) {
+        $result = json_decode($body);
+        \Drupal::logger('bhge_training_video_api')
+          ->notice('result value' . $result->Result);
+        if ($result->Result === TRUE) {
+          // Check if result response is TRUE.
+          $data = $result->Data;
+          return $data;
+        }
+        else {
+          \Drupal::logger('bhge_training_video_api')
+            ->warning('Status code 200, but request body returned FALSE');
+          return '';
+        }
+      }
+    }
+  }
+  catch (\Exception $e) {
+    \Drupal::logger('bhge_training_video_api')
+      ->error('401 Unauthorized` response');
+  }
+}
+
+/**
+ * Function to kill the cache for the page.
+ */
+function bhge_training_video_api_my_page_cache() {
+  \Drupal::service('page_cache_kill_switch')->trigger();
+  return [
+    '#markup' => time(),
+  ];
+}
+
+/**
+ * Implements hook_preprocess_paragraph().
+ */
+function bhge_training_video_api_preprocess_paragraph(&$variables) {
+  if (!empty($variables['elements']['#paragraph'])) {
+    /** @var \Drupal\paragraphs\Entity\Paragraph $paragraph */
+    $paragraph = $variables['elements']['#paragraph'];
+    $id = $paragraph->get('type')->getValue();
+    if ($id[0]['target_id'] === 'block_video_id') {
+      $vid = $paragraph->get('field_video')->value;
+      $url_with_token = bhge_training_video_api_fetch_training_videos_by_id($vid);
+      $variables['vid'] = $vid;
+      $variables['LoadUrl'] = $url_with_token;
+      $variables['#cache']['max-age'] = 0;
+      // \Drupal::entityTypeManager()->getStorage('paragraph')->resetCache([$id[0]['target_id']]);
+      bhge_training_video_api_my_page_cache();
+    }
+  }
+}

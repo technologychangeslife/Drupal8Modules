@@ -1,0 +1,35 @@
+<?php
+
+/**
+ * @file
+ * Custom bh_filter_external_links.
+ */
+
+use Drupal\Component\Utility\Html;
+
+/**
+ * Process callback for external links filter.
+ *
+ * Sets target attribute to blank for external links.
+ */
+function _filter_external_links_process($text) {
+
+  $html_dom = Html::load($text);
+  $links = $html_dom->getElementsByTagName('a');
+  foreach ($links as $link) {
+    $href = $link->getAttribute('href');
+    $href_host = parse_url($href, PHP_URL_HOST);
+    if (!$href_host) {
+      // Probably a relative url.
+      continue;
+    }
+    $base_url = $GLOBALS['base_url'];
+    $base_host = parse_url($base_url, PHP_URL_HOST);
+
+    if ($href_host !== $base_host) {
+      $link->setAttribute('target', '_blank');
+    }
+  }
+  $text = Html::serialize($html_dom);
+  return $text;
+}

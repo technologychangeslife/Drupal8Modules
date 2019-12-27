@@ -1,0 +1,105 @@
+<?php
+
+/**
+ * @file
+ * Custom bhge_blog_question module.
+ */
+
+use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
+
+/**
+ * Implements hook_ENTITY_TYPE_view().
+ */
+function bhge_blog_question_node_view(array &$build, EntityInterface $entity, EntityViewDisplayInterface $display, $view_mode) {
+
+  if ($view_mode == 'full' && $entity->getType() == 'question') {
+
+    if ($display->getComponent('c20_bhge_blog_question')) {
+
+      $config = \Drupal::configFactory()->get('bhge.general_settings');
+      $is_internal = $config->get('internal_site');
+      $alias_manager = \Drupal::service('path.alias_manager');
+
+      $alias = $alias_manager->getAliasByPath('/node/' . $entity->id());
+
+      $blog_page_id = $entity->get('field_blog_page')->first()->getValue()['target_id'];
+      $blog_page_alias = $alias_manager->getAliasByPath('/node/' . $blog_page_id);
+
+      // Build quick links component.
+      $build['c20_bhge_blog_question'] = [
+        '#theme' => 'c20_quick_links_generic',
+        '#links' => [
+          [
+            'link' => $blog_page_alias,
+            'label' => 'Blogposts overview',
+            'target' => NULL,
+          ],
+          [
+            'link' => $blog_page_alias . '?display=questions',
+            'label' => 'Browse all questions',
+            'target' => NULL,
+          ],
+          [
+            'link' => $blog_page_alias . '?display=question-form',
+            'label' => 'Ask a question',
+            'target' => NULL,
+          ],
+        ],
+      ];
+    }
+  }
+}
+
+/**
+ * Implements hook_preprocess_HOOK().
+ */
+function bhge_blog_question_preprocess_node(&$variables) {
+
+  /* @var $node \Drupal\node\nodeInterface */
+  $node = $variables['node'];
+
+  if ($variables['view_mode'] == 'full' && $node->getType() == 'question') {
+    $created = $node->getCreatedTime();
+    $author = $node->get('uid')->entity;
+    $dataHelpers = \Drupal::service('bhge_c55_gallery.gallery_data_helpers');
+
+    $variables['question_title'] = $node->getTitle();
+
+    // Question meta.
+    $variables['vote_count'] = $node->field_votes->value;
+    $variables['likeAttribute'] = !empty($node->get('field_users_voted')) ? $dataHelpers->getLikeAttribute(\Drupal::currentUser(), $node->get('field_users_voted')->getValue()) : '';
+    $variables['comment_count'] = $node->field_comments->comment_count;
+    $variables['question_state'] = $dataHelpers->getQuestionState($node);
+
+    $variables['message'] = $node->field_message->value;
+    $variables['question_body'] = $node->body->value;
+    $variables['creation_date'] = \Drupal::service('date.formatter')
+      ->formatTimeDiffSince($created, ['granularity' => 1]) . ' ' . t('ago');
+
+    // Use mail as name because users don't have name set.
+    $variables['author_name'] = $author->mail->value;
+    $variables['like_api_url'] = '/api/v1/question-vote/add/' . $node->id();
+    if (!empty($author->user_picture) && !empty($author->user_picture->entity)) {
+      $file = $author->user_picture->entity;
+      $variables['author_image'] = !empty($file) ? $file->getFileUri() : '';
+    }
+  }
+
+}
+
+/**
+ * Implements hook_entity_extra_field_info().
+ */
+function bhge_blog_question_entity_extra_field_info() {
+  $extra = [];
+
+  $extra['node']['question']['display']['c20_bhge_blog_question'] = [
+    'label' => t('BHGE question quick links'),
+    'description' => t('Blog question quick links component.'),
+    'weight' => 5,
+    'visible' => TRUE,
+  ];
+
+  return $extra;
+}

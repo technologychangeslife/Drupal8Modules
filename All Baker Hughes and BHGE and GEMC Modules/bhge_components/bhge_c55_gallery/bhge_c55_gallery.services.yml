@@ -1,0 +1,7 @@
+services:
+  bhge_c55_gallery.gallery_data:
+    class: Drupal\bhge_c55_gallery\GalleryData
+    arguments: ['@database', '@bhge_c55_gallery.gallery_data_helpers']
+  bhge_c55_gallery.gallery_data_helpers:
+    class: Drupal\bhge_c55_gallery\DataHelpers
+    arguments: ['@bhge_core.data_helpers']

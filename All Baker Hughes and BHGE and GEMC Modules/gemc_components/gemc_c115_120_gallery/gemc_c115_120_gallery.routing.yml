@@ -1,0 +1,8 @@
+gemc_gallery.content.gallery:
+  path: 'api/v1/content-gallery'
+  defaults: { _controller: '\Drupal\gemc_c115_120_gallery\Controller\GalleryController::getFilteredResult' }
+  methods:  [GET]
+  requirements:
+    _access: 'TRUE'
+  options:
+    no_cache: true

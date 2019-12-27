@@ -1,0 +1,19 @@
+bhge-product:
+  version: 1.x
+  js:
+    js/bhge-product-category.js: {}
+  dependencies:
+  - core/jquery
+  - core/drupal
+  - core/drupalSettings
+  - core/drupal.ajax
+
+bhge-cat-three-card:
+  version: 1.x
+  js:
+    js/bhge-cat-three-card.js: {}
+  dependencies:
+  - core/jquery
+  - core/drupal
+  - core/drupalSettings
+  - core/drupal.ajax

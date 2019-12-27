@@ -1,0 +1,11 @@
+bh_component_library.settings:
+  path: '/admin/component-library'
+  defaults:
+    _controller: '\Drupal\system\Controller\SystemController::systemAdminMenuBlockPage'
+    _title: 'Component Library'
+  requirements:
+    _permission: 'can view bh component library'
+    _user_is_logged_in: 'TRUE'
+
+route_callbacks:
+  - '\Drupal\bh_component_library\Routing\BhDynamicRouteSubscriber::routes'

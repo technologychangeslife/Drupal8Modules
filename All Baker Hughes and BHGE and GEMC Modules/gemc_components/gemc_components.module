@@ -1,0 +1,132 @@
+<?php
+
+/**
+ * @file
+ * GEMC components Module.
+ */
+
+use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Entity\ContentEntityType;
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\field\Entity\FieldConfig;
+use Drupal\Core\Entity\EntityTypeInterface;
+use Drupal\system\Entity\Menu;
+
+/**
+ * Implements hook_entity_view_mode_alter().
+ *
+ * Allow to change the product node view mode by providing 'display' query
+ * parameter with needed view mode name.
+ */
+function gemc_components_entity_view_mode_alter(&$view_mode, EntityInterface $entity, $context) {
+  $request = \Drupal::request();
+  if ($request->query->has('display') && $entity->getEntityTypeId() == 'node') {
+    if (in_array($request->query->get('display'), ['downloads', 'specifications'])) {
+      $view_mode = $request->query->get('display');
+    }
+  }
+}
+
+/**
+ * Implements hook_preprocess_HOOK().
+ *
+ * Pass menu titles to the menu templates.
+ */
+function gemc_components_preprocess_menu(&$variables) {
+  if (!empty($variables['menu_name'])) {
+    $menu = Menu::load($variables['menu_name']);
+    if (!empty($menu)) {
+      $variables['menu_title'] = $menu->label();
+    }
+  }
+}
+
+/**
+ * Implements hook_entity_bundle_field_info_alter().
+ */
+function gemc_components_entity_bundle_field_info_alter(&$fields, EntityTypeInterface $entity_type, $bundle) {
+  if ($entity_type->id() === 'paragraph') {
+    if (isset($fields['field_video'])) {
+      $fields['field_video']->addConstraint('VideoUrlAllowed', []);
+    }
+  }
+
+  if (in_array($bundle, ['section', 'product', 'industry'])) {
+    $alter_fields = [
+      'field_prod_category_components',
+      'field_product_components',
+      'field_industry_components'
+    ];
+    foreach ($alter_fields as $field) {
+      if (isset($fields[$field])) {
+        $fields[$field]->addConstraint('RequiredComponents', ['bundle' => $bundle]);
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_entity_type_alter().
+ */
+function gemc_components_entity_type_alter(array &$entity_types) {
+  foreach ($entity_types as $entity_type) {
+    if ($entity_type instanceof ContentEntityType) {
+      $constraints = $entity_type->getConstraints();
+      unset($constraints['EntityUntranslatableFields']);
+      unset($constraints['ContentTranslationSynchronizedFields']);
+      $entity_type->setConstraints($constraints);
+    }
+  }
+}
+
+/**
+ * Implements hook_module_implements_alter().
+ */
+function gemc_components_module_implements_alter(&$implementations, $hook) {
+  switch ($hook) {
+    // Move our hook_entity_type_alter() implementation to the end of the list.
+    case 'entity_type_alter':
+      $group = $implementations['gemc_components'];
+      unset($implementations['gemc_components']);
+      $implementations['gemc_components'] = $group;
+      break;
+  }
+}
+
+/**
+ * Implements hook_field_widget_form_alter().
+ */
+function gemc_components_field_widget_form_alter(&$element, FormStateInterface $form_state, $context) {
+  $field_definition = $context['items']->getFieldDefinition();
+  // Base fields are not configurable.
+  if (!$field_definition instanceof FieldConfig || $field_definition->getType() !== 'image') {
+    return;
+  }
+
+  $host = $context["items"]->getEntity();
+  $default_langcode_key = $host->getEntityType()->getKey('default_langcode');
+  if (!$host->hasField($default_langcode_key)) {
+    return;
+  }
+
+  $is_translating = FALSE;
+  if (!empty($form_state->get('content_translation'))) {
+    $is_translating = TRUE;
+  }
+  if ($host->hasTranslation($form_state->get('langcode')) && $host->getTranslation($form_state->get('langcode'))->get($default_langcode_key)->value == 0) {
+    // Editing a translation.
+    $is_translating = TRUE;
+  }
+
+  if (!$is_translating || empty($element['current'])) {
+    return;
+  }
+
+  foreach ($context['items'] as $item) {
+    $id = $item->getValue()['target_id'];
+    if (!empty($element['current'][$id])) {
+      $access = $element['current'][$id]['remove_button']['#access'] && !$is_translating;
+      $element['current'][$id]['remove_button']['#access'] = $access;
+    }
+  }
+}

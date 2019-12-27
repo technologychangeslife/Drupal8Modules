@@ -1,0 +1,9 @@
+langcode: en
+status: true
+dependencies:
+  enforced:
+    module:
+      - gemc_events
+id: gemc_events
+label: 'Events'
+description: 'Import Events'

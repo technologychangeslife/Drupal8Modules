@@ -1,0 +1,91 @@
+<?php
+
+/**
+ * @file
+ * Custom bhge_channel_partner.
+ */
+
+use Drupal\Core\Form\FormStateInterface;
+
+/**
+ * Implements hook_form_alter().
+ */
+function bhge_channel_partner_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+  $view_names = ['channel_partner_finder'];
+  $view = $form_state->getStorage('view');
+
+  if ($form_id == 'views_exposed_form' && in_array($view['view']->id(), $view_names)) {
+    // Make the product brand as exposed filter.
+    unset($form['nid']);
+    $options = bhge_channel_partner_get_product_nodes('get_channel_partner_tagged_products');
+    if (!empty($options)) {
+      $product_brand = 'nid';
+      $form[$product_brand]['#title'] = 'Select a product brand';
+      $form[$product_brand]['#options']['All'] = t('Select a product brand');
+      $form[$product_brand]['#type'] = 'select';
+      $form[$product_brand]['#multiple'] = FALSE;
+      // Specify the empty option for our select list.
+      $form[$product_brand]['#empty_option'] = t('- Any -');
+      $form[$product_brand]['#options'] = $options;
+      $form[$product_brand]['#weight'] = -3;
+      unset($form[$product_brand]['#size']);
+    }
+    $form['field_relationship_type_target_id']['#weight'] = -1;
+    $form['field_channel_location_proximity']['#weight'] = 40;
+    $form['field_channel_location_proximity']['#type'] = 'hidden';
+  }
+}
+
+/**
+ * Get the list of product and product subsection.
+ *
+ * Which is tagged to a channel partner.
+ */
+function bhge_channel_partner_get_product_nodes($view_name) {
+  $options = [];
+  // Get the results from this view.
+  // Only get the nodes that have a channel partners.
+  $result = views_get_view_result($view_name, 'block_1');
+  if (!$result) {
+    return $options;
+  }
+  foreach ($result as $data) {
+    $node = Drupal::getContainer()
+      ->get('entity_type.manager')
+      ->getStorage('node')->load($data->nid);
+    $options[$data->nid] = $node->getTitle();
+  }
+  return $options;
+}
+
+/**
+ * Implements hook_preprocess_paragraph().
+ */
+function bhge_channel_partner_preprocess_paragraph(&$variables) {
+
+  if (!empty($variables['elements']['#paragraph'])) {
+    /** @var \Drupal\paragraphs\Entity\Paragraph $paragraph */
+    $paragraph = $variables['elements']['#paragraph'];
+    $id = $paragraph->get('type')->getValue();
+    $parent = NULL;
+    if ($id[0]['target_id'] === 'block_channel_partner') {
+      $configMarketo = Drupal::config('ge_marketo_form.settings');
+      $variables['marketo_form_id_cp'] = $configMarketo->get('channel_partner_marketo_form_id');
+      $variables['marketo_munchkin_id_cp'] = $configMarketo->get('marketo_id');
+      $variables['marketo_title_cp'] = $configMarketo->get('channel_partner_marketo_title');
+      $variables['thank_you_text_cp'] = $configMarketo->get('channel_partner_marketo_thank_you_text');
+      // Add JS.
+      $variables['#attached']['library'][] = 'bhge_channel_partner/bhge-channel-partner';
+    }
+  }
+}
+
+/**
+ * Implements hook_views_query_alter().
+ */
+function bhge_channel_partner_views_query_alter($view, $query) {
+  if ($view->id() === 'channel_partner_finder') {
+    $query->addField('node', 'nid', 'node_nid', ['function' => 'groupby']);
+    $query->addGroupBy('node.nid');
+  }
+}

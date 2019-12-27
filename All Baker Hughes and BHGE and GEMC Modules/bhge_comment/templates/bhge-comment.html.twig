@@ -1,0 +1,160 @@
+{#
+/**
+ * @file
+ * Custom theme for parent comments.
+ *
+ * Available variables:
+ * - comment_data.
+ *
+ */
+#}
+
+{#{ dump(comment_data|keys) }#}
+
+{% if is_parent %}
+<div class="comment-wrapper {% if comment_data.expand %}view-sub-comments{% endif %}"
+     data-is-previous="{{ comment_data.show }}" data-oldest-position="{{ comment_data.count }}"
+     data-newest-position="{{ comment_data.count_back }}" data-comments-position="-{{ comment_data.likes }}"
+     data-comment-id="comment-{{ comment_data.id }}">
+  <div class="comment {% if comment_data.childs %}has-sub-comment{% endif %}" id="comment-{{ comment_data.id }}">
+    {% else %}
+    <div class="comment sub-comment" id="comment-{{ comment_data.id }}">
+      {% endif %}
+
+      <div class="comment-header">
+        <div class="profile">
+          <div class="image">{{ comment_data.user_picture }}</div>
+          <div class="user">
+            <div class="name">{{ comment_data.user_name }}</div>
+            <div class="time">{{ comment_data.timediff }}</div>
+          </div>
+        </div>
+        <div class="share">
+          <div class="share-button">
+            <span>{{ "Share"|t }}</span>
+            <svg class="component-icon ">
+              <use xlink:href="#share"/>
+            </svg>
+          </div>
+          <div class="share-menu">
+            <div class="share-email">
+              <a href="mailto:{{ comment_data.user_email }}?subject=Share comment&amp;body=Interesting comment {{ comment_data.link }}"
+                 target="_top">
+                <svg class="component-icon ">
+                  <use xlink:href="#email" />
+                </svg>
+              </a>
+            </div>
+
+            <div class="share-chain" data-clipboard-target="#url00{{ comment_data.id }}">
+              <svg class="component-icon ">
+                <use xlink:href="#chain" />
+              </svg>
+              <div class="success">{{ 'URL has been copied to clipboard' | t }}</div>
+              <input id="url00{{ comment_data.id }}" value="{{ comment_data.link }}">
+            </div>
+
+            <div class="share-close"></div>
+          </div>
+        </div>
+      </div>
+      <div class="copy shorten-mobile">
+        {{ comment_data.body_mobile|nl2br }}
+        {% if comment_data.body_mobile_more %}<span class="read-more">{{ "See more"|t }}</span>{% endif %}
+      </div>
+      <div class="copy shorten-desktop">
+        {{ comment_data.body_desktop|nl2br }}
+        {% if comment_data.body_desktop_more %}<span class="read-more">{{ "See more"|t }}</span>{% endif %}
+      </div>
+      <div class="copy extended">
+        {{ comment_data.body_full|nl2br }}
+      </div>
+      <div class="edit-form-wrapper">
+        <form class="comment-form-edit" action="post" data-form-url="/api/v1/comment/edit/{{ comment_data.id }}"
+              data-comment-id="comment-{{ comment_data.id }}">
+          <textarea id="" class="input-field" placeholder="Edit your comment">{{ comment_data.body_full }}</textarea>
+          <div class="button-edit-cancel cta"><span class="copy">{{ "Cancel"|t }}</span></div>
+          <input data-drupal-selector="edit-submit" type="submit" id="edit-submit" name="op" value="Save"
+                 class="button button--primary js-form-submit form-submit">
+          <div class="error">Something went wrong</div>
+        </form>
+      </div>
+      <div class="options">
+        <div class="options-social">
+          <div class="likes {% if comment_data.i_liked %}liked{% endif %}" data-likes="{{ comment_data.likes }}"
+               data-url="/api/v1/comment-like/add/{{ comment_data.id }}"
+               data-delete-url="/api/v1/comment-like/remove/{{ comment_data.id }}">
+            <span>{{ comment_data.likes }}</span>
+            <svg class="component-icon like">
+              <use xlink:href="#like" />
+            </svg>
+            <svg class="component-icon like-active">
+              <use xlink:href="#like-active" />
+            </svg>
+          </div>
+
+          {% if is_parent %}
+            {% if comments_status == 2 %}
+              <div class="reply" data-comment-id="comment-{{ comment_data.id }}">
+                <span>{{ "reply"|t }}</span>
+                <svg class="component-icon ">
+                  <use xlink:href="#reply" />
+                </svg>
+              </div>
+            {% endif %}
+            {% if comment_data.child_count %}
+              <div class="view-all">
+                <span>View all {{ comment_data.child_count }} replies</span>
+
+                <svg class="component-icon ">
+                  <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#chevron-down"></use>
+                </svg>
+              </div>
+            {% endif %}
+          {% endif %}
+        </div>
+
+
+        <div class="options-edit">
+          {% if comment_data.may_edit and not comment_data.child_count %}
+            <a href="#" class="delete">
+              <span>{{ "delete"|t }}</span>
+              <svg class="component-icon ">
+                <use xlink:href="#delete" />
+              </svg>
+            </a>
+          {% endif %}
+          {% if comment_data.may_edit %}
+            <a href="#" class="edit">
+              <span>{{ "edit"|t }}</span>
+              <svg class="component-icon ">
+                <use xlink:href="#pencil" />
+              </svg>
+            </a>
+          {% endif %}
+          <div class="delete-confirm">
+            <div class="title">{{ "Are you sure?"|t }}</div>
+            <div class="button-delete-confirm cta full" data-api-url="/api/v1/comment/delete/{{ comment_data.id }}">
+              <span class="copy">{{ "Yes, delete"|t }}</span></div>
+            <div class="button-delete-cancel cta"><span class="copy">{{ "No, cancel"|t }}</span></div>
+            <div class="error">Something went wrong</div>
+          </div>
+        </div>
+      </div>
+      {% if is_parent %}
+    </div>
+    {{ comment_data.childs }}
+    {% if comments_status == 2 %}
+      <div class="new-comment-wrapper"></div>
+      <div class="sub-reply-wrapper reply-wrapper">
+        <form class="comment-form-add" action="post"
+              data-form-url="/api/v1/comment/add/{{ entity_id }}/{{ comment_data.id }}"
+              data-parent-comment="comment-{{ comment_data.id }}">
+          <textarea id="shareMessage" class="input-field" placeholder="{{ "Leave a comment"|t }}"></textarea>
+          <input data-drupal-selector="edit-submit" type="submit" id="edit-submit" name="op" value="Submit"
+                 class="button button--primary js-form-submit form-submit">
+        </form>
+      </div>
+    {% endif %}
+    {% endif %}
+  </div>

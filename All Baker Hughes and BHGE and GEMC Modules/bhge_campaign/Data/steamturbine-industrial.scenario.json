@@ -1,0 +1,313 @@
+{
+	"properties": {
+		"location": "India",
+		"title": "Steam Turbine",
+		"map": "modules/custom/bhge_campaign/Maps/asia.png",
+		"timeOffset": 5.5,
+		"description": "A machine conversation like this can avoid several days of unexpected outage.",
+		"scenario": 3,
+		"video": {
+			"src":"modules/custom/bhge_campaign/Videos/steamturbine-industrial.scenario.mp4",
+			"poster": "modules/custom/bhge_campaign/Videos/steamturbine-industrial.scenario.png",
+			"init": {
+				"start":0,
+				"duration":6
+			},
+			"normal": {
+				"start":6,
+				"duration":7
+			},
+			"anomaly": {
+				"start":7,
+				"duration":10.5
+			},
+			"anomalyend": {
+				"start":10.5,
+				"duration":13
+			}
+		}
+	},
+	"dialog": [
+		{
+			"author": "machine2",
+			"message": {
+				"text": "Good morning! STEAM TURBINE here! Are you looking at me?"
+			},
+			"status":"init",
+			"wait":10,
+			"waitAuthor": "icenter"
+		},
+		{
+			"author": "icenter",
+			"alert": null,
+			"message": {
+				"text": "Ciao from the Analytics Engine! Of course I am."
+			},
+			"status":"init",
+			"wait":5,
+			"waitAuthor": "machine2"
+		},
+		{
+			"author": "machine2",
+			"alert": null,
+			"message": {
+				"text": "Did you notice any issues?"
+			},
+			"status":"init",
+			"wait":4,
+			"waitAuthor": "icenter"
+		},
+		{
+			"author": "icenter",
+			"message": {
+				"text": "Nope, no major changes since the last check."
+			},
+			"status":"normal",
+			"wait":2,
+			"waitAuthor": "machine2"
+		},
+		{
+			"author": "machine2",
+			"alert": null,
+			"message": {
+				"text": "Sounds great, don’t forget to look after me!"
+			},
+			"status":"normal",
+			"wait":2,
+			"waitAuthor": "machine2"
+		},
+		{
+			"author": "icenter",
+			"message": {
+				"text": "Copy that!"
+			},
+			"status":"normal",
+			"wait":20
+		},
+		
+		
+		
+		
+		
+		{
+			"author": "machine2",
+			"message": {
+				"text": "Hey, I don’t feel so good, something is wrong. I’m sending you some exhaust steam pressure data."
+			},
+			"status":"normal",
+			"wait":2,
+			"waitAuthor": "icenter"
+		},
+		{
+			"author": "icenter",
+			"alert": null,
+			"message": {
+				"text": "Uhm, that’s weird."
+			},
+			"status":"normal"
+		},
+		{
+			"author": "machine2",
+			"message": {
+				"text": "",
+				"image": "modules/custom/bhge_campaign/Widgets/steamturbine-industrial.scenario/w01.png"
+			},
+			"status":"anomaly",
+			"wait":2,
+			"waitAuthor": "icenter"
+		},
+		
+		
+		
+		
+		
+		
+		{
+			"author": "icenter",
+			"alert": null,
+			"message": {
+				"text": "You’re right, the exhaust steam pressure is increasing…"
+			},
+			"status":"anomaly"
+		},
+		{
+			"author": "machine2",
+			"message": {
+				"text": "Yep I know... 😟"
+			},
+			"status":"anomaly",
+			"wait":3,
+			"waitAuthor": "icenter"
+		},
+		{
+			"author": "icenter",
+			"message": {
+				"text": "Careful, it looks like we’re approaching the alarm value, I need to call the iCenter in Florence to alert our Engineers there."
+			},
+			"status":"anomaly"
+		},
+		{
+			"author": "machine2",
+			"message": {
+				"text": "Thanks, anyway they’re shutting me down. It looks like I’ll be resting for the next few hours."
+			},
+			"status":"anomaly"
+		},
+		{
+			"author": "icenter",
+			"alert": null,
+			"message": {
+				"text": "Mario, can you take a look at this exhaust steam pressure trend?",
+				"image": "modules/custom/bhge_campaign/Widgets/steamturbine-industrial.scenario/w01.png"
+			},
+			"status":"anomaly",
+			"wait": 5
+		},
+		{
+			"author": "system",
+			"alert": null,
+			"message": {
+				"text": "Mario has been added to this conversation"
+			},
+			"status":"anomaly"
+		},
+		{
+			"author": "ge1",
+			"alert": null,
+			"message": {
+				"text": "Sorry, I need vacuum breaker position too. Can you retrieve it?"
+			},
+			"status":"anomaly"
+		},
+		{
+			"author": "machine2",
+			"alert": null,
+			"message": {
+				"text": "Here we are…"
+			},
+			"status":"anomaly",
+			"wait": 5,
+			"waitAuthor": "machine2"
+		},
+		{
+			"author": "machine2",
+			"message": {
+				"image": "modules/custom/bhge_campaign/Widgets/steamturbine-industrial.scenario/w03.png"
+			},
+			"status":"anomaly",
+			"wait": 5,
+			"waitAuthor": "ge1"
+		},
+		{
+			"author": "ge1",
+			"message": {
+				"text": "Gotcha!"
+			},
+			"status":"anomaly",
+			"wait": 3,
+			"waitAuthor": "ge1"
+		},
+		{
+			"author": "ge1",
+			"alert": null,
+			"message": {
+				"text": "It seems to me that the source of problem is the vacuum breaker valve. I think it’s best if we inform operators at site."
+			},
+			"status":"anomaly"
+		},
+		{
+			"author": "system",
+			"alert": null,
+			"message": {
+				"text": "Luis has been added to this conversation"
+			},
+			"status":"anomaly"
+		},
+		{
+			"author": "ge1",
+			"alert": null,
+			"message": {
+				"text": "Hi Luis, I need to inform you about something we detected. During shut down, the vacuum breaker valve opens too early when the turbine is still running."
+			},
+			"status":"anomaly"
+		},
+		{
+			"author": "ge1",
+			"alert": null,
+			"message": {
+				"text": "In the long run, this might damage turbine blades. I’m sending you an analysis with instructions to modify the shutdown procedure."
+			},
+			"status":"anomaly"
+		},
+		{
+			"author": "engineer1",
+			"message": {
+				"text": "Hi Mario, thanks. We weren’t aware of this, thanks for sharing this info."
+			},
+			"status":"anomaly",
+			"wait": 2,
+			"waitAuthor": "engineer1"
+		},
+		{
+			"author": "engineer1",
+			"message": {
+				"text": "Please send over the procedure as soon as possible. I’ll implement it as soon as I receive it."
+			},
+			"status":"anomaly"
+		},
+		{
+			"author": "ge1",
+			"message": {
+				"text": "Good! We’ll keep watching.",
+				"image": "modules/custom/bhge_campaign/Widgets/steamturbine-industrial.scenario/w04.png"
+			},
+			"status":"anomaly"
+		},
+		{
+			"author": "engineer1",
+			"message": {
+				"text": "Got it, I’m implementing the new logic"
+			},
+			"status":"anomalyend",
+			"wait": 40,
+			"waitAuthor": "icenter"
+		},
+		
+		
+		{
+			"author": "icenter",
+			"message": {
+				"text": "Copy that!"
+			},
+			"status":"anomalyend"
+		},
+		{
+			"author": "machine2",
+			"message": {
+				"text": "What do you think of this?",
+				"image": "modules/custom/bhge_campaign/Widgets/steamturbine-industrial.scenario/w05.png"
+			},
+			"status":"anomalyend",
+			"wait": 3,
+			"waitAuthor": "icenter"
+		},
+		{
+			"author": "icenter",
+			"alert": null,
+			"message": {
+				"text": "That’s okay,  I’m not seeing any issue."
+			},
+			"status":"anomalyend",
+			"wait":5,
+			"waitAuthor": "ge1"
+		},
+		{
+			"author": "ge1",
+			"alert": null,
+			"message": {
+				"text": "Cool, I'll close the case"
+			},
+			"status":"normal"
+		}
+	]
+}

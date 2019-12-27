@@ -1,0 +1,22 @@
+.bhge-page-access-form .bhge-page-access-user-autocomplete {
+  width: 65%;
+}
+.bhge-page-access-form .bhge-page-access-edit-access {
+  margin-left: 6%;
+}
+.bhge-page-access-form .container-inline {
+  margin-bottom: 2%;
+}
+.bhge-page-access-form .container-inline label::after {
+  content: '';
+}
+.bhge-page-access-form .bhge-page-access-add-user {
+  margin-top: 1%;
+}
+.bhge-page-access-form .bhge-page-access-remove-user {
+  display: inline;
+  padding: 3px 6px;
+}
+.bhge-page-access-form .bhge-page-access-remove-user:hover {
+  color: #ff0000;
+}

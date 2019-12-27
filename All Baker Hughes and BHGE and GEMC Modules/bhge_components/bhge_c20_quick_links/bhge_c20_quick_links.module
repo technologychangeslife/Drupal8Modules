@@ -1,0 +1,54 @@
+<?php
+
+/**
+ * @file
+ * Custom bhge_c20_quick_links module.
+ */
+
+/**
+ * Implements hook_theme().
+ */
+function bhge_c20_quick_links_theme($existing, $type, $theme, &$path) {
+
+  $path = 'themes/custom/bhge';
+  $theme = [
+    'c20_quick_links_generic' => [
+      'variables' => [
+        'links' => [],
+        'top_component_class' => '',
+        'id' => 'c20-quick-links-generic',
+      ],
+      'template' => 'sources/c20-quick-links/c20-quick-links-generic',
+    ],
+  ];
+  return $theme;
+}
+
+/**
+ * Implements hook_preprocess_paragraph().
+ */
+function bhge_c20_quick_links_preprocess_paragraph(&$variables) {
+  if (!empty($variables['elements']['#paragraph'])) {
+
+    /** @var \Drupal\paragraphs\Entity\Paragraph $paragraph */
+    $paragraph = $variables['elements']['#paragraph'];
+    $id = $paragraph->get('type')->getValue();
+    $parent = NULL;
+
+    if ($id[0]['target_id'] == 'block_contact' && !empty($paragraph->field_target)) {
+      $links = [];
+      foreach ($paragraph->field_target as $target) {
+
+        if ($paragraph->hasField('field_target')) {
+          $links[] = [
+            'link' => $target->getUrl(),
+            'label' => $target->title,
+          ];
+        }
+      }
+
+      $variables['links'] = $links;
+
+    }
+  }
+}

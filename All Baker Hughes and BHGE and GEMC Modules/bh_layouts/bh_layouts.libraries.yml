@@ -1,0 +1,18 @@
+bh_layouts_library:
+  version: 1.x
+  css:
+    theme:
+      assets/dark-chosen.css: {}
+auto_save_block:
+  version: 1.x
+  js:
+    assets/auto-save-block.js: {}
+  dependencies:
+    - core/drupal
+    - core/drupal.dialog.ajax
+bh_layouts_live_preview:
+  version: 1.x
+  js:
+    assets/live-preview.js: {}
+  dependencies:
+    - core/drupal

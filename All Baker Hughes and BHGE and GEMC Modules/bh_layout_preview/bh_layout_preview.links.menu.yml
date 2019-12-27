@@ -1,0 +1,15 @@
+bh_layout_preview.bhge_layout_builder_preview_settings:
+  title: 'Layout Builder Preview Config Form'
+  description: 'Layout Builder Preview Config Form.'
+  route_name: bh_layout_preview.bhge_layout_builder_preview_settings
+  parent: bh_settings.general_settings_form
+  menu_name: bh_settings
+  weight: 1
+
+bh_layout_preview.bhge_expose_content_type_settings:
+  title: 'Expose Content Type Config Form'
+  description: 'Expose Content Type Config Form.'
+  route_name: bh_layout_preview.bhge_expose_content_type_settings
+  parent: bh_settings.general_settings_form
+  menu_name: bh_settings
+  weight: 2

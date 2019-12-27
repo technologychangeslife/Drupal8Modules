@@ -1,0 +1,7 @@
+bhge_gallery.product_gallery:
+  path: 'api/v1/products-gallery/{nid}'
+  defaults:
+    _controller: '\Drupal\gemc_c115_120_section\Controller\ProductGallery::load'
+  methods:  [GET]
+  requirements:
+    _permission: 'access content'

@@ -1,0 +1,8 @@
+services:
+  bhge_c55_content_repo.content.respository.class:
+    class: \Drupal\bhge_c55_content_repo\Controller\ContentRepository
+    arguments: ['@request_stack', '@entity.query', '@entity_type.manager', '@current_route_match']
+  bhge_c55_content_repo.twig.contentrepository.extension:
+    class: Drupal\bhge_c55_content_repo\Extension\ContentRepositoryExtension
+    tags:
+      - { name: twig.extension }

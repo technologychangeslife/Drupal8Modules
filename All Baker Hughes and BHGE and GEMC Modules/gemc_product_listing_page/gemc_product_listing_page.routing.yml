@@ -1,0 +1,8 @@
+gemc_product_listing_page.products:
+  path: '/solutions'
+  defaults:
+    _controller: '\Drupal\gemc_product_listing_page\Controller\Products::init'
+    _title: 'Product Listing'
+  methods:  [GET]
+  requirements:
+    _permission: 'access content'

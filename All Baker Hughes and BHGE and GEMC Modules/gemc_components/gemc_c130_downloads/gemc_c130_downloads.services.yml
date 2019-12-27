@@ -1,0 +1,4 @@
+services:
+  gemc_c130_downloads.downloads_data:
+    class: Drupal\gemc_c130_downloads\DownloadsData
+    arguments: ['@database']

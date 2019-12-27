@@ -1,0 +1,14 @@
+services:
+  bhge_c55_product_gallery.gallery_data_helpers:
+    class: Drupal\bhge_c55_product_gallery\DataHelpers
+    arguments: ['@string_translation']
+  bhge_c55_product_gallery.product_data:
+    class: Drupal\bhge_c55_product_gallery\ProductData
+    arguments: ['@database', '@bhge_c55_product_gallery.gallery_data_helpers']
+  bhge_c55_product_gallery.product_gallery_initial:
+    class: Drupal\bhge_c55_product_gallery\ProductGalleryInitial
+    arguments: ['@bhge_c55_product_gallery.product_data', '@bhge_c55_product_gallery.gallery_data_helpers']
+  bhge_c55_product_gallery.sectionpage.subscriber:
+    class: '\Drupal\bhge_c55_product_gallery\EventSubscriber\SectionPageSubscriber'
+    tags:
+      - { name: 'event_subscriber' }

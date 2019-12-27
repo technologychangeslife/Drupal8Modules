@@ -1,0 +1,48 @@
+bhge_core.ical:
+  path: '/ical-export/{id}'
+  defaults: { _controller: '\Drupal\bhge_core\Controller\IcalController::downloadIcal' }
+  methods:  [GET]
+  requirements:
+    _access: 'TRUE'
+bhge_core.general_settings_form:
+  path: '/admin/config/bhge-general-settings'
+  defaults:
+    _form: '\Drupal\bhge_core\Form\BhgeGeneralSettingsForm'
+    _title: 'BHGE settings'
+  requirements:
+    _permission: 'administer bhge settings'
+bhge_core.social_settings_form:
+  path: '/admin/config/bhge-social-settings'
+  defaults:
+    _form: '\Drupal\bhge_core\Form\BhgeSocialSettingsForm'
+    _title: 'BHGE Social settings'
+  requirements:
+    _permission: 'administer bhge settings'
+bhge_core.tracking_settings_form:
+  path: '/admin/config/bhge-tracking-settings'
+  defaults:
+    _form: '\Drupal\bhge_core\Form\BhgeTrackingSettingsForm'
+    _title: 'BHGE Tracking settings'
+  requirements:
+    _permission: 'administer bhge settings'
+bhge_core.organization_schema_settings_form:
+  path: '/admin/config/bhge-organization-schema-settings'
+  defaults:
+    _form: '\Drupal\bhge_core\Form\BhgeOrganizationSchemaSettingsForm'
+    _title: 'BHGE Organization Schema settings'
+  requirements:
+    _permission: 'administer bhge settings'
+bhge_core.external_api_settings_form:
+  path: '/admin/config/bhge-external-api-settings'
+  defaults:
+    _form: '\Drupal\bhge_core\Form\BhgeExternalAPISettingsForm'
+    _title: 'BHGE External API settings'
+  requirements:
+    _permission: 'administer bhge settings'
+bhge_core.market_info_settings_form:
+  path: '/admin/config/bhge-market-info-settings'
+  defaults:
+    _form: '\Drupal\bhge_core\Form\BhgeMarketInfoSettingsForm'
+    _title: 'BHGE Market Info settings'
+  requirements:
+    _permission: 'administer bhge settings'

@@ -1,0 +1,8 @@
+name: BHGE C55 Featured Video
+type: module
+description: 'BHGE C55 Component For Featured Video'
+package: BHGE Components
+version: 8.x
+core: 8.x
+dependencies:
+  - bhge_c55_gallery

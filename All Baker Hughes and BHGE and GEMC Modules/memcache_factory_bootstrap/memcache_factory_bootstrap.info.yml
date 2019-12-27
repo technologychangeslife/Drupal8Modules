@@ -1,0 +1,5 @@
+name: Memcache Factory Boostrap
+type: module
+description: Class to create instances for memcache on bootstrap level
+core: 8.x
+package: cache

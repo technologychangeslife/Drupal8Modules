@@ -1,0 +1,43 @@
+bhge_user_registration.admin_settings_form:
+  path: '/admin/config/engagereceip-settings'
+  defaults:
+    _form: '\Drupal\bhge_user_registration\Form\EngagereceipSettingsForm'
+    _title: 'EngageRecip settings'
+  requirements:
+    _permission: 'administer engagerecip settings'
+bhge_user_registration.geform:
+  path: '/bhge_user_registration/geform'
+  defaults:
+    _form: '\Drupal\bhge_user_registration\Form\GeForm'
+    _title: 'GE form'
+  requirements:
+    _permission: 'access content'
+bhge_user_registration.requsetpendingmessage:
+  path: 'bhge_user_registration/requestpendingmessage'
+  defaults: { _controller: '\Drupal\bhge_user_registration\Controller\registrationformController::requestpendingmessage' }
+  requirements:
+    _access: 'TRUE'
+bhge_user_registration.approve:
+  path: '/bhge-user-approve/{uid}'
+  defaults:
+    _controller: '\Drupal\bhge_user_registration\Controller\BhgeUserApprovalController::approveUser'
+    _title: 'Approve User'
+  requirements:
+    _access: 'TRUE'
+bhge_user_registration.requsetnotapprovedmessage:
+  path: 'bhge_user_registration/notapproved'
+  defaults: { _controller: '\Drupal\bhge_user_registration\Controller\registrationformController::requestnotapprovedmessage' }
+  requirements:
+    _access: 'TRUE'
+bhge_user_registration.nongeform:
+ path: '/bhge_user_registration/nongeform'
+ defaults:
+   _title: 'Non GE form'
+   _form: '\Drupal\bhge_user_registration\Form\NongeForm'
+ requirements:
+   _permission: 'access content'
+bhge_user_registration.bhge_user_registration_document_check:
+  path: 'bhge_user_registration'
+  defaults: { _controller: '\Drupal\bhge_user_registration\Controller\registrationformController::documentcheck' }
+  requirements:
+    _access: 'TRUE'

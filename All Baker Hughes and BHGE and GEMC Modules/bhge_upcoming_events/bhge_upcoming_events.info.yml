@@ -1,0 +1,6 @@
+name: BHGE Upcoming Events
+type: module
+description: 'BHGE Upcoming Events.'
+package: Custom
+version: 8.x
+core: 8.x

@@ -1,0 +1,16 @@
+bhge_search_api.search:
+  path: '/search'
+  defaults:
+    _controller: '\Drupal\bhge_search_api\Controller\SearchApiController::search'
+    _title: 'Search'
+  methods:  [GET]
+  requirements:
+    _access: 'TRUE'
+bhge_search_api.search_suggestions:
+  path: '/search-suggestions'
+  defaults:
+    _controller: '\Drupal\bhge_search_api\Controller\SuggestionsController::getSuggestions'
+    _title: 'Search Suggestions'
+  methods:  [GET]
+  requirements:
+    _access: 'TRUE'

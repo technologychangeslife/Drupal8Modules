@@ -1,0 +1,24 @@
+bhge-video-popup:
+  version: 1.x
+  js:
+    js/bhge-video.popup.js: {}
+  dependencies:
+      - core/jquery
+  css:
+     theme:
+        css/bhge-video.popup.css: {}
+bhge-youtube-popup:
+  version: 1.x
+  js:
+    js/bhge-youtube-popup.js: {}
+  dependencies:
+    - core/jquery
+bhge-views-counter:
+  version: 1.x
+  js:
+    js/bhge-views-counter.js: {}
+  dependencies:
+    - core/jquery
+    - core/drupal
+    - core/drupalSettings
+    - core/drupal.ajax

@@ -1,0 +1,432 @@
+<?php
+
+/**
+ * @file
+ * Install, update and uninstall functions for the bhge_core module.
+ */
+
+use Drupal\Core\Database\Database;
+
+/**
+ * @file
+ * Install, update and uninstall functions for the bhge_core module.
+ */
+
+/**
+ * Make sure these hooks are executed on install. Remove after deployment to P.
+ */
+function bhge_core_install() {
+  bhge_core_update_8313();
+}
+
+/**
+ * Delete references to renamed modules.
+ */
+function bhge_core_update_8304() {
+  // Read the configuration.
+  $module_data = \Drupal::config('core.extension')->get('module');
+  $module_names = [
+    'bhge_oil',
+    'bhge_oil_my',
+    'commodities_info',
+    'market_info',
+    'rigcount',
+  ];
+  foreach ($module_names as $module_name) {
+    // Unset the modules you do not need.
+    unset($module_data[$module_name]);
+  }
+  // Write the configuration.
+  \Drupal::configFactory()->getEditable('core.extension')->set('module', $module_data)->save();
+}
+
+/**
+ * Delete references to non-existing field, this crashes field_purge_batch().
+ */
+function bhge_core_update_8305() {
+  $query = \Drupal::database()->delete('key_value');
+  $query->condition('name', 'taxonomy_term.field_schema_data.field_svg_markup_code');
+  $query->execute();
+
+  $changed_state = FALSE;
+  $deleted_fields = \Drupal::state()->get('field.field.deleted');
+  if (!empty($deleted_fields) && is_array($deleted_fields)) {
+    foreach ($deleted_fields as $uuid => $deleted_field) {
+      if (in_array($deleted_field['id'],
+        [
+          'taxonomy_term.link_sector.field_svg_markup_code',
+          'media.document.field_function',
+          'node.document.field_country',
+          'media.document.field_country',
+          'media.document.field_band',
+          '',
+        ])) {
+        unset($deleted_fields[$uuid]);
+        $changed_state = TRUE;
+      }
+    }
+  }
+  if ($changed_state) {
+    \Drupal::state()->set('field.field.deleted', $deleted_fields);
+  }
+}
+
+/**
+ * Obsolete modules cleanup from system table.
+ */
+function bhge_core_update_8307() {
+
+  $modules = ['bhge_oil',
+    'commodities_info',
+    'market_info',
+    'rigcount',
+    'share_price_info',
+  ];
+  _bhge_core_clean_obsolete_modules($modules);
+}
+
+/**
+ * Change profile from standard to bhge_base.
+ */
+function bhge_core_update_8308() {
+  $profile_name = "bhge_base";
+  \Drupal::keyValue('system.schema')->delete('standard');
+  \Drupal::keyValue('system.schema')->set($profile_name, 8000);
+
+  $extension_config = \Drupal::configFactory()->getEditable('core.extension');
+  $modules = $extension_config->get('module');
+  $modules[$profile_name] = 1;
+  $extension_config->set('module', $modules);
+  $extension_config->save();
+
+  \Drupal::configFactory()->getEditable('core.extension')
+    ->set('profile', $profile_name)
+    ->save();
+
+  drupal_flush_all_caches();
+}
+
+/**
+ * Enabling search field in navigation.
+ */
+function bhge_core_update_8309() {
+  $bhgeSettings = \Drupal::service('state');
+  $bhgeSettings->set('enable_search', TRUE);
+
+}
+
+/**
+ * Delete styles data from database.
+ */
+function bhge_core_update_8310() {
+  $query = \Drupal::database()->delete('paragraphs_item');
+  $query->condition('type', 'styles');
+  $query->execute();
+  $query = \Drupal::database()->delete('paragraphs_item_field_data');
+  $query->condition('type', 'styles');
+  $query->execute();
+
+  $query = \Drupal::database()->delete('paragraph__field_align');
+  $query->execute();
+  $query = \Drupal::database()->delete('paragraph__field_offset_bottom');
+  $query->execute();
+  $query = \Drupal::database()->delete('paragraph__field_offset_top');
+  $query->execute();
+  $query = \Drupal::database()->delete('paragraph__field_padding_top');
+  $query->execute();
+  $query = \Drupal::database()->delete('paragraph__field_padding_bottom');
+  $query->execute();
+  $query = \Drupal::database()->delete('paragraph__field_z_index');
+  $query->execute();
+
+  $query = \Drupal::database()->delete('paragraph_revision__field_align');
+  $query->execute();
+  $query = \Drupal::database()->delete('paragraph_revision__field_offset_bottom');
+  $query->execute();
+  $query = \Drupal::database()->delete('paragraph_revision__field_offset_top');
+  $query->execute();
+  $query = \Drupal::database()->delete('paragraph_revision__field_padding_top');
+  $query->execute();
+  $query = \Drupal::database()->delete('paragraph_revision__field_padding_bottom');
+  $query->execute();
+  $query = \Drupal::database()->delete('paragraph_revision__field_z_index');
+  $query->execute();
+
+}
+
+/**
+ * Delete bhge_www module data from database.
+ */
+function bhge_core_update_8311() {
+  \Drupal::service('module_installer')->uninstall(['bhge_www']);
+  $query = \Drupal::database()->delete('key_value');
+  $query->condition('collection', 'system.schema');
+  $query->condition('name', 'bhge_www');
+  $query->execute();
+}
+
+/**
+ * Uninstalls bhge_products.
+ */
+function bhge_core_update_8312() {
+
+  // bhge_products.
+  $moduleHandler = \Drupal::service('module_handler');
+  if ($moduleHandler->moduleExists('bhge_products')) {
+    // Code Here.
+    \Drupal::service('module_installer')->uninstall(['bhge_products']);
+    $query = \Drupal::database()->delete('key_value');
+    $query->condition('collection', 'system.schema');
+    $query->condition('name', 'bhge_products');
+    $query->execute();
+  }
+}
+
+/**
+ * Disable search from acsf sites.
+ */
+function bhge_core_update_8313() {
+  if (function_exists('gardens_site_data_get_filepath') && file_exists(gardens_site_data_get_filepath())) {
+    $bhgeSettings = \Drupal::service('state');
+    $bhgeSettings->set('enable_search', FALSE);
+  }
+}
+
+/**
+ * Delete conflicting config before config import.
+ *
+ * Remove reference to obsolete module.
+ *
+ * @param string $sandbox
+ *   Sandbox.
+ */
+function bhge_core_post_update_core844(&$sandbox) {
+  Drupal::configFactory()->getEditable('core.entity_form_display.media.file.default')->delete();
+  Drupal::configFactory()->getEditable('core.entity_view_display.media.file.default')->delete();
+  Drupal::configFactory()->getEditable('media.type.file')->delete();
+  _bhge_core_clean_obsolete_modules(['media_entity_document']);
+}
+
+/**
+ * Obsolete MY modules cleanup from system table.
+ */
+function bhge_core_update_8401() {
+
+  $modules = [
+    'bhge_my_comment',
+    'bhge_oil_my',
+  ];
+  _bhge_core_clean_obsolete_modules($modules);
+}
+
+/**
+ * Populate config file for career settings with settings from state.
+ */
+function bhge_core_update_8402() {
+  $stateFields = [
+    'career_search_api_oauth_url',
+    'career_search_api_url',
+    'career_search_api_client_id',
+    'career_search_api_client_secret',
+  ];
+
+  $config = \Drupal::configFactory()->getEditable('bhge.career_settings');
+
+  $state = \Drupal::service('state');
+
+  foreach ($stateFields as $stateField) {
+    if (!empty($state->get($stateField))) {
+      $config->set($stateField, $state->get($stateField))->save();
+    }
+  }
+}
+
+/**
+ * Populate config file for social settings with settings from state.
+ */
+function bhge_core_update_8403() {
+  $stateFields = [
+    'facebook_page_url',
+    'twitter_page_url',
+    'linkedin_page_url',
+    'social_share_title',
+    'email_share_sender',
+  ];
+
+  $config = \Drupal::configFactory()->getEditable('bhge.social_settings');
+
+  $state = \Drupal::service('state');
+
+  foreach ($stateFields as $stateField) {
+    if (!empty($state->get($stateField))) {
+      $config->set($stateField, $state->get($stateField))->save();
+    }
+  }
+}
+
+/**
+ * Populate config file for hse settings with settings from state.
+ */
+function bhge_core_update_8404() {
+  $stateFields = [
+    'hse_days',
+    'hse_last_updated',
+    'hse_fetch_url',
+    'hse_days_suffix',
+  ];
+
+  $config = \Drupal::configFactory()->getEditable('bhge.hse_info_settings');
+
+  $state = \Drupal::service('state');
+
+  foreach ($stateFields as $stateField) {
+    if (!empty($state->get($stateField))) {
+      $config->set($stateField, $state->get($stateField))->save();
+    }
+  }
+}
+
+/**
+ * Populate config file for stock settings with settings from state.
+ */
+function bhge_core_update_8405() {
+  $stateFields = [
+    'stock_info_url',
+  ];
+
+  $config = \Drupal::configFactory()->getEditable('bhge.stock_info_settings');
+
+  $state = \Drupal::service('state');
+
+  foreach ($stateFields as $stateField) {
+    if (!empty($state->get($stateField))) {
+      $config->set($stateField, $state->get($stateField))->save();
+    }
+  }
+}
+
+/**
+ * Populate config file for organization schema settings.
+ *
+ * With settings from state.
+ */
+function bhge_core_update_8406() {
+  $stateFields = [
+    'organization_name',
+    'organization_description',
+    'organization_url',
+    'organization_logo',
+    'organization_facebook_logo',
+    'organization_twitter_logo',
+    'organization_linkedin_logo',
+    'organization_instagram_logo',
+  ];
+
+  $config = \Drupal::configFactory()->getEditable('bhge.organization_schema_settings');
+
+  $state = \Drupal::service('state');
+
+  foreach ($stateFields as $stateField) {
+    if (!empty($state->get($stateField))) {
+      $config->set($stateField, $state->get($stateField))->save();
+    }
+  }
+}
+
+/**
+ * Populate config file for tracking settings with settings from state.
+ */
+function bhge_core_update_8407() {
+  $stateFields = [
+    'gtm_id',
+  ];
+
+  $config = \Drupal::configFactory()->getEditable('bhge.tracking_settings');
+
+  $state = \Drupal::service('state');
+
+  foreach ($stateFields as $stateField) {
+    if (!empty($state->get($stateField))) {
+      $config->set($stateField, $state->get($stateField))->save();
+    }
+  }
+}
+
+/**
+ * Populate config file for general settings with settings from state.
+ */
+function bhge_core_update_8408() {
+  $stateFields = [
+    'internal_site',
+    'enable_search',
+    'enable_global_nav',
+  ];
+
+  $config = \Drupal::configFactory()->getEditable('bhge.general_settings');
+
+  $state = \Drupal::service('state');
+
+  foreach ($stateFields as $stateField) {
+    if (!empty($state->get($stateField))) {
+      $config->set($stateField, $state->get($stateField))->save();
+    }
+  }
+}
+
+/**
+ * Generate or remove file for state detection early in drupal bootstrap.
+ */
+function bhge_core_update_8409() {
+  $filename = 'public://isinternalsite.dontremove';
+  $state = \Drupal::service('state');
+  if ($state->get('internal_site') == 1) {
+    file_save_data('Generated by ' . __CLASS__, $filename, FILE_EXISTS_REPLACE);
+  }
+}
+
+/**
+ * Delete all tables starting with field_deleted_data.
+ */
+function bhge_core_update_8410() {
+  $tables = \Drupal::database()->query("SHOW TABLES")->fetchAll();
+  $field_deleted_data_tables = array_filter($tables, function ($table) {
+    $stdObjectToArray = (Array) $table;
+    return (
+      stripos(current($stdObjectToArray), 'field_deleted_data') !== FALSE ||
+      stripos(current($stdObjectToArray), 'field_deleted_revision') !== FALSE
+    );
+  });
+  $schema = Database::getConnection()->schema();
+  foreach ($field_deleted_data_tables as $data_table) {
+    $stdObjectToArray = (Array) $data_table;
+    if (!empty(current($stdObjectToArray))) {
+      if ($schema->tableExists(current($stdObjectToArray))) {
+        $schema->dropTable(current($stdObjectToArray));
+      }
+    }
+  }
+}
+
+/**
+ * Update url alias of products-services.
+ */
+function bhge_core_update_8411() {
+  // Query to get aliases which contain products-services in alias.
+  // Error in this code, removed. Leave update hook for reference.
+}
+
+/**
+ * Remove unused bhge_node_copy from key_value.
+ */
+function bhge_core_update_8412() {
+  $query = \Drupal::database()->delete('key_value');
+  $query->condition('name', 'bhge_node_copy');
+  $query->execute();
+}
+
+/**
+ * Change max length of field_sub_title to 280 chars.
+ */
+function bhge_core_update_8500() {
+  _bhge_core_change_text_field_max_length('paragraph', 'field_sub_title', 280);
+}

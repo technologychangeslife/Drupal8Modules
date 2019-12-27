@@ -1,0 +1,17 @@
+services:
+  gemc_components.render.render_handlebars_template:
+    class: Drupal\gemc_components\Templating\Renderer
+    arguments: ['@handlebars_theme_handler.files_utility']
+    public: true
+    decorates: handlebars_theme_handler.render.render_handlebars_template
+    decoration_priority: 1
+  gemc_components.field_data_service:
+    class: Drupal\gemc_components\FieldData\FieldDataService
+    arguments: ['@gemc_components.video_helper']
+  gemc_components.video_helper:
+    class: Drupal\gemc_components\FieldData\Helper\VideoDataHelper
+  gemc_components.content_lists:
+    class: Drupal\gemc_components\ContentLists
+    arguments: ['@database']
+  gemc_components.helpers:
+    class: Drupal\gemc_components\MarketoHelpers

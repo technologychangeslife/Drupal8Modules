@@ -1,0 +1,78 @@
+<?php
+
+/**
+ * @file
+ * Custom gemc_c17_brand_nav module.
+ */
+
+use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
+use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Url;
+
+/**
+ * Implements hook_entity_extra_field_info().
+ */
+function gemc_c17_brand_nav_entity_extra_field_info() {
+  $extra = [];
+
+  $extra_field = [
+    'label' => t('GEMC C17 browser'),
+    'description' => t('C17 previous next navigation for brands.'),
+    'weight' => 6,
+    'visible' => TRUE,
+  ];
+  $extra['node']['product_brand']['display']['gemc_product_brand_prev_next'] = $extra_field;
+
+  return $extra;
+}
+
+/**
+ * Implements hook_ENTITY_TYPE_view().
+ */
+function gemc_c17_brand_nav_node_view(array &$build, EntityInterface $entity, EntityViewDisplayInterface $display, $view_mode) {
+  if ($entity->bundle() != 'product_brand') {
+    return;
+  }
+
+  if ($view_mode == 'full') {
+    if ($display->getComponent('gemc_product_brand_prev_next')) {
+      $brandNavLinks = \Drupal::service('gemc_c17_brand_nav.brand_data')->getBrandNavLinks($entity->id());
+
+      // Only display component if results.
+      if (!empty($brandNavLinks)) {
+        $build_id = 'gemc_product_brand_prev_next';
+        $build[$build_id] = [
+          '#theme' => 'gemc_c17_browser',
+          '#cache' => ['contexts' => ['url']],
+        ];
+        $data = [];
+        if (!empty($brandNavLinks['previous'])) {
+          $data['previous']['link'] = Url::fromRoute('entity.node.canonical', ['node' => $brandNavLinks['previous']->id])->toString();
+          $data['previous']['label'] = $brandNavLinks['previous']->title;
+        }
+        if (!empty($brandNavLinks['next'])) {
+          $data['next']['link'] = Url::fromRoute('entity.node.canonical', ['node' => $brandNavLinks['next']->id])->toString();
+          $data['next']['label'] = $brandNavLinks['next']->title;
+        }
+        $build[$build_id]['#data'] = $data;
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_theme().
+ */
+function gemc_c17_brand_nav_theme($existing, $type, $theme, &$path) {
+
+  $path = 'themes/custom/gemc';
+  $theme = [
+    'gemc_c17_browser' => [
+      'variables' => [
+        'data' => [],
+      ],
+      'template' => 'components/c17-browser/c17-browser',
+    ],
+  ];
+  return $theme;
+}

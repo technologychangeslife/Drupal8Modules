@@ -1,0 +1,6 @@
+bhge_c55_downloads.filter:
+  path: 'api/v1/download-filter'
+  defaults: { _controller: '\Drupal\bhge_c55_downloads\Controller\DownloadFilter::getFilteredFiles' }
+  methods:  [GET]
+  requirements:
+    _access: 'TRUE'

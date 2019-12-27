@@ -1,0 +1,6 @@
+name: BHGE Campaign
+type: module
+description: 'BHGE Campaign Related Files.'
+package: Custom
+version: 8.x
+core: 8.x

@@ -1,0 +1,11 @@
+bhge_c01a_product_nav.section_hierarchy_link:
+  title: 'Sectionpage hierarchy'
+  description: 'Product sectionpage hierarchy'
+  route_name: bhge_c01a_product_nav.section_hierarchy
+  parent: 'system.admin_content'
+bhge_c01a_product_nav.products_link:
+  title: 'Products & Services'
+  url: 'internal:#'
+  weight: 50
+  menu_name: main
+  enabled: 0

@@ -1,0 +1,318 @@
+<?php
+
+/**
+ * @file
+ * Custom gemc_core.
+ */
+
+use Drupal\Core\Extension\Extension;
+use Drupal\search_api\Entity\Index;
+use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Entity\ContentEntityInterface;
+use Drupal\Core\Entity\ContentEntityType;
+use Drupal\search_api\Plugin\search_api\datasource\ContentEntity;
+use Drupal\file\Entity\File;
+use Drupal\media\Entity\Media;
+use Drupal\field\Entity\FieldConfig;
+
+/**
+ * Implements hook_form_alter().
+ */
+function gemc_core_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+
+  if ($form_id === 'node_download_edit_form' || $form_id === 'node_download_form') {
+    $form['#attached']['library'][] = 'gemc_core/gemc-core';
+
+  }
+
+  $forms = [
+    'media_dam_asset_pdf_add_form',
+    'media_dam_asset_pdf_edit_form',
+    'media_dam_asset_dld_add_form',
+    'media_dam_asset_dld_edit_form',
+    'media_dam_asset_epub_add_form',
+    'media_dam_asset_epub_edit_form',
+    'media_dam_asset_img_add_form',
+    'media_dam_asset_img_edit_form'
+  ];
+  if (in_array($form_id, $forms)) {
+    // Disable the field_asset form field.
+    $form['field_asset']['#disabled'] = 'disabled';
+  }
+
+}
+
+/**
+ * Implements hook_entity_view().
+ */
+function gemc_core_entity_view(array &$build, EntityInterface $entity, EntityViewDisplayInterface $display, $view_mode) {
+
+  if ($entity->getEntityTypeId() !== 'menu_link_content' || $entity->bundle() !== 'main-navigation') {
+    return;
+  }
+
+  $remove_contexts = [
+    'url.query_args',
+    'url.path',
+    'user'
+  ];
+
+  $build['#cache']['contexts'] = array_diff($build['#cache']['contexts'], $remove_contexts);
+}
+
+/**
+ * Implements hook_ENTITY_TYPE_update() to reindex reference node on updating DAM asset.
+ */
+function gemc_core_media_update($media) {
+  $media_id = $media->id();
+  // Get the bundle.
+  $media_type = $media->bundle();
+
+  if ($media_id > 0 && $media_type == 'dam_asset_dld') {
+    /* get all nids associated with updated media */
+    $nids = \Drupal::entityQuery('node')->condition('type', 'download')->condition('status', 1)
+      ->condition('field_download_dam_media', $media_id)
+      ->execute();
+
+    if ($nids) {
+      $updated_nids = $updated_item_nids = [];
+      foreach ($nids as $nid) {
+        $node_entity = \Drupal::entityTypeManager()->getStorage('node')->load($nid);
+        $node_translations = $node_entity->getTranslationLanguages();
+        foreach ($node_translations as $langcode => $language) {
+          $updated_nids[$nid] = $nid . ':' . $langcode;
+        }
+      }
+
+      $index = Index::load('acquia_search_index');
+      /* Track updated nodes to re-index */
+      $index->trackItemsUpdated('entity:node', $updated_nids);
+      /* add datasoure prefix to all values of array */
+      $updated_item_nids = preg_filter('/^/', 'entity:node/', $updated_nids);
+      /* re-index specific nodes from tracked nodes */
+      $items = $index->loadItemsMultiple($updated_item_nids);
+      $index->indexSpecificItems($items);
+    }
+  }
+}
+
+/**
+ * Implements hook_system_info_alter().
+ *
+ * These contrib module don't have project info from drupal.org in .info.yml.
+ * Adding project info to fix notices in "Available translation updates" page.
+ */
+function gemc_core_system_info_alter(array &$info, Extension $file, $type) {
+  $fix_project_info = ['block_field', 'redirect', 'entity_reference_revisions'];
+  if ($type == 'module' && in_array($file->getName(), $fix_project_info)) {
+    $info['project'] = $file->getName();
+  }
+}
+
+/**
+ * Implements hook_page_attachments().
+ */
+function gemc_core_page_attachments(array &$page) {
+  // If asset_injector module is enabled, make sure that scripts/css files are
+  // rendering at the beginning of the page.
+  // This is specifically to solve Google Optimize issues with asset order, needed for A/B testing.
+  // CSS is needed first for the "no blink" styling.
+  if (\Drupal::moduleHandler()->moduleExists('asset_injector')) {
+    // Force Asset Injector scripts to load at very top of the page.
+    /** @var \Drupal\Core\Render\RendererInterface $renderer */
+    $renderer = \Drupal::service('renderer');
+    /** @var \Drupal\Core\Asset\AttachedAssetsInterface $asset */
+    foreach (asset_injector_get_assets(TRUE) as $asset) {
+      $library = $asset->libraryInfo();
+      $library_id = $asset->id();
+      $asset_path = file_url_transform_relative(file_create_url($asset->internalFileUri()));
+
+      // Add css files to the top of the head.
+      if (!empty($library['css'])) {
+        foreach ($library['css'] as $group) {
+          foreach (array_keys($group) as $file) {
+            $page['#attached']['html_head'][] = [
+              [
+                '#type' => 'html_tag',
+                '#tag' => 'link',
+                '#attributes' => [
+                  'rel' => 'stylesheet',
+                  'href' => $asset_path,
+                  'media' => 'screen',
+                ],
+                '#weight' => -1,
+              ],
+              "asset_injector_$library_id",
+            ];
+          }
+        }
+      }
+
+      // Add js files to the top of the head.
+      if (!empty($library['js'])) {
+        foreach (array_keys($library['js']) as $file) {
+          $page['#attached']['html_head'][] = [
+            [
+              '#type' => 'html_tag',
+              '#tag' => 'script',
+              '#attributes' => ['src' => $asset_path],
+              '#weight' => 0,
+            ],
+            "asset_injector_$library_id",
+          ];
+        }
+      }
+
+      $renderer->addCacheableDependency($page, $asset);
+    }
+  }
+}
+
+/**
+ * Implements hook_page_attachments_alter().
+ */
+function gemc_core_page_attachments_alter(array &$attachments) {
+  // If Asset Injector module exist, we are moving scripts/js to head as a
+  // separate html_tags, so we need to make sure that libraries are removed so
+  // the resources are not rendered twice.
+  if (\Drupal::moduleHandler()->moduleExists('asset_injector')) {
+    foreach (asset_injector_library_info_build() as $lib_id => $library) {
+      if (!empty($library['js']) || !empty($library['css'])) {
+        if ($index = array_search("asset_injector/$lib_id", $attachments['#attached']['library'])) {
+          unset($attachments["#attached"]["library"][$index]);
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_ENTITY_TYPE_predelete() to delete associated files and dam assets with node.
+ */
+function gemc_core_node_predelete($node) {
+  $type = $node->getType();
+
+  if ($type == 'download') {
+    $all_revision_ids = \Drupal::entityManager()->getStorage('node')->revisionIds($node);
+
+    $checked_files = $checked_media = [];
+    foreach ($all_revision_ids as $revision_id) {
+      $revised_node = \Drupal::entityTypeManager()->getStorage('node')->loadRevision($revision_id);
+
+      $file_val = $revised_node->get('field_file')->getValue();
+      $media_val = $revised_node->get('field_download_dam_media')->getValue();
+
+      if (count($media_val) > 0 and isset($media_val[0]['target_id']) and !in_array($media_val[0]['target_id'], $checked_media)) {
+        $checked_media[] = $media_val[0]['target_id'];
+        gemc_core_delete_media_on_node_delete($node->id(), $media_val[0]['target_id']);
+      }
+
+      if (count($file_val) > 0 and isset($file_val[0]['target_id']) and !in_array($file_val[0]['target_id'], $checked_files)) {
+        $checked_files[] = $file_val[0]['target_id'];
+        gemc_core_delete_file_on_node_delete($node->id(), $file_val[0]['target_id']);
+      }
+    }
+
+    \Drupal::logger('dam_handler')->warning('checked files : <pre><code>' . print_r($checked_files, TRUE) . '</code></pre>');
+    \Drupal::logger('dam_handler')->warning('checked media : <pre><code>' . print_r($checked_media, TRUE) . '</code></pre>');
+  }
+}
+
+/**
+ * Helper function to delete associated media when node deleted.
+ */
+function gemc_core_delete_media_on_node_delete($node_id, $media_id) {
+  /* get dam media types */
+  $media_bundles = \Drupal::entityTypeManager()->getStorage('media_type')->loadByProperties(['source' => 'acquiadam_asset']);
+  $media_bundles_arr = array_keys($media_bundles);
+
+  $field_map = \Drupal::service('entity_field.manager')->getFieldMapByFieldType('entity_reference');
+  $node_field_map = $field_map['node'];
+
+  /*find out dam media referencing fields */
+  $dam_node_fields = [];
+  foreach ($node_field_map as $node_name => $node_field_details) {
+    foreach ($node_field_details['bundles'] as $bundle) {
+      $field = FieldConfig::loadByName('node', $bundle, $node_name);
+      if ($field != NULL) {
+        $target_bundle = $field->getSettings()['handler_settings']['target_bundles'];
+        if ($target_bundle != NULL && in_array(key($target_bundle), $media_bundles_arr)) {
+          $dam_node_fields[$node_name] = $node_name;
+        }
+      }
+    }
+  }
+
+  $referrenced_node_ids = [];
+  foreach ($dam_node_fields as $single) {
+    $associated_node_ids = \Drupal::entityQuery('node')
+      ->condition($single, $media_id)
+      ->execute();
+    foreach ($associated_node_ids as $associated_node_id) {
+      if ($associated_node_id != $node_id) {
+        $referrenced_node_ids[] = $associated_node_id;
+      }
+    }
+  }
+
+  \Drupal::logger('dam_handler')->warning($media_id . ' references node ids : <pre><code>' . print_r($referrenced_node_ids, TRUE) . '</code></pre>');
+  if (count($referrenced_node_ids) <= 0) {
+    $media = Media::load($media_id);
+
+    $bundle = \Drupal::entityTypeManager()->getStorage('media_type')->load($media->bundle());
+    $bundle_field_map = $bundle->getFieldMap();
+    $media_field = empty($bundle_field_map['file']) ? FALSE : $bundle_field_map['file'];
+
+    if ($media_field and $media->hasField($media_field)) {
+      /** @var \Drupal\file\Plugin\Field\FieldType\FileItem $file */
+      $file_item = $media->get($media_field)->first();
+      if (!empty($file_item->target_id)) {
+        $fid = $file_item->target_id;
+        // \Drupal::logger('dam_handler')->warning($fid.' media references file ids : <pre><code>' . print_r($fid, TRUE) . '</code></pre>');.
+        $is_file_deleted = gemc_core_delete_file_on_node_delete($media_id, $fid);
+        if ($is_file_deleted) {
+          $media->delete();
+          return TRUE;
+        }
+      }
+    }
+    else {
+      $media->delete();
+      return TRUE;
+    }
+  }
+  return FALSE;
+}
+
+/**
+ * Helper function to delete associated files when node deleted.
+ */
+function gemc_core_delete_file_on_node_delete($entity_id, $fid) {
+  $file = File::load($fid);
+  $usage = Drupal::service('file.usage')->listUsage($file);
+  \Drupal::logger('dam_handler')->warning($entity_id . ' references : <pre><code>' . print_r($usage, TRUE) . '</code></pre>');
+  if (count($usage) == 0) {
+    $file->delete();
+    return TRUE;
+  }
+  else {
+    $referrenced_entities = [];
+    foreach ($usage as $single_usage) {
+      foreach ($single_usage as $single_entity) {
+        foreach ($single_entity as $single_entity_id => $usage_count) {
+          if ($usage_count > 0 && $single_entity_id != $entity_id) {
+            $referrenced_entities[] = $single_entity_id;
+          }
+        }
+      }
+    }
+    \Drupal::logger('dam_handler')->warning($entity_id . ' references entities : <pre><code>' . print_r($referrenced_entities, TRUE) . '</code></pre>');
+    if (count($referrenced_entities) <= 0) {
+      $file->delete();
+      return TRUE;
+    }
+  }
+  return FALSE;
+}

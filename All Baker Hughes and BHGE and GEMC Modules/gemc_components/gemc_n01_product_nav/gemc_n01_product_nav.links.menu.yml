@@ -1,0 +1,5 @@
+gemc_n01_product_nav.section_hierarchy_link:
+  title: 'Product category hierarchy'
+  description: 'Product sectionpage hierarchy'
+  route_name: gemc_n01_product_nav.section_hierarchy
+  parent: 'system.admin_content'

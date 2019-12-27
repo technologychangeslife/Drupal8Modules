@@ -1,0 +1,6 @@
+name: BHGE C20 Quick Links
+type: module
+description: 'C20 Quick Links component'
+package: BHGE Components
+version: 8.x
+core: 8.x

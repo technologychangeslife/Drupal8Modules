@@ -1,0 +1,93 @@
+<?php
+
+/**
+ * @file
+ * Custom bhge_c55_gallery module.
+ */
+
+use Drupal\Core\Form\FormStateInterface;
+
+/**
+ * Implements hook_field_widget_form_alter().
+ */
+function bhge_c55_dsoc_field_widget_form_alter(&$element, FormStateInterface $form_state, $context) {
+  if (isset($context['items']) && $context['items']->getName() == 'field_dsoc_filter_ctype') {
+    $org_options = $element['#options'];
+
+    $supportedTypes = [
+      'event',
+      'event_item',
+      'news_item',
+      'article',
+      'blog_post',
+      'page',
+      'video_item',
+      'case_study_summary',
+    ];
+
+    foreach ($org_options as $key => $option) {
+      if (!in_array($key, $supportedTypes)) {
+        unset($element['#options'][$key]);
+      }
+    }
+  }
+}
+
+/**
+ * Implements hooks_preprocess_paragraph().
+ */
+function bhge_c55_dsoc_preprocess_paragraph(&$variables) {
+  if (!empty($variables['elements']['#paragraph'])) {
+
+    /** @var \Drupal\paragraphs\Entity\Paragraph $paragraph */
+    $paragraph = $variables['elements']['#paragraph'];
+    $id = $paragraph->get('type')->getValue();
+    $parent = NULL;
+
+    if ($id[0]['target_id'] == 'block_dynamic_cards') {
+
+      if (!empty($paragraph->get('field_dsoc_filter_ctype')) && !empty($paragraph->get('field_dsoc_filter_ctype')->getValue()[0]['target_id'])) {
+
+        $arrCtypes = [];
+        $ctypes = $paragraph->get('field_dsoc_filter_ctype')->getValue();
+        foreach ($ctypes as $ctype) {
+          $arrCtypes[] = $ctype['target_id'];
+        }
+        $variables['content_type'] = implode('|', $arrCtypes);
+        $filter_nid = $paragraph->getParentEntity()->id();
+
+        $variables['limit'] = $paragraph->get('field_dsoc_more')
+          ->getValue()[0]['value'] * 3;
+
+        // Category filter.
+        $variables['category'] = NULL;
+        if (!empty($paragraph->get('field_dsoc_filter_category')->first())) {
+          $variables['category'] = $paragraph->get('field_dsoc_filter_category')
+            ->first()->getValue()['target_id'];
+        }
+
+        $variables['offset'] = 0;
+
+        $parent = $paragraph->getParentEntity();
+
+        // For auto filtering event_items.
+        $pid = NULL;
+        if (!empty($parent->id()) && $parent->getType() == 'event') {
+          $pid = $parent->id();
+        }
+
+        $variables['sort_by'] = !empty($paragraph->get('field_sort_by')
+          ->getValue()[0]['value']) ? 'created' : 'weight';
+
+        // Initial load dataset.
+        $variables['dataset'] = \Drupal::service('bhge_c55_gallery.gallery_data')
+          ->prepareData($arrCtypes, $pid, NULL, $variables['sort_by'], 0, $paragraph->get('field_dsoc_initial')
+            ->getValue()[0]['value'] * 3, $variables['category']);
+
+        $variables['total'] = !empty($variables['dataset']['count']) ? $variables['dataset']['count'] : 0;
+        $variables['count'] = !empty($variables['results']) ? count($variables['results']) : 0;
+
+      }
+    }
+  }
+}

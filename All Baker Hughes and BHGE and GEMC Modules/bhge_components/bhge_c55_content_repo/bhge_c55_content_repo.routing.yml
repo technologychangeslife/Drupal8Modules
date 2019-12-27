@@ -1,0 +1,6 @@
+bhge_c55_content_repo.content.repository:
+  path: 'api/v1/contentrepository'
+  defaults: { _controller: '\Drupal\bhge_c55_content_repo\Controller\ContentRepository::search' }
+  methods:  [GET]
+  requirements:
+    _access: 'TRUE'

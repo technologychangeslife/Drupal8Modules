@@ -1,0 +1,10 @@
+services:
+  gemc_c115_120_section.gallery_data_helpers:
+    class: Drupal\gemc_c115_120_section\DataHelpers
+    arguments: ['@string_translation', '@gemc_components.field_data_service']
+  gemc_c115_120_section.product_data:
+    class: Drupal\gemc_c115_120_section\ProductData
+    arguments: ['@database', '@gemc_c115_120_section.gallery_data_helpers']
+  gemc_c115_120_section.product_gallery_initial:
+    class: Drupal\gemc_c115_120_section\ProductGalleryInitial
+    arguments: ['@gemc_c115_120_section.product_data', '@gemc_c115_120_section.gallery_data_helpers']

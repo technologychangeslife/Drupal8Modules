@@ -1,0 +1,42 @@
+<?php
+
+/**
+ * @file
+ * This module is for Contact Single CTA component.
+ */
+
+use Drupal\Core\Url;
+
+/**
+ * Implements hook_preprocess_paragraph().
+ */
+function bhge_c04_contact_single_cta_preprocess_paragraph(&$variables) {
+  if (!empty($variables['elements']['#paragraph'])) {
+
+    /** @var \Drupal\paragraphs\Entity\Paragraph $paragraph */
+    $paragraph = $variables['elements']['#paragraph'];
+    $id = $paragraph->get('type')->getValue();
+    $parent = NULL;
+
+    if ($id[0]['target_id'] == 'block_full_contact_single_cta') {
+      if (!empty($paragraph->field_cta_link)) {
+        if (!empty($paragraph->field_cta_link->getValue()[0]['uri'])) {
+
+          $options = [];
+          if (\Drupal::hasService('bhge_marketo.helpers')) {
+            $marketoHelpers = \Drupal::service('bhge_marketo.helpers');
+            $marketoOptions = $marketoHelpers->populateMarketoMeta([], $paragraph);
+
+            if (!empty($marketoOptions)) {
+              $options = ['query' => $marketoOptions];
+            }
+          }
+
+          $uri = $paragraph->field_cta_link->getValue()[0]['uri'];
+          $variables['contact_link'] = Url::fromUri($uri, $options);
+
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,11 @@
+name: BH Layout Preview
+type: module
+description: Add Preview to layouts.
+core: '8.x'
+version: '8.x-1.x-dev'
+dependencies:
+  - layout_builder
+  - layout_discovery
+  - bh_layouts
+libraries:
+  - bh_layout_preview

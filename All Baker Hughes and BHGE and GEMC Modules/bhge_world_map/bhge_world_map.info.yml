@@ -1,0 +1,6 @@
+name: BHGE WORLD MAP
+type: module
+description: 'BHGE World Map'
+package: BHGE Components
+version: 8.x
+core: 8.x

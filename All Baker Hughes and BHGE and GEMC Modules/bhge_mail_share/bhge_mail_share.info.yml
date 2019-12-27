@@ -1,0 +1,6 @@
+name: BHGE Email Share
+type: module
+description: 'Share by mail functionality for BHGE Oil'
+package: Custom
+version: 8.x
+core: 8.x

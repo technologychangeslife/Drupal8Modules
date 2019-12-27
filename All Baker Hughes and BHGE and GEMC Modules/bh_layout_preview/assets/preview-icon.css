@@ -1,0 +1,16 @@
+#drupal-off-canvas a.bh-preview:hover {
+  text-decoration: none;
+}
+#drupal-off-canvas a.bh-preview > img {
+  width: 7%;
+}
+#drupal-off-canvas .throbber {
+  background: transparent url(../../../../core/themes/stable/images/core/throbber-active.gif) no-repeat 0 center;
+}
+
+.layout-builder-add-block #entity-browser-block-form .tabledrag-toggle-weight-wrapper,
+.layout-builder-add-block #entity-browser-block-form .tableresponsive-toggle-columns,
+.layout-builder-add-block #entity-browser-block-form .responsive-enabled,
+#layout-builder-add-block .entity-browser-save-button.form-submit {
+  display: none;
+}

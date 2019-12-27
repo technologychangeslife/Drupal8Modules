@@ -1,0 +1,6 @@
+market.info.preview:
+  path: 'market-info/preview'
+  defaults: { _controller: '\Drupal\bhge_market_info\Controller\MarketInfoController::preview' }
+  methods:  [GET]
+  requirements:
+    _access: 'TRUE'

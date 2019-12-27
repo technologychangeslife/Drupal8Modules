@@ -1,0 +1,3 @@
+administer bhge settings:
+  title: 'Administer BHGE settings'
+  description: 'Allow access to BHGE settings form'

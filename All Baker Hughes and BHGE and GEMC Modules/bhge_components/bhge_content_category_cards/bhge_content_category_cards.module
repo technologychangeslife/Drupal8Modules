@@ -1,0 +1,62 @@
+<?php
+
+/**
+ * @file
+ * Custom bhge_content_category_cards.
+ */
+
+/**
+ * Implements hook_preprocess_paragraph().
+ */
+function bhge_content_category_cards_preprocess_paragraph(&$variables) {
+  if (!empty($variables['elements']['#paragraph'])) {
+    /** @var \Drupal\paragraphs\Entity\Paragraph $paragraph */
+    $paragraph = $variables['elements']['#paragraph'];
+    $id = $paragraph->get('type')->getValue();
+    $parent = NULL;
+    if ($id[0]['target_id'] === 'block_product_category') {
+      $cat_arr = [];
+      $variables['#attached']['library'][] = 'bhge_content_category_cards/bhge-product';
+      foreach ($paragraph->get('field_category_content') as $key => $value) {
+        $cat_arr[$key]['title'] = $value->entity->field_title->getValue()[0]['value'];
+        $cat_arr[$key]['image']['alt'] = $value->entity->field_image->getValue()[0]['alt'];
+        $cat_arr[$key]['image']['uri'] = $value->entity->field_image->entity->uri->getValue()[0]['value'];
+        $cat_arr[$key]['bg_image']['alt'] = $value->entity->field_background_image->getValue()[0]['alt'];
+        $cat_arr[$key]['bg_image']['uri'] = $value->entity->field_background_image->entity->uri->getValue()[0]['value'];
+        if (!empty($value->entity->field_description->getValue())) {
+          $cat_arr[$key]['desc'] = $value->entity->field_description->getValue()[0]['value'];
+        }
+
+        if (!empty($value->entity->field_multiple_link)) {
+          foreach ($value->entity->field_multiple_link as $k => $links) {
+            if (!empty($links->entity->field_main_link->getValue())) {
+              $cat_arr[$key]['link'][] = $links->entity->field_main_link->getValue()[0];
+              if (!empty($links->entity->field_sub_link->getValue())) {
+                $cat_arr[$key]['link'][$k]['sublink'] = $links->entity->field_sub_link->getValue();
+              }
+            }
+          }
+        }
+      }
+      $variables['content_category'] = $cat_arr;
+    }
+    if ($id[0]['target_id'] === 'block_content_category_three_car') {
+
+      $variables['#attached']['drupalSettings']['bhge_content_category_cards']['bhgeCatThreeCard']['current_theme'] = \Drupal::Service('theme.manager')->getActiveTheme()->getName();
+
+      $cat_arr = [];
+      $variables['#attached']['library'][] = 'bhge_content_category_cards/bhge-cat-three-card';
+      foreach ($paragraph->get('field_content_category_three_car') as $key => $value) {
+        $cat_arr[$key]['title'] = $value->entity->field_title->getValue()[0]['value'];
+        $cat_arr[$key]['image']['alt'] = $value->entity->field_image->getValue()[0]['alt'];
+        $cat_arr[$key]['image']['uri'] = $value->entity->field_image->entity->uri->getValue()[0]['value'];
+        if (!empty($value->entity->field_background_image->getValue())) {
+          $cat_arr[$key]['bg_image']['alt'] = $value->entity->field_background_image->getValue()[0]['alt'];
+          $cat_arr[$key]['bg_image']['uri'] = $value->entity->field_background_image->entity->uri->getValue()[0]['value'];
+        }
+        $cat_arr[$key]['desc'] = $value->entity->field_description->getValue()[0]['value'];
+      }
+      $variables['cat_three_card'] = $cat_arr;
+    }
+  }
+}

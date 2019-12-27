@@ -1,0 +1,5 @@
+gemc_events.migrate_source_ui_form:
+  title: 'Migrate Source UI'
+  description: 'Migrate Source UI'
+  route_name: migrate_source_ui.form
+  parent: migrate_tools.menu

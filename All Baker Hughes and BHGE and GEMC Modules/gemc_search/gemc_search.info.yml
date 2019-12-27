@@ -1,0 +1,8 @@
+name: GEMC Search
+type: module
+description: 'Custom GEMC search module working with solr search'
+package: Custom
+version: 8.x
+core: 8.x
+dependencies:
+  - search_api

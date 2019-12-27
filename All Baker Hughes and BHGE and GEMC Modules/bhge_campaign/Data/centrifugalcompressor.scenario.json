@@ -1,0 +1,432 @@
+{
+	"properties": {
+		"location": "North Sea",
+		"title": "Centrifugal Compressor ",
+		"map": "modules/custom/bhge_campaign/Maps/europe.png",
+		"timeOffset": 1,
+		"description": "A machine conversation like this can save up to 1 day of additional outage time at this facility",
+		"scenario": 2,
+		"video": {
+			"src":"modules/custom/bhge_campaign/Videos/centrifugalcompressor.scenario.mp4",
+			"poster": "modules/custom/bhge_campaign/Videos/centrifugalcompressor.scenario.png",
+			"init": {
+				"start":0,
+				"duration":6
+			},
+			"normal": {
+				"start":6,
+				"duration":7
+			},
+			"anomaly": {
+				"start":7,
+				"duration":10.5
+			},
+			"anomalyend": {
+				"start":10.5,
+				"duration":13
+			}
+		}
+	},
+	"dialog": [
+		{
+			"author": "machine1",
+			"message": {
+				"text": "Good morning! Here’s CENTRIFUGAL COMPRESSOR, It’s a rainy day ☁︎ with a temperature of 49°F!"
+			},
+			"status":"init",
+			"wait":10,
+			"waitAuthor": "icenter"
+		},
+		{
+			"author": "icenter",
+			"alert": null,
+			"message": {
+				"text": "Ciao from the Analytics Engine!"
+			},
+			"status":"init",
+			"wait":5,
+			"waitAuthor": "icenter"
+		},
+		{
+			"author": "icenter",
+			"alert": null,
+			"message": {
+				"text": "Did you notice any issues?"
+			},
+			"status":"normal",
+			"wait":4,
+			"waitAuthor": "machine1"
+		},
+		{
+			"author": "machine1",
+			"message": {
+				"text": "Nope, no major changes since the last check."
+			},
+			"status":"normal",
+			"wait":2,
+			"waitAuthor": "icenter"
+		},
+		{
+			"author": "icenter",
+			"alert": null,
+			"message": {
+				"text": "Sounds great, don’t forget your umbrella! ☂"
+			},
+			"status":"normal",
+			"wait":2,
+			"waitAuthor": "machine1"
+		},		
+		{
+			"author": "machine1",
+			"message": {
+				"text": "Copy that!"
+			},
+			"status":"normal",
+			"wait":20
+		},
+		{
+			"author": "machine1",
+			"message": {
+				"text": "Hey, I don’t feel so good, something is wrong…"
+			},
+			"status":"normal"
+		},
+		{
+			"author": "machine1",
+			"message": {
+				"text": "I’m sending you some data from the Driven End bearing."
+			},
+			"status":"normal",
+			"wait":2,
+			"waitAuthor": "icenter"
+		},
+		{
+			"author": "icenter",
+			"alert": null,
+			"message": {
+				"text": "Uhm, that’s weird."
+			},
+			"status":"normal"
+		},
+		{
+			"author": "machine1",
+			"message": {
+				"text": "",
+				"image": "modules/custom/bhge_campaign/Widgets/not-gecentrifugalcompressor.scenario/w01.png"
+			},
+			"status":"normal",
+			"wait":2,
+			"waitAuthor": "icenter"
+		},
+		{
+			"author": "icenter",
+			"alert": null,
+			"message": {
+				"text": "You’re right, vibrations are oscillating. What about the other bearing?"
+			},
+			"status":"anomaly"
+		},
+		{
+			"author": "machine1",
+			"message": {
+				"text": "I’m sending the data…"
+			},
+			"status":"anomaly",
+			"wait":4,
+			"waitAuthor": "machine1"
+		},
+		{
+			"author": "machine1",
+			"message": {
+				"text": "",
+				"image": "modules/custom/bhge_campaign/Widgets/not-gecentrifugalcompressor.scenario/w02.png"
+			},
+			"status":"anomaly",
+			"wait":2,
+			"waitAuthor": "icenter"
+		},
+		{
+			"author": "icenter",
+			"alert": null,
+			"message": {
+				"text": "Careful, it looks like meanwhile vibrations are oscillating on the other side too, I think this requires human intervention, I need to call the iCenter in Kuala Lumpur and alert our Engineers there."
+			},
+			"status":"anomaly"
+		},
+		{
+			"author": "machine1",
+			"message": {
+				"text": "Thanks."
+			},
+			"status":"anomaly"
+		},
+		{
+			"author": "icenter",
+			"alert": null,
+			"message": {
+				"text": "Deepak can you take a look at the vibrations on the compressor?"
+			},
+			"status":"anomaly",
+			"wait": 5
+		},
+		{
+			"author": "system",
+			"alert": null,
+			"message": {
+				"text": "Deepak has been added to this conversation"
+			},
+			"status":"anomaly"
+		},
+		{
+			"author": "ge2",
+			"alert": null,
+			"message": {
+				"text": "Hello there, I’m Deepak from Kuala Lumpur."
+			},
+			"status":"anomaly"
+		},
+		{
+			"author": "ge2",
+			"alert": null,
+			"message": {
+				"text": "Can you please tell me if you are changing compressor speed or pressure ratio?"
+			},
+			"status":"anomaly"
+		},
+		{
+			"author": "ge2",
+			"alert": null,
+			"message": {
+				"text": "And retrieve amplitude and phase data."
+			},
+			"status":"anomaly"
+		},
+		
+		
+		
+		
+
+		
+		{
+			"author": "machine1",
+			"message": {
+				"text": "Hi Deepak! Sure, let me check…"
+			},
+			"status":"anomaly",
+			"wait": 5,
+			"waitAuthor": "machine1"
+		},
+		{
+			"author": "machine1",
+			"message": {
+				"text": "Look at this…",
+				"image": "modules/custom/bhge_campaign/Widgets/not-gecentrifugalcompressor.scenario/w05.png"
+			},
+			"status":"anomaly",
+			"wait": 5,
+			"waitAuthor": "ge2"
+		},
+		{
+			"author": "ge2",
+			"alert": null,
+			"message": {
+				"text": "What about the lube oil pressure and temperature?"
+			},
+			"status":"anomaly"
+		},
+		{
+			"author": "ge2",
+			"alert": null,
+			"message": {
+				"text": "Can you provide me the latest value trend?"
+			},
+			"status":"anomaly"
+		},
+		
+		{
+			"author": "machine1",
+			"message": {
+				"text": "Let me have a look…"
+			},
+			"status":"anomaly",
+			"wait": 2,
+			"waitAuthor": "machine1"
+		},
+		{
+			"author": "machine1",
+			"message": {
+				"text": "Here’s the trend of the lube oil pressure and temperature value over the last two hours.",
+				"image": "modules/custom/bhge_campaign/Widgets/not-gecentrifugalcompressor.scenario/w03.png"
+			},
+			"status":"anomaly"
+		},
+		{
+			"author": "machine1",
+			"message": {
+				"text": "Apparently the lube oil pressure change slightly."
+			},
+			"status":"anomaly",
+			"wait": 3,
+			"waitAuthor": "ge2"
+		},
+		{
+			"author": "ge2",
+			"alert": null,
+			"message": {
+				"text": "Gotcha!"
+			},
+			"status":"anomaly",
+			"wait": 3,
+			"waitAuthor": "ge2"
+		},
+		{
+			"author": "ge2",
+			"alert": null,
+			"message": {
+				"text": "It seems to me that the source of problem is the lube oil pressure."
+			},
+			"status":"anomaly"
+		},
+		{
+			"author": "ge2",
+			"alert": null,
+			"message": {
+				"text": "Let’s alert the maintenance team to check the control valve."
+			},
+			"status":"anomaly"
+		},
+		
+		
+		{
+			"author": "system",
+			"alert": null,
+			"message": {
+				"text": "John has been added to this conversation"
+			},
+			"status":"anomaly"
+		},
+		{
+			"author": "ge2",
+			"alert": null,
+			"message": {
+				"text": "Hi John, it’s Deepak here."
+			},
+			"status":"anomaly"
+		},
+		{
+			"author": "ge2",
+			"alert": null,
+			"message": {
+				"text": "We’ve detected this behavior on a bearing. Did you notice it?"
+			},
+			"status":"anomaly",
+			"wait": 15,
+			"waitAuthor": "engineer2"
+		},
+		{
+			"author": "engineer2",
+			"alert": null,
+			"message": {
+				"text": "Nope. Thanks for the head up!"
+			},
+			"status":"anomaly"
+		},
+		{
+			"author": "ge2",
+			"alert": null,
+			"message": {
+				"text": "Could you please check the control valve. It’s indicated in the insight I’m sending you.",
+				"image": "modules/custom/bhge_campaign/Widgets/not-gecentrifugalcompressor.scenario/w04.png"
+			},
+			"status":"anomaly",
+			"wait":20,
+			"waitAuthor": "engineer2"
+		},
+		{
+			"author": "engineer2",
+			"message": {
+				"text": "You were right, we’ve adjusted the control parameter! Anything else I should check?"
+			},
+			"status":"anomaly",
+			"wait": 6,
+			"waitAuthor": "machine1"
+		},
+		{
+			"author": "ge2",
+			"message": {
+				"text": "Not really, I do believe the control valve is the problem."
+			},
+			"status":"anomaly",
+			"wait": 3,
+			"waitAuthor": "ge2"
+		},
+		{
+			"author": "engineer2",
+			"alert": null,
+			"message": {
+				"text": "For now, I set the parameters back to the old values. Please, continue to keep an eye on this behavior in the future."
+			},
+			"status":"anomalyend",
+			"wait":2
+		},
+		{
+			"author": "ge2",
+			"alert": null,
+			"message": {
+				"text": "I’ll make sure the analytics start tracking this closely."
+			},
+			"status":"anomalyend"
+		},
+		{
+			"author": "icenter",
+			"alert": null,
+			"message": {
+				"text": "Got it!"
+			},
+			"status":"anomalyend",
+			"wait": 45,
+			"waitAuthor": "machine1"
+		},
+		{
+			"author": "machine1",
+			"message": {
+				"text": "Vibration report #3",
+				"image": "modules/custom/bhge_campaign/Widgets/not-gecentrifugalcompressor.scenario/w06.png"
+			},
+			"status":"anomalyend"
+		},
+		{
+			"author": "icenter",
+			"alert": null,
+			"message": {
+				"text": "That’s okay, I’m not seeing any issue."
+			},
+			"status":"normal"
+		},
+		{
+			"author": "ge2",
+			"alert": null,
+			"message": {
+				"text": "Anything you need to let me know about this case?"
+			},
+			"status":"normal"
+		},
+		{
+			"author": "icenter",
+			"alert": null,
+			"message": {
+				"text": "All good here!"
+			},
+			"status":"normal"
+		},
+		{
+			"author": "ge2",
+			"alert": null,
+			"message": {
+				"text": "Cool, I'll close the case."
+			},
+			"status":"normal",
+			"wait":15
+		}
+	]
+}

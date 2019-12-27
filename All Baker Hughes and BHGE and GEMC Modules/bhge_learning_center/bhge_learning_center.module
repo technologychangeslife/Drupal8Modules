@@ -1,0 +1,200 @@
+<?php
+
+/**
+ * @file
+ * Custom functionality for bhge learning center.
+ */
+
+define('BHGE_LEARNING_CENTER_PATH', Drupal::service('module_handler')->getModule('bhge_learning_center')->getPath());
+
+/**
+ * Implements hook_preprocess_page().
+ */
+function bhge_learning_center_preprocess_page(&$variables) {
+  $current_path = \Drupal::service('path.current')->getPath();
+  $url_alias = \Drupal::service('path.alias_manager')->getAliasByPath($current_path);
+  $flc_pages = ['/florence-learning-center', '/flc'];
+  if (in_array($url_alias, $flc_pages, TRUE)) {
+    $variables['#attached']['library'][] = 'bhge_learning_center/bhge-learning-center-library';
+  }
+}
+
+/**
+ * Implements hook_preprocess_paragraph.
+ */
+function bhge_learning_center_preprocess_paragraph(&$variables) {
+
+  if (!empty($variables['elements']['#paragraph'])) {
+    /** @var \Drupal\paragraphs\Entity\Paragraph $paragraph */
+    $paragraph = $variables['elements']['#paragraph'];
+    $id = $paragraph->get('type')->getValue();
+    $language = \Drupal::languageManager()->getCurrentLanguage()->getId();
+
+    if ($id[0]['target_id'] == 'block_hero_carousel_flc') {
+
+      $language = \Drupal::languageManager()->getCurrentLanguage()->getId();
+
+      foreach ($paragraph->get('field_slides') as $key => $value) {
+        $hero_arr[$key]['headline'] = '';
+        $hero_arr[$key]['subtitle'] = '';
+
+        if (!empty($value->entity->field_headline->getValue())) {
+          $headline = !empty($value->entity->field_headline->entity->hasTranslation($language)) ? $value->entity->field_headline->entity->getTranslation($language)->field_label->getValue() : $value->entity->field_headline->entity->field_label->getValue();
+          $hero_arr[$key]['headline'] = isset($headline[0]['value']) ? $headline[0]['value'] : '';
+        }
+        if (!empty($value->entity->field_subtitle->entity->field_label)) {
+          $subtitle = !empty($value->entity->field_subtitle->entity->hasTranslation($language)) ? $value->entity->field_subtitle->entity->getTranslation($language)->field_label->getValue() : $value->entity->field_subtitle->entity->field_label->getValue();
+          $hero_arr[$key]['subtitle'] = isset($subtitle[0]['value']) ? $subtitle[0]['value'] : ''; ;
+        }
+
+        if (!empty($value->entity->field_copy)) {
+          $copy = !empty($value->entity->hasTranslation($language)) ? $value->entity->getTranslation($language)->field_copy->getValue() : $value->entity->field_copy->getValue();
+        }
+
+        if (!empty($value->entity->field_image->getValue())) {
+          $hero_arr[$key]['image']['alt'] = !empty($value->entity->hasTranslation($language)) ? $value->entity->getTranslation($language)->field_image->getValue()[0]['alt'] : $value->entity->field_image->getValue()[0]['alt'];
+          $hero_arr[$key]['image']['title'] = !empty($value->entity->hasTranslation($language)) ? $value->entity->getTranslation($language)->field_image->getValue()[0]['title'] : $value->entity->field_image->getValue()[0]['title'];
+          $hero_arr[$key]['image']['uri'] = !empty($value->entity->hasTranslation($language)) ? $value->entity->getTranslation($language)->field_image->entity->uri->getValue()[0]['value'] : $value->entity->field_image->entity->uri->getValue()[0]['value'];
+        }
+        $gradient = !empty($value->entity->hasTranslation($language)) ? $value->entity->getTranslation($language)->field_gradient_background_image->getValue() : $value->entity->field_gradient_background_image->getValue();
+        $is_header = $value->entity->is_header;
+        if (!empty($value->entity->field_video->getValue())) {
+          $video = !empty($value->entity->hasTranslation($language)) ? $value->entity->getTranslation($language)->field_video->getValue() : $value->entity->field_video->getValue();
+          $hero_arr[$key]['video'] = $video[0]['value'];
+        }
+        if (!empty($value->entity->field_link->entity->field_label)) {
+          $cta_label = !empty($value->entity->field_link->entity->hasTranslation($language)) ? $value->entity->field_link->entity->getTranslation($language)->field_label->getValue() : $value->entity->field_link->entity->field_label->getValue();
+        }
+        if (!empty($value->entity->field_link->entity->field_target)) {
+          $cta_link = !empty($value->entity->field_link->entity->hasTranslation($language)) ? $value->entity->field_link->entity->getTranslation($language)->field_target->getValue() : $value->entity->field_link->entity->field_target->getValue();
+          $hero_arr[$key]['cta_link'] = !empty($cta_link) ? (object) $cta_link[0] : '';
+        }
+        if (!empty($value->entity->field_link->entity->field_target_destination)) {
+          if (!empty($value->entity->field_link->entity->field_target_destination->entity)) {
+            $cta_target = $value->entity->field_link->entity->field_target_destination->entity->field_link_target_destination->value;
+          }
+          else {
+            $cta_target = '';
+          }
+        }
+
+        $allowedtags = "<br>";
+        $hero_arr[$key]['copy'] = !empty($copy) ? str_replace('&nbsp;', '', strip_tags($copy[0]['value'], $allowedtags)) : '';
+        $hero_arr[$key]['is_header'] = !empty($is_header) ? $is_header : '';
+        $hero_arr[$key]['gradient'] = $gradient[0]['value'];
+        $hero_arr[$key]['cta_label'] = !empty($cta_label) ? $cta_label[0]['value'] : '';
+        $hero_arr[$key]['cta_target'] = !empty($cta_target) ? $cta_target : '';
+      }
+      $variables['hero_data'] = $hero_arr;
+
+    }
+    elseif ($id[0]['target_id'] == 'table_flc') {
+
+      $variables['ushape_image'] = '/' . BHGE_LEARNING_CENTER_PATH . '/images/u-shape.png';
+      $variables['cabaret_image'] = '/' . BHGE_LEARNING_CENTER_PATH . '/images/cabaret.png';
+      $variables['classroom_image'] = '/' . BHGE_LEARNING_CENTER_PATH . '/images/classroom.png';
+      $variables['theater_image'] = '/' . BHGE_LEARNING_CENTER_PATH . '/images/theater.png';
+      $variables['people_image'] = '/' . BHGE_LEARNING_CENTER_PATH . '/images/people.png';
+
+      $variables['field_id'] = '';
+      if (!empty($paragraph->get('field_id')->getValue())) {
+        $field_id = $paragraph->get('field_id')->getValue();
+        $id = isset($field_id[0]['value']) ? $field_id[0]['value'] : '#';
+        $variables['field_id'] = $id;
+      }
+
+      $room_data = [];
+      foreach ($paragraph->get('field_room') as $key => $value) {
+        if (!empty($value->entity->field_room_name->getValue())) {
+          // !empty($value->entity->field_room_name->entity->hasTranslation($language)) ? $value->entity->field_room_name->entity->getTranslation($language)->field_label->getValue() : $value->entity->field_room_name->entity->field_label->getValue();
+          $room_name = $value->entity->field_room_name->getValue();
+          $room_data[$key]['room_name'] = isset($room_name[0]['value']) ? $room_name[0]['value'] : '';
+        }
+        if (!empty($value->entity->field_area_mq->getValue())) {
+          $area_mq = $value->entity->field_area_mq->getValue();
+          $room_data[$key]['area_mq'] = isset($area_mq[0]['value']) ? $area_mq[0]['value'] : '';
+        }
+
+        if (!empty($value->entity->field_area_sqft->getValue())) {
+          $area_sqft = $value->entity->field_area_sqft->getValue();
+          $room_data[$key]['area_sf'] = isset($area_sqft[0]['value']) ? $area_sqft[0]['value'] : '';
+        }
+        if (!empty($value->entity->field_ushape->getValue())) {
+          $ushape = $value->entity->field_ushape->getValue();
+          $room_data[$key]['ushape'] = isset($ushape[0]['value']) ? $ushape[0]['value'] : '';
+        }
+        if (!empty($value->entity->field_classroom->getValue())) {
+          $roomclass = $value->entity->field_classroom->getValue();
+          $room_data[$key]['classroom'] = isset($roomclass[0]['value']) ? $roomclass[0]['value'] : '';
+        }
+        if (!empty($value->entity->field_theatre->getValue())) {
+          $theatre = $value->entity->field_theatre->getValue();
+          $room_data[$key]['theatre'] = isset($theatre[0]['value']) ? $theatre[0]['value'] : '';
+        }
+        if (!empty($value->entity->field_cabaret->getValue())) {
+          $cabaret = $value->entity->field_cabaret->getValue();
+          $room_data[$key]['cabaret'] = isset($cabaret[0]['value']) ? $cabaret[0]['value'] : '';
+        }
+
+        if (!empty($value->entity->field_room_image->getValue())) {
+          $room_data[$key]['image']['alt'] = !empty($value->entity->hasTranslation($language)) ? $value->entity->getTranslation($language)->field_room_image->getValue()[0]['alt'] : $value->entity->field_room_image->getValue()[0]['alt'];
+          $room_data[$key]['image']['title'] = !empty($value->entity->hasTranslation($language)) ? $value->entity->getTranslation($language)->field_room_image->getValue()[0]['title'] : $value->entity->field_room_image->getValue()[0]['title'];                    $room_data[$key]['image']['uri'] = $value->entity->field_room_image->entity->uri->getValue()[0]['value'];
+        }
+      }
+      $variables['table_flc_data'] = $room_data;
+
+    }
+    elseif ($id[0]['target_id'] == 'txt_image_flc') {
+      $variables['ushape_image'] = '/' . BHGE_LEARNING_CENTER_PATH . '/images/u-shape.png';
+      $variables['cabaret_image'] = '/' . BHGE_LEARNING_CENTER_PATH . '/images/cabaret.png';
+      $variables['classroom_image'] = '/' . BHGE_LEARNING_CENTER_PATH . '/images/classroom.png';
+      $variables['theater_image'] = '/' . BHGE_LEARNING_CENTER_PATH . '/images/theater.png';
+      $variables['people_image'] = '/' . BHGE_LEARNING_CENTER_PATH . '/images/people.png';
+
+      $variables['field_id'] = '';
+      if (!empty($paragraph->get('field_id')->getValue())) {
+        $field_id = $paragraph->get('field_id')->getValue();
+        $id = isset($field_id[0]['value']) ? $field_id[0]['value'] : '#';
+        $variables['field_id'] = $id;
+      }
+
+      $bullet_points = [];
+      foreach ($paragraph->get('field_bullet_point_flc')->getValue() as $key => $item) {
+        $bullet_points[] = isset($item['value']) ? $item['value'] : '';
+      }
+      $variables['bullet_points'] = $bullet_points;
+      $image_flc = $paragraph->get('field_image_flc')->entity->uri->getValue()[0]['value'];
+      $variables['image_flc'] = $image_flc;
+    }
+
+    elseif ($id[0]['target_id'] == 'fixed_menu_flc') {
+      $variables['phone_image'] = '/' . BHGE_LEARNING_CENTER_PATH . '/images/phone.svg';
+      $variables['collapse_image'] = '/' . BHGE_LEARNING_CENTER_PATH . '/images/collapse.svg';
+
+      $menu_links = [];
+      foreach ($paragraph->field_menu_links_flc as $target) {
+        if ($paragraph->hasField('field_menu_links_flc')) {
+          $menu_links[] = [
+            'link' => $target->getUrl(),
+            'label' => $target->title,
+          ];
+        }
+      }
+      $variables['menu_links'] = $menu_links;
+      $variables['contactus_link'] = '#';
+      foreach ($paragraph->field_phone_flc as $target) {
+        if ($paragraph->hasField('field_phone_flc')) {
+          if (strtolower($target->title) == 'contact us') {
+            $variables['contactus_link'] = $target->getUrl();
+            continue;
+          }
+          $phone_links[] = [
+            'link' => $target->getUrl(),
+            'label' => $target->title,
+          ];
+        }
+      }
+      $variables['phone_links'] = $phone_links;
+    }
+  }
+}

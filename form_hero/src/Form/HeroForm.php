@@ -5,7 +5,6 @@ namespace Drupal\form_hero\Form;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
-use Symfony\Component\HttpFoundation\Session\Session;
 
 
 /**
@@ -58,10 +57,6 @@ class HeroForm extends FormBase {
     }
 
     user_cookie_save(array('key'=> $cookies_val));
-
-
-    
-    //$details = $session->get('profile');
     
     $winner = rand(1, 2);
     drupal_set_message(

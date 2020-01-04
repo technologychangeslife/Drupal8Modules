@@ -1,0 +1,15 @@
+form_hero.herolist:
+  path: '/herolist'
+  defaults:
+    _controller: '\Drupal\form_hero\Controller\HeroController::heroList'
+    _title: 'Our super heroes list'
+  requirements:
+    _permission: 'access content'
+
+form_hero.heroform:
+  path: '/hero-form'
+  defaults:
+    _form: '\Drupal\form_hero\Form\HeroForm'
+    _title: 'Who will win'
+  requirements:
+    _permission: 'access content'

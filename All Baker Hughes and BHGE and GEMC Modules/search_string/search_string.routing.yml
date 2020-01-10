@@ -1,0 +1,14 @@
+search_string.configstring:
+  path: '/admin/search_string'
+  defaults:
+    _form: '\Drupal\search_string\Form\TextConfigForm'
+    _title: 'Our Admin Date Config'
+  requirements:
+    _permission: 'administer site configuration'
+search_string.gettime:
+  path: 'get-contents'
+  defaults:
+    _controller: '\Drupal\search_string\Controller\MyController::getContent'
+    _title: 'Get All Related Contents with Given String'
+  requirements:
+    _permission: 'access content'

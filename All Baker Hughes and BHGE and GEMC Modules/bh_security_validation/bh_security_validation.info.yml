@@ -1,0 +1,5 @@
+name: BH Security Validation
+type: module
+description: Adds security validations for vulnerabilities
+core: '8.x'
+version: '8.x-1.x-dev'

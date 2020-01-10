@@ -115,6 +115,15 @@ function gemc_core_system_info_alter(array &$info, Extension $file, $type) {
  * Implements hook_page_attachments().
  */
 function gemc_core_page_attachments(array &$page) {
+  $page['#attached']['html_head'][] = [
+    [
+      '#type' => 'html_tag',
+      '#tag' => 'script',
+      '#value' => 'window.XMLHttpRequest = newrelic.o.XHR || window.XMLHttpRequest',
+    ],
+    'new_relic_fix',
+  ];
+
   // If asset_injector module is enabled, make sure that scripts/css files are
   // rendering at the beginning of the page.
   // This is specifically to solve Google Optimize issues with asset order, needed for A/B testing.
@@ -214,9 +223,6 @@ function gemc_core_node_predelete($node) {
         gemc_core_delete_file_on_node_delete($node->id(), $file_val[0]['target_id']);
       }
     }
-
-    \Drupal::logger('dam_handler')->warning('checked files : <pre><code>' . print_r($checked_files, TRUE) . '</code></pre>');
-    \Drupal::logger('dam_handler')->warning('checked media : <pre><code>' . print_r($checked_media, TRUE) . '</code></pre>');
   }
 }
 
@@ -270,7 +276,6 @@ function gemc_core_delete_media_on_node_delete($node_id, $media_id) {
       $file_item = $media->get($media_field)->first();
       if (!empty($file_item->target_id)) {
         $fid = $file_item->target_id;
-        // \Drupal::logger('dam_handler')->warning($fid.' media references file ids : <pre><code>' . print_r($fid, TRUE) . '</code></pre>');.
         $is_file_deleted = gemc_core_delete_file_on_node_delete($media_id, $fid);
         if ($is_file_deleted) {
           $media->delete();
@@ -292,7 +297,6 @@ function gemc_core_delete_media_on_node_delete($node_id, $media_id) {
 function gemc_core_delete_file_on_node_delete($entity_id, $fid) {
   $file = File::load($fid);
   $usage = Drupal::service('file.usage')->listUsage($file);
-  \Drupal::logger('dam_handler')->warning($entity_id . ' references : <pre><code>' . print_r($usage, TRUE) . '</code></pre>');
   if (count($usage) == 0) {
     $file->delete();
     return TRUE;
@@ -315,4 +319,39 @@ function gemc_core_delete_file_on_node_delete($entity_id, $fid) {
     }
   }
   return FALSE;
+}
+
+/**
+ * Implements hook_ENTITY_TYPE_update() for file entity to purge url.
+ */
+function gemc_core_file_update($file) {
+  gemc_core_purge_file_entity($file);
+}
+
+/**
+ * Implements hook_ENTITY_TYPE_predelete() for file entity to purge url.
+ */
+function gemc_core_file_predelete($file) {
+  gemc_core_purge_file_entity($file);
+}
+
+/**
+ * Helper function for file entity to purge url on create, update and delete.
+ */
+function gemc_core_purge_file_entity($file) {
+  $purgeInvalidationFactory = \Drupal::service('purge.invalidation.factory');
+  $purgeQueuers = \Drupal::service('purge.queuers');
+  $purgeQueue = \Drupal::service('purge.queue');
+
+  $queuer = $purgeQueuers->get('coretags');
+  // Invalidate cache tags so all pages that have the file get banned from varnish
+  // Also invalidate the file's url.
+  \Drupal::logger('purge_message')->warning('<pre><code>file url : ' . print_r($file->getFileUri(), TRUE) . '</code></pre>');
+
+  $invalidations = [
+    $purgeInvalidationFactory->get('tag', 'file:' . $file->id()),
+    $purgeInvalidationFactory->get('url', file_create_url($file->getFileUri())),
+  ];
+
+  $purgeQueue->add($queuer, $invalidations);
 }

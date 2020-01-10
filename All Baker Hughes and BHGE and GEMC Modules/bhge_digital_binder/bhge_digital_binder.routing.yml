@@ -1,0 +1,28 @@
+bhge_digital_binder.binder_form:
+  path: '/binder-form'
+  defaults:
+    _controller: '\Drupal\bhge_digital_binder\Controller\BinderFormController::displayForm'
+    _title: 'Binder Form'
+  requirements:
+    _permission: 'access content'
+bhge_digital_binder.binder_form_raw:
+  path: '/binder-form-raw'
+  defaults:
+    _form: '\Drupal\bhge_digital_binder\Form\BinderForm'
+    _title: 'Binder Form'
+  requirements:
+    _permission: 'access content'
+bhge_digital_binder.digital_binder_list:
+  path: '/digital-binder-list'
+  defaults:
+    _controller: '\Drupal\bhge_digital_binder\Controller\BinderFormListController::displayForm'
+    _title: 'List of selected documents'
+  requirements:
+    _permission: 'access content'
+bhge_digital_binder.binder:
+  path: '/binder'
+  defaults:
+    _controller: '\Drupal\bhge_digital_binder\Controller\DigitalController::binder'
+    _title: 'Binder'
+  requirements:
+    _permission: 'access content'

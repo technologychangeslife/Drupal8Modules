@@ -1,0 +1,64 @@
+<?php
+
+/**
+ * @file
+ * Bh Security Validation module file.
+ */
+
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\Component\Utility\Xss;
+
+/**
+ * Implements hook_form_alter().
+ */
+function bh_security_validation_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+  if ($form_id == 'node_basic_page_form' || $form_id == 'node_basic_page_edit_form' || $form_id == 'block_content_text_content_form' || $form_id == 'block_content_text_content_edit_form'
+        || $form_id == 'block_content_image_with_cta_form' || $form_id == 'block_content_image_with_cta_edit_form' || $form_id == 'media_image_add_form') {
+    $form['#validate'][] = 'bh_security_validation_custom_check';
+  }
+}
+
+/**
+ * Implements hook_element_info_alter().
+ */
+function bh_security_validation_element_info_alter(array &$types) {
+  if (isset($types['password_confirm'])) {
+    $types['password_confirm']['#process'][] = 'bh_security_validation_form_process_password_confirm';
+  }
+}
+
+/**
+ * Implements autocomplete on password confirm.
+ */
+function bh_security_validation_form_process_password_confirm($element) {
+  $element['pass1']['#attributes']['autocomplete'] = 'off';
+  $element['pass2']['#attributes']['autocomplete'] = 'off';
+
+  return $element;
+}
+
+/**
+ * Custom validation function for our title.
+ */
+function bh_security_validation_custom_check(&$form, FormStateInterface $form_state) {
+
+  $xss_checks = ['onmouseover', 'alert(', 'prompt(', 'script(', 'onabort', 'onbeforepaste', 'onbeforeprint', 'onblur', 'onbounce', 'onchange', 'onclick', 'oncopy', 'oncut', 'ondatasetchanged', 'ondatasetcomplete', 'ondblclick', 'ondeactivate', 'ondrag', 'ondragend', 'ondragleave', 'ondragenter', 'ondragover', 'ondragdrop', 'ondragstart', 'onfocus', 'onfocusin', 'onfocusout', 'onkeydown', 'onkeypress', 'onkeyup', 'onload', 'onmousedown', 'onmouseenter', 'onmouseleave', 'onmousemove', 'onmouseout', 'onmouseover', 'onmouseup', 'onmousewheel', 'onmove', 'onoffline', 'ononline', 'onpause', 'onprogress', 'onreadystatechange', 'onredo', 'onrepeat', 'onreset', 'onresume', 'onreverse', 'onscroll', 'onseek', 'onselect', 'onselectionchange', 'onselectstart', 'onstart', 'onstop', 'onsubmit', 'onundo', 'onunload'];// phpcs:ignore
+  $node_title = !empty($form_state->hasValue('title')) ? $form_state->getValue('title') : '';
+  $body = !empty($form_state->hasValue('body')) ? $form_state->getValue('body') : '';
+  $block_title = !empty($form_state->hasValue('info')) ? $form_state->getValue('info') : '';
+  $media_title = !empty($form_state->hasValue('name')) ? $form_state->getValue('name') : '';
+  foreach ($xss_checks as $xss) {
+    if (!empty($node_title) && strpos($node_title[0]['value'], $xss) !== FALSE) {
+      $form_state->setErrorByName('title', t('Invalid Content.'));
+    }
+    if (!empty($body) && strpos($body[0]['value'], $xss) !== FALSE) {
+      $form_state->setErrorByName('body', t('Invalid Content.'));
+    }
+    if (!empty($block_title) && strpos($block_title[0]['value'], $xss) !== FALSE) {
+      $form_state->setErrorByName('info', t('Invalid Content.'));
+    }
+    if (!empty($media_title) && strpos($media_title[0]['value'], $xss) !== FALSE) {
+      $form_state->setErrorByName('name', t('Invalid Content.'));
+    }
+  }
+}

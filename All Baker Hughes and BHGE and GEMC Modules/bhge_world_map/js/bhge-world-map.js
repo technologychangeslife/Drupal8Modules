@@ -4,7 +4,7 @@
     Drupal.behaviors.world_map = {
         attach: function () {
 
-            $(document).ready(function(){
+            /* $(document).ready(function(){
                 var rightBoxHeight = $(".image-map-right-box").outerHeight();
                 if ($(window).width() >= 1024 ) {
                     if (rightBoxHeight > 530) {
@@ -20,7 +20,7 @@
                         }
                     }
                 });
-            });
+            }); */
         }
     };
 }(jQuery, Drupal));

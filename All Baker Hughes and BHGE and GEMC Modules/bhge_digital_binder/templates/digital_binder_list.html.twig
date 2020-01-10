@@ -1,0 +1,37 @@
+<section data-component="digital-binder" class="digital-binder">
+  <div class="section-wrapper">
+    <div class="content-wrapper dc-list-view">
+      <div class="binder-search-content">
+        <div class="desktop-nav-box navigation-box-list navigation-box">
+          <h2 class="page-title">Digital Catalog Builder</h2>
+          <div class="navigation-structure">
+            <div class="add-documents"> Add Documents </div>
+            <div class="add-documents-arrow  navigation-arrow"></div>
+            <div class="review-build"> Review & Build </div>
+            <div class="review-build-arrow  navigation-arrow"></div>
+            <div class="merge-review"> Merge + Review </div>
+          </div>
+        </div>
+        <div class="mobile-nav-box navigation-box-list navigation-box">
+          <div class="navigation-structure">
+            <div class="add-documents"> Add</div>
+            <div class="add-documents-arrow navigation-arrow"></div>
+            <div class="review-build"> Review</div>
+            <div class="review-build-arrow navigation-arrow"></div>
+            <div class="merge-review"> Merge</div>
+          </div>
+        </div>
+        {{ search_results_list }}
+      </div>
+    </div>
+  </div>
+  <div class="mobile-filter-buttons" >
+    <div class="ajax-progress ajax-progress-throbber ajax-through-js"><div class="throbber"> </div><div class="message">Please wait...</div></div>
+    <span id="dc-overlay-filter-go-back" class="cta component-cta full wide light title-cta js-open-filter dc-overlay-filter">
+    <span class="copy go-back">Go Back</span>
+    </span>
+    <span id="dc-overlay-filter-merge" class="cta component-cta full wide light title-cta js-open-filter dc-overlay-filter">
+    <span class="copy merge">Merge</span>
+    </span>
+  </div>
+</section>

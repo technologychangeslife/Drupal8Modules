@@ -1,0 +1,5 @@
+name: "Search For a Given String in the entire Site"
+description: "Search For a Given String in the entire Site in all nodes."
+type: module
+core: 8.x
+configure: search_string.configstring

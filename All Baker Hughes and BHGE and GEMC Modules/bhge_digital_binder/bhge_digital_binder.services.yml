@@ -1,0 +1,7 @@
+services:
+  bhge_digital_binder.say_hello:
+    class: Drupal\bhge_digital_binder\HelloServices
+  bhge_digital_binder.fpdf_merger:
+    class: Drupal\bhge_digital_binder\FPDF_Merge
+  bhge_digital_binder.pdf_merge:
+    class: Drupal\bhge_digital_binder\PDFMerger

@@ -23,7 +23,8 @@ function gemc_webform_form_alter(&$form, FormStateInterface &$form_state, $form_
       $form['#form_id'] == 'webform_submission_gas_shipment_form_reuter_stokes_add_form' ||
       $form['#form_id'] == 'webform_submission_bn_repair_request_add_form' ||
       $form['#form_id'] == 'webform_submission_bn_credit_return_add_form' ||
-      $form['#form_id'] == 'webform_submission_bn_calibration_request_add_form') {
+      $form['#form_id'] == 'webform_submission_bn_calibration_request_add_form' ||
+      $form['#form_id'] == 'webform_submission_request_for_take_back_form_add_form') {
     $form['#attached']['library'][] = 'gemc_webform/gemc-webform';
   }
 }

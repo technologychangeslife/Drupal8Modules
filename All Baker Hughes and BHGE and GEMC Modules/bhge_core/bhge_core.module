@@ -419,3 +419,38 @@ function bhge_core_node_access_records_alter(&$grants, NodeInterface $node) {
     $grants = $access_grants;
   }
 }
+
+/**
+ * Implements hook_ENTITY_TYPE_update() for file entity to purge url.
+ */
+function bhge_core_file_update($file) {
+  bhge_core_purge_file_entity($file);
+}
+
+/**
+ * Implements hook_ENTITY_TYPE_predelete() for file entity to purge url.
+ */
+function bhge_core_file_predelete($file) {
+  bhge_core_purge_file_entity($file);
+}
+
+/**
+ * Helper function for file entity to purge url on create, update and delete.
+ */
+function bhge_core_purge_file_entity($file) {
+  $purgeInvalidationFactory = \Drupal::service('purge.invalidation.factory');
+  $purgeQueuers = \Drupal::service('purge.queuers');
+  $purgeQueue = \Drupal::service('purge.queue');
+
+  $queuer = $purgeQueuers->get('coretags');
+  // Invalidate cache tags so all pages that have the file get banned from varnish
+  // Also invalidate the file's url.
+  \Drupal::logger('purge_message')->warning('<pre><code>file url : ' . print_r($file->getFileUri(), TRUE) . '</code></pre>');
+
+  $invalidations = [
+    $purgeInvalidationFactory->get('tag', 'file:' . $file->id()),
+    $purgeInvalidationFactory->get('url', file_create_url($file->getFileUri())),
+  ];
+
+  $purgeQueue->add($queuer, $invalidations);
+}

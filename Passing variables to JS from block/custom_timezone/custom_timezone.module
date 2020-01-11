@@ -1,0 +1,37 @@
+<?php
+
+/**
+ * Implements hook_theme().
+ */
+function custom_timezone_theme() {
+ 
+  $templates = array('contacts_show_page' => array('template' =>'contacts_show'),
+                     'custom_timezone_block' => array(
+                        'variables' => array('title' => NULL, 'description' => NULL),
+                        'template' => 'block--custom-timezone',
+                      ),
+                      'contact_edit_page'  => array(  
+                        'variables' => ['id' => NULL],
+                        'template' => 'contact_edit')
+     );
+     
+  return $templates;
+ 
+  /*return array(
+   'custom_timezone_block' => array(
+            'variables' => array('title' => NULL, 'description' => NULL),
+            'template' => 'block--custom-timezone',
+        ),
+  );*/
+}
+
+/**
+ * Implements hook_theme().
+ */
+function custom_timezone_preprocess_html(&$variables) {
+  $lotus_height = '300px';
+  //Add a JS library
+  $variables['#attached']['library'][] = 'custom_timezone/my-jslibrary';
+  // $variables['#attached']['drupalSettings']['module_name']['your_variable_name'] = $your_varaible_containing_value;
+  $variables['#attached']['drupalSettings']['custom_timezone']['lotus_height'] = $lotus_height;
+}

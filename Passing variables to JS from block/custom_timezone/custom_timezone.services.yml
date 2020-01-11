@@ -1,0 +1,3 @@
+services:
+  custom_timezone.get_timezone:
+    class: Drupal\custom_timezone\GetTimezoneService

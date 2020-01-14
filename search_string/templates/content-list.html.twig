@@ -1,0 +1,8 @@
+{{ attach_library('search_string/my-formlibrary') }}
+<h4>{{ title }}</h4>
+<ol>
+  {% for key, value in items %}
+    <li class="animated">{{ value }}</li>
+  {% endfor %}
+</ol>
+<div id="showformresults">Please wait..</div>

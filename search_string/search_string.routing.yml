@@ -1,0 +1,28 @@
+search_string.configstring:
+  path: '/admin/search_string'
+  defaults:
+    _form: '\Drupal\search_string\Form\TextConfigForm'
+    _title: 'Our Admin Date Config'
+  requirements:
+    _permission: 'administer site configuration'
+search_string.customform:
+  path: '/get-form'
+  defaults:
+    _form: '\Drupal\search_string\Form\CustomForm'
+    _title: 'Our Custom Form'
+  requirements:
+    _permission: 'access content'
+search_string.gettime:
+  path: 'get-contents'
+  defaults:
+    _controller: '\Drupal\search_string\Controller\MyController::getContent'
+    _title: 'Get All Related Contents with Given String'
+  requirements:
+    _permission: 'access content'
+search_string.gettheform:
+  path: 'get-the-form'
+  defaults:
+    _controller: '\Drupal\search_string\Controller\MyController::getForm'
+    _title: 'Get The Form'
+  requirements:
+    _permission: 'access content'

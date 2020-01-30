@@ -1,0 +1,22 @@
+download and install composer.exe from https://getcomposer.org/download/
+
+run c:\> composer
+
+run $ composer global require drupal/coder
+
+run $ composer global show -P
+
+run export PATH="$HOME/AppData/Roaming/Composer/vendor/bin:$PATH"
+
+run composer global require drupal/coder:^8.3.1
+
+run composer global require dealerdirect/phpcodesniffer-composer-installer
+
+The above command should return something like this:
+
+PHP CodeSniffer Config installed_paths set to ~/.composer/vendor/drupal/coder/coder_sniffer
+
+
+and you are done!!
+
+source url : https://www.drupal.org/docs/8/modules/code-review-module/installing-coder-sniffer

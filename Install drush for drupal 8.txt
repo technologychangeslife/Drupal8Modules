@@ -1,0 +1,43 @@
+http://modulesunraveled.com/drush/installing-drush-windows
+
+Install Drush via Composer
+Now, we're ready to install Drush with composer. It's pretty simple. In fact, it's a single line in the command line.
+
+In the Git Bash, type "composer global require drush/drush:7.*" and press Enter.
+This will install Drush to "C:/Users/[user name]/AppData/Roaming/Composer/vendor/drush/drush"
+
+We can't run it from anywhere else though, so we need to add that path to our Environment Variables.
+
+Adding Our Drush Folder to the System Path
+To add a directory to the PATH, we need to edit the PATH System Variable
+
+Open the Control Panel
+Change the "View by" option to "Small icons"
+Click "System"
+Click "Advanced system settings"
+Click "Environment Variables"
+There are two sections here. One for "User variables" and one for "System variables". The first only affect the logged-in user, while the second affect all users on the system. I'm going to change the User variable because it's safer, but if you have a reason to change the system variable, do that instead.
+
+I don't have a Path User Variable, so I'll create one.
+
+In the "User variables" section click "New"
+Variable name: "Path"
+Variable value: "C:/Users/Modules/AppData/Roaming/Composer/vendor/drush/drush" (Replace "Modules" with your user name)
+Click "OK"
+Note:
+If you do want to add this path to the System variables instead:
+
+* In the "System variables" section scroll down and click on "Path"
+* Click Edit (Each location is separated by a semicolon (;).)
+* Scroll to the end of the line, add a semicolon, and paste the path there
+
+You would also follow these steps in the User variable section, if there were already a "Path" variable present.
+
+Click "OK"
+Click "OK"
+If we try to type "drush" and press Enter in the command prompt, it still won't work becuase it's already loaded the previous PATH value. We need to close this window and open a new one to load the new PATH.
+
+Click the red "X"
+Open a new Git Bash window
+Type "drush" and press Enter
+This time, we see all of the available Drush commands. And if we type "drush status" and press Enter, we'll see that we are running version 7.0.0.

@@ -1,43 +1,44 @@
-http://modulesunraveled.com/drush/installing-drush-windows
+https://medium.com/d6-digital/installing-drush-on-windows-10-for-drupal-8-22f7f7c38f2
 
-Install Drush via Composer
-Now, we're ready to install Drush with composer. It's pretty simple. In fact, it's a single line in the command line.
+Installing Drush On Windows 10 For Drupal 8
+Ahmed Thaajwer
+Ahmed Thaajwer
+Follow
+Mar 30, 2019 · 3 min read
 
-In the Git Bash, type "composer global require drush/drush:7.*" and press Enter.
-This will install Drush to "C:/Users/[user name]/AppData/Roaming/Composer/vendor/drush/drush"
+Drush Version And Supported Drupal Versions.
 
-We can't run it from anywhere else though, so we need to add that path to our Environment Variables.
+Here I explain the short way to install Drush on MS Windows 10.
+Drush is an awesome shell interface for managing Drupal right from your cloud server command line. It is a very useful tool as it helps you perform various admin task using just one or two commands in the terminal.
+Drush has the dependency of the composer.
+Requirements:
+Composer, You can download and install the composer using this link https://getcomposer.org/Composer-Setup.exe
+Drush is now located on GitHub. you can easily find it using this link https://github.com/drush-ops/drush
+Ok, let’s see the steps to install drush
+STEP-01
+In c-drive create folder mkdir /usr/local/src and go to the particular path cd /usr/local/src
+STEP-02
+Then, type this command line the particular directory.
+git clone https://github.com/drush-ops/drush.git
 
-Adding Our Drush Folder to the System Path
-To add a directory to the PATH, we need to edit the PATH System Variable
+STEP-03
+Then, type composer install
+STEP-04
+After that,go to the folder /usr/local/src/drush/drush and type chmod u+x and, go to the folder /usr/local/src/drush/drush.bat and type chmod u+x
+STEP-05
+This step is an important one for drush installation. as we have to set up the environment variables to include this directory in our path setting.
+Right click on My Computer and select Properties and select advance system setting. You will get this window.
 
-Open the Control Panel
-Change the "View by" option to "Small icons"
-Click "System"
-Click "Advanced system settings"
-Click "Environment Variables"
-There are two sections here. One for "User variables" and one for "System variables". The first only affect the logged-in user, while the second affect all users on the system. I'm going to change the User variable because it's safer, but if you have a reason to change the system variable, do that instead.
+2. click Environment variables and you will get this window.
 
-I don't have a Path User Variable, so I'll create one.
+3. In the system variables, select the path and click edit, this window will popup
 
-In the "User variables" section click "New"
-Variable name: "Path"
-Variable value: "C:/Users/Modules/AppData/Roaming/Composer/vendor/drush/drush" (Replace "Modules" with your user name)
-Click "OK"
-Note:
-If you do want to add this path to the System variables instead:
+4. Then, copy the path from here.
 
-* In the "System variables" section scroll down and click on "Path"
-* Click Edit (Each location is separated by a semicolon (;).)
-* Scroll to the end of the line, add a semicolon, and paste the path there
+5. Then, In edit environment variable window, select the option New and paste the particular path that you have copied from the above.
 
-You would also follow these steps in the User variable section, if there were already a "Path" variable present.
+Then finish the environment variable setup (ok, ok, apply)
+STEP-06
+Then, Check by c:\usr\local\src\drush>drush status
 
-Click "OK"
-Click "OK"
-If we try to type "drush" and press Enter in the command prompt, it still won't work becuase it's already loaded the previous PATH value. We need to close this window and open a new one to load the new PATH.
-
-Click the red "X"
-Open a new Git Bash window
-Type "drush" and press Enter
-This time, we see all of the available Drush commands. And if we type "drush status" and press Enter, we'll see that we are running version 7.0.0.
+That's it congratulations, you have installed drush successfully :)

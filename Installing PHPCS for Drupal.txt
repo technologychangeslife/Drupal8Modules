@@ -1,3 +1,4 @@
+
 download and install composer.exe from https://getcomposer.org/download/
 
 run c:\> composer
@@ -20,3 +21,7 @@ PHP CodeSniffer Config installed_paths set to ~/.composer/vendor/drupal/coder/co
 and you are done!!
 
 source url : https://www.drupal.org/docs/8/modules/code-review-module/installing-coder-sniffer
+
+502616262@GF1HQ8S2E MINGW64 /c/Project/bhge-sites/source/drupal/docroot/modules/custom (develop)
+$ phpcs --standard=Drupal --extensions=php,module,inc,install,test,profile,theme,css,info,txt,md,yml bhge_training_video_api/
+
